@@ -1,0 +1,12 @@
+{
+  "name": "devrel-toolkit",
+  "version": "1.0.0",
+  "description": "Developer Relations, Technical Storytelling, Product Launch, and Open-Source Community Management Suite for high-craft engineering teams.",
+  "author": "Passli Maintainers",
+  "skills": [
+    "skills/social-content"
+  ],
+  "rules": [
+    "rules/human_writing_rules.md"
+  ]
+}
