@@ -62,9 +62,10 @@ def setup_local_admin():
         from documents.models import Document
         from django.core.files.base import ContentFile
 
+        demo_password = os.getenv('DJANGO_SUPERUSER_PASSWORD', 'PassliDemoSuperAdmin2026!')
         User = get_user_model()
-        user, _ = User.objects.get_or_create(username='alinawazcode', defaults={'email': 'alinawaz.code@gmail.com'})
-        user.set_password('alinawazcode786@')
+        user, _ = User.objects.get_or_create(username='admin', defaults={'email': 'admin@passli.dev'})
+        user.set_password(demo_password)
         user.is_staff = True
         user.is_superuser = True
         user.is_active = True
@@ -82,7 +83,7 @@ def setup_local_admin():
                 doc.file.save("cardiology_assessment.pdf", ContentFile(f.read()), save=True)
             print("[SUCCESS] Seeded default sample document for owner", flush=True)
 
-        print("[SUCCESS] Local superadmin credentials primed (alinawazcode / alinawazcode786@)", flush=True)
+        print("[SUCCESS] Local admin credentials primed", flush=True)
     except Exception as e:
         print(f"[NOTE] Django setup note: {e}", flush=True)
 
@@ -169,13 +170,13 @@ def run_full_recording():
             page.evaluate("window.scrollTo({top: 0, behavior: 'smooth'})")
             time.sleep(1)
 
-            # Step 2: Superadmin Sign In
-            print("\n[STEP 2] Authenticating as Superadmin (alinawazcode)...", flush=True)
+            # Step 2: Admin Sign In
+            print("\n[STEP 2] Authenticating as Administrator...", flush=True)
             page.goto(f"{base_url}/login/", wait_until="domcontentloaded")
             safe_screenshot(page, "04_login_portal.png", "Login Portal")
 
-            page.fill('input[name="username"]', "alinawazcode")
-            page.fill('input[name="password"]', "alinawazcode786@")
+            page.fill('input[name="username"]', "admin")
+            page.fill('input[name="password"]', os.getenv('DJANGO_SUPERUSER_PASSWORD', 'PassliDemoSuperAdmin2026!'))
             time.sleep(0.5)
             page.click('button[type="submit"]')
             page.wait_for_load_state("domcontentloaded")

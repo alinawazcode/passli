@@ -9,9 +9,9 @@ class Command(BaseCommand):
     help = 'Ensures the default superadmin user exists in the production database (Railway/Deployment).'
 
     def handle(self, *args, **options):
-        username = os.getenv('DJANGO_SUPERUSER_USERNAME', 'alinawazcode')
-        password = os.getenv('DJANGO_SUPERUSER_PASSWORD', 'alinawazcode786@')
-        email = os.getenv('DJANGO_SUPERUSER_EMAIL', 'alinawaz@passli.dev')
+        username = os.getenv('DJANGO_SUPERUSER_USERNAME', 'admin')
+        password = os.getenv('DJANGO_SUPERUSER_PASSWORD', 'PassliAdminDefault2026!')
+        email = os.getenv('DJANGO_SUPERUSER_EMAIL', 'admin@passli.dev')
 
         user, created = User.objects.get_or_create(
             username=username,

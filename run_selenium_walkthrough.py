@@ -93,8 +93,8 @@ def run_walkthrough():
 
         user_input = wait.until(EC.presence_of_element_located((By.NAME, "username")))
         pass_input = driver.find_element(By.NAME, "password")
-        user_input.send_keys("alinawazcode")
-        pass_input.send_keys("PassliSuperAdmin2026!")
+        user_input.send_keys(os.getenv("DJANGO_SUPERUSER_USERNAME", "admin"))
+        pass_input.send_keys(os.getenv("DJANGO_SUPERUSER_PASSWORD", "PassliAdminDefault2026!"))
         driver.find_element(By.CSS_SELECTOR, "button[type='submit']").click()
         time.sleep(2.5)
 
