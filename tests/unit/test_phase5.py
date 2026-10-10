@@ -298,3 +298,20 @@ class Phase5RecipientPortalTests(TestCase):
         # Accessing portal again should now redirect back to verify
         portal_res = self.client.get(reverse('recipient_portal', kwargs={'pass_id': self.active_pass.id}))
         self.assertRedirects(portal_res, reverse('recipient_verify', kwargs={'pass_id': self.active_pass.id}))
+
+    def test_recipient_portal_renders_dynamic_watermark(self):
+        """Verify dynamic anti-exfiltration watermark overlay is injected into recipient portal."""
+        verify_url = reverse('recipient_verify', kwargs={'pass_id': self.active_pass.id})
+        self.client.post(verify_url, {'access_key': self.raw_key})
+
+        portal_url = reverse('recipient_portal', kwargs={'pass_id': self.active_pass.id})
+        response = self.client.get(portal_url, REMOTE_ADDR='198.51.100.42')
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('client_ip', response.context)
+        self.assertEqual(response.context['client_ip'], '198.51.100.42')
+        self.assertIn('watermark_label', response.context)
+        self.assertContains(response, 'data-testid="watermark-overlay"')
+        self.assertContains(response, '198.51.100.42')
+        self.assertContains(response, 'UNAUTHORIZED CAPTURE PROHIBITED')
+

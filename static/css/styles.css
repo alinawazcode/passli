@@ -2436,6 +2436,63 @@ a {
   }
 }
 
+/* ==========================================================================
+   Anti-Exfiltration & Dynamic Watermark Styles
+   ========================================================================== */
+.recipient-viewer-canvas {
+  position: relative;
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+  background-color: #0f172a;
+  border-radius: var(--radius-md);
+}
+
+.watermark-overlay-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 10;
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.watermark-repeating-grid {
+  position: absolute;
+  inset: -50%;
+  width: 200%;
+  height: 200%;
+  transform: rotate(-25deg);
+  display: flex;
+  flex-wrap: wrap;
+  align-content: space-around;
+  justify-content: space-around;
+  opacity: 0.12;
+  pointer-events: none;
+  user-select: none;
+  font-family: var(--font-mono, monospace);
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: #ffffff;
+  line-height: 2.2;
+}
+
+@media print {
+  .recipient-viewer-canvas {
+    display: none !important;
+  }
+  body::before {
+    content: "PASSLI CONFIDENTIAL: PRINTING AND EXPORT RESTRICTED";
+    display: block;
+    text-align: center;
+    font-weight: bold;
+    color: red;
+    font-size: 24pt;
+    padding: 2rem;
+  }
+}
+
 
 
 

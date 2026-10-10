@@ -255,12 +255,23 @@ def recipient_portal_view(request, pass_id):
     if not active_doc:
         active_doc = documents[0]
 
+    # Extract client IP and access timestamp for dynamic anti-exfiltration watermarking
+    from audit.models import get_client_ip
+    client_ip = get_client_ip(request) or '127.0.0.1'
+    access_time = timezone.now().strftime('%Y-%m-%d %H:%M:%S UTC')
+    pass_short_id = str(share_pass.id)[:8].upper()
+    watermark_label = f"CONFIDENTIAL • PASSLI #{pass_short_id} • {client_ip} • {access_time}"
+
     context = {
         'pass': share_pass,
         'documents': documents,
         'active_doc': active_doc,
         'can_download': share_pass.can_download,
         'expires_at_iso': share_pass.expires_at.isoformat() if share_pass.expires_at else '',
+        'client_ip': client_ip,
+        'access_timestamp': access_time,
+        'pass_short_id': pass_short_id,
+        'watermark_label': watermark_label,
     }
     return render(request, 'sharing/recipient_portal.html', context)
 

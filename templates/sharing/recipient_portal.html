@@ -139,16 +139,48 @@
                         </div>
                     </div>
 
-                    <!-- Viewer Content -->
-                    <div class="recipient-viewer-canvas">
+                    <!-- Viewer Content with Dynamic Anti-Exfiltration Watermark Layer -->
+                    <div class="recipient-viewer-canvas" id="recipientViewerCanvas" style="position: relative; overflow: hidden; user-select: none; -webkit-user-select: none;">
+                        
+                        <!-- Dynamic Security Watermark Overlay Layer -->
+                        <div class="watermark-overlay-layer" aria-hidden="true" data-testid="watermark-overlay" style="position: absolute; inset: 0; pointer-events: none; z-index: 10; display: flex; flex-direction: column; justify-content: space-between; overflow: hidden;">
+                            <!-- Repeating Diagonal Watermark Grid -->
+                            <div class="watermark-repeating-grid" style="position: absolute; inset: -50%; width: 200%; height: 200%; transform: rotate(-25deg); display: flex; flex-wrap: wrap; align-content: space-around; justify-content: space-around; opacity: 0.13; pointer-events: none; user-select: none; font-family: var(--font-mono, monospace); font-weight: 700; font-size: 0.85rem; color: #0f172a; line-height: 2.2;">
+                                <span>{{ watermark_label }}</span>
+                                <span>{{ watermark_label }}</span>
+                                <span>{{ watermark_label }}</span>
+                                <span>{{ watermark_label }}</span>
+                                <span>{{ watermark_label }}</span>
+                                <span>{{ watermark_label }}</span>
+                                <span>{{ watermark_label }}</span>
+                                <span>{{ watermark_label }}</span>
+                                <span>{{ watermark_label }}</span>
+                                <span>{{ watermark_label }}</span>
+                                <span>{{ watermark_label }}</span>
+                                <span>{{ watermark_label }}</span>
+                            </div>
+
+                            <!-- Live Security Banner Badge at Top-Right -->
+                            <div style="position: absolute; top: 0.75rem; right: 0.75rem; z-index: 15; background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); color: #f8fafc; padding: 0.25rem 0.6rem; border-radius: var(--radius-sm); font-size: 0.68rem; font-family: var(--font-mono, monospace); display: flex; align-items: center; gap: 0.4rem; border: 1px solid rgba(255, 255, 255, 0.15);">
+                                <span class="material-symbols-outlined" style="font-size: 12px; color: #38bdf8;">verified_user</span>
+                                <span>TRACED IP: {{ client_ip }}</span>
+                            </div>
+
+                            <!-- Live Security Banner Badge at Bottom-Left -->
+                            <div style="position: absolute; bottom: 0.75rem; left: 0.75rem; z-index: 15; background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); color: #94a3b8; padding: 0.25rem 0.6rem; border-radius: var(--radius-sm); font-size: 0.65rem; font-family: var(--font-mono, monospace); display: flex; align-items: center; gap: 0.35rem; border: 1px solid rgba(255, 255, 255, 0.1);">
+                                <span class="material-symbols-outlined" style="font-size: 11px; color: #e11d48;">lock</span>
+                                <span>UNAUTHORIZED CAPTURE PROHIBITED • #{{ pass_short_id }}</span>
+                            </div>
+                        </div>
+
                         {% if active_doc.is_pdf %}
-                            <iframe src="{% url 'recipient_doc_preview' pass.id active_doc.id %}#toolbar=0" class="recipient-pdf-frame" title="{{ active_doc.title }}" data-testid="recipient-pdf-frame"></iframe>
+                            <iframe src="{% url 'recipient_doc_preview' pass.id active_doc.id %}#toolbar=0" class="recipient-pdf-frame" title="{{ active_doc.title }}" data-testid="recipient-pdf-frame" style="width: 100%; height: 600px; border: none; display: block;"></iframe>
                         {% elif active_doc.is_image %}
-                            <div class="recipient-img-container">
-                                <img src="{% url 'recipient_doc_preview' pass.id active_doc.id %}" alt="{{ active_doc.title }}" class="recipient-img-preview" data-testid="recipient-img-preview">
+                            <div class="recipient-img-container" style="display: flex; justify-content: center; align-items: center; padding: 1.5rem; background: #0b1120; min-height: 400px;">
+                                <img src="{% url 'recipient_doc_preview' pass.id active_doc.id %}" alt="{{ active_doc.title }}" class="recipient-img-preview" data-testid="recipient-img-preview" style="max-width: 100%; max-height: 600px; object-fit: contain; border-radius: var(--radius-sm); box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);">
                             </div>
                         {% else %}
-                            <div style="text-align: center; padding: 2.5rem 1.25rem; color: #fff;">
+                            <div style="text-align: center; padding: 2.5rem 1.25rem; color: #fff; background: #0b1120;">
                                 <span class="material-symbols-outlined" style="font-size: 48px; color: #94a3b8;">draft</span>
                                 <h3 style="font-size: 1.1rem; margin: 0.75rem 0 0.25rem;">Binary File Payload</h3>
                                 <p style="font-size: 0.85rem; color: #94a3b8; max-width: 400px; margin: 0 auto 1.25rem;">
