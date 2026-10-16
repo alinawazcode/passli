@@ -4,7 +4,34 @@
 
 document.addEventListener('DOMContentLoaded', () => {
     initStitchSimulator();
+    initVaultSearchShortcut();
 });
+
+function initVaultSearchShortcut() {
+    const searchInput = document.querySelector('[data-testid="vault-search-input"]');
+    if (!searchInput) {
+        return;
+    }
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key !== '/' || e.ctrlKey || e.metaKey || e.altKey) {
+            return;
+        }
+
+        const active = document.activeElement;
+        const tag = active ? active.tagName.toLowerCase() : '';
+        const isTyping = tag === 'input' || tag === 'textarea' || tag === 'select' ||
+            Boolean(active && active.isContentEditable);
+
+        if (isTyping || searchInput.disabled || searchInput.readOnly) {
+            return;
+        }
+
+        e.preventDefault();
+        searchInput.focus();
+        searchInput.select();
+    });
+}
 
 function initStitchSimulator() {
     const docCheckboxes = document.querySelectorAll('.sim-doc-checkbox');

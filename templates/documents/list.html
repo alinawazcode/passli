@@ -68,7 +68,7 @@
                 {% endif %}
                 <div class="search-input-wrapper">
                     <span class="material-symbols-outlined search-icon" style="font-size: 18px;">search</span>
-                    <input type="text" name="q" value="{{ search_query }}" placeholder="Search records by name, hash, notes..." class="form-input search-input" data-testid="vault-search-input">
+                    <input type="text" name="q" value="{{ search_query }}" placeholder="Search records by name, hash, notes..." class="form-input search-input" data-testid="vault-search-input" aria-keyshortcuts="/" aria-label="Search vault records (press / to focus)">
                     {% if search_query %}
                         <a href="{% url 'documents_list' %}{% if selected_category != 'all' %}?category={{ selected_category }}{% endif %}" class="clear-search-btn" title="Clear search">
                             <span class="material-symbols-outlined" style="font-size: 16px;">close</span>
