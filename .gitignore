@@ -31,11 +31,13 @@ staticfiles/
 .DS_Store
 Thumbs.db
 
-# Test reports
+# Test reports & execution artifacts
 htmlcov/
 .coverage
 .pytest_cache/
 screenshots/
 test-reports/
 recordings/
+selenium_testing/reports/
+selenium_testing/screenshots/
 
