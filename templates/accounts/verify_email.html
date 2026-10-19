@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Verify Email Address — Passli Personal Vault{% endblock %}
+
+{% block content %}
+<section class="auth-section">
+    <div class="auth-card" data-testid="verify-email-card">
+        <div class="auth-header">
+            <div class="auth-icon-box" style="background: rgba(14, 165, 233, 0.15); border: 1px solid rgba(14, 165, 233, 0.3); color: #38bdf8; margin: 0 auto 1rem auto; display: flex; align-items: center; justify-content: center; width: 56px; height: 56px; border-radius: 12px;">
+                <span class="material-symbols-outlined" style="font-size: 28px;">mark_email_read</span>
+            </div>
+            <h1 class="auth-title">Verify Email Address</h1>
+            <p class="auth-subtitle">
+                Enter the 6-digit verification code sent to <strong class="font-mono-data" style="color: #38bdf8;">{{ user_email }}</strong>
+            </p>
+        </div>
+
+        {% if form.errors %}
+            <div class="alert alert-danger" data-testid="auth-error-box">
+                {% for field in form %}
+                    {% for error in field.errors %}
+                        <div style="display: flex; align-items: center; gap: 0.35rem;">
+                            <span class="material-symbols-outlined" style="font-size: 18px;">error</span>
+                            <span>{{ error }}</span>
+                        </div>
+                    {% endfor %}
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <form method="post" action="{% url 'verify_email' %}" class="auth-form" novalidate>
+            {% csrf_token %}
+
+            <div class="form-group" style="text-align: center;">
+                <label for="otp-input" class="form-label">6-Digit Numerical Code</label>
+                {{ form.code }}
+                <span class="form-hint" style="display: block; margin-top: 0.5rem;">
+                    Code expires in 15 minutes. Check spam/junk folders if you don't see it.
+                </span>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-block btn-lg" data-testid="verify-otp-submit-btn" style="margin-top: 1rem;">
+                <span class="material-symbols-outlined" style="font-size: 18px;">verified_user</span> Confirm Code
+            </button>
+        </form>
+
+        <div style="margin-top: 1.5rem; text-align: center; padding-top: 1rem; border-top: 1px solid var(--border-color);">
+            <form method="post" action="{% url 'resend_verification_otp' %}" style="display: inline;">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-secondary btn-sm" data-testid="resend-otp-btn">
+                    <span class="material-symbols-outlined" style="font-size: 16px;">refresh</span> Resend Verification Code
+                </button>
+            </form>
+        </div>
+
+        <div class="auth-footer">
+            <a href="{% url 'dashboard' %}" class="auth-link font-mono-data">Skip for now & go to Vault Dashboard</a>
+        </div>
+    </div>
+</section>
+{% endblock %}

@@ -38,6 +38,7 @@
             <div class="form-group">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
                     <label for="login-password" class="form-label" style="margin-bottom: 0;">Password</label>
+                    <a href="{% url 'password_reset' %}" class="auth-link" style="font-size: 0.8rem;" data-testid="forgot-password-link">Forgot Password?</a>
                 </div>
                 {{ form.password }}
                 {% if form.password.errors %}

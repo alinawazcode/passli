@@ -7,6 +7,7 @@ from django.utils import timezone
 from .models import SharePass
 from .forms import RecipientKeyVerificationForm
 from audit.models import ShareAccessLog, log_share_event
+from accounts.emails import check_and_send_failed_passcode_alert
 
 logger = logging.getLogger(__name__)
 
@@ -136,6 +137,8 @@ def recipient_verify_view(request, pass_id):
                 request.session[fail_key] = failures
                 remaining_attempts = max(0, MAX_FAILED_ATTEMPTS - failures)
 
+                check_and_send_failed_passcode_alert(share_pass, request, failures)
+
                 log_share_event(
                     share_pass,
                     ShareAccessLog.EventType.KEY_FAILED,
@@ -167,6 +170,8 @@ def recipient_verify_view(request, pass_id):
             failures += 1
             request.session[fail_key] = failures
             remaining_attempts = max(0, MAX_FAILED_ATTEMPTS - failures)
+
+            check_and_send_failed_passcode_alert(share_pass, request, failures)
 
             log_share_event(
                 share_pass,

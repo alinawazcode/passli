@@ -1,0 +1,19 @@
+======================================================================
+PASSLI VAULT — EMAIL VERIFICATION CONFIRMED
+======================================================================
+
+Hello {{ username }},
+
+Your email address ({{ email }}) has been successfully verified.
+
+Vault Status: Email Verified & Protected
+Security alerts, access notifications, and password recovery workflows are active for this address.
+
+Access your vault dashboard:
+{{ dashboard_url }}
+
+If you did not confirm this verification, please sign in and update your security settings immediately.
+
+----------------------------------------------------------------------
+Passli Cryptographic Vault | {{ app_url }}
+Generated on {{ timestamp_utc }} UTC

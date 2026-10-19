@@ -1,0 +1,29 @@
+======================================================================
+SECURITY ALERT: FAILED QR PASSCODE ATTEMPTS — PASSLI
+======================================================================
+
+Hello {{ owner_name }},
+
+Authentication Status: FAILED
+Unauthorized access was blocked. None of your vault records or documents were decrypted or viewed.
+
+We detected {{ attempts_count }} consecutive failed passcode attempt(s) against your active Share Pass: "{{ pass_title }}".
+
+Incident Details:
+- Target Pass: {{ pass_title }} (Pass ID: {{ pass_id }})
+- Timestamp: {{ timestamp_utc }} UTC
+- Client IP: {{ ip_address }}
+- Inferred Device: {{ device_type }} ({{ os }} — {{ browser }})
+- Recent Failed Attempts: {{ attempts_count }} failure(s)
+
+Recommended Immediate Actions:
+1. Revoke the Share Pass immediately if you did not authorize these attempts:
+   {{ pass_manage_url }}
+2. Issue a fresh Share Pass with a new 8-character key if sharing is still required.
+3. Review full audit records in your Passli audit logs.
+
+* Device and browser details are inferred from HTTP client headers.
+
+----------------------------------------------------------------------
+Passli Cryptographic Vault | {{ app_url }}
+Generated on {{ timestamp_utc }} UTC

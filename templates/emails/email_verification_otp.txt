@@ -1,0 +1,19 @@
+======================================================================
+PASSLI VAULT — EMAIL VERIFICATION CODE
+======================================================================
+
+Hello {{ username }},
+
+Please enter the following 6-digit verification code to confirm ownership of this email address:
+
+    VERIFICATION CODE: {{ otp_code }}
+
+This code expires in 15 minutes (at {{ expires_at_utc }} UTC) and is valid for a single use.
+
+Security Reminder: Passli personnel will never ask for your verification code or master passphrase. Never share this code with anyone.
+
+If you did not initiate this request, you can safely disregard this message.
+
+----------------------------------------------------------------------
+Passli Cryptographic Vault | {{ app_url }}
+Generated on {{ timestamp_utc }} UTC

@@ -1,0 +1,24 @@
+{% extends "emails/base_email.html" %}
+
+{% block email_title %}Email Verified — Passli Vault{% endblock %}
+
+{% block email_content %}
+    <h1 class="email-title">Email Address Verified</h1>
+    <p>Hello <strong>{{ username }}</strong>,</p>
+    <p>Your email address (<strong>{{ email }}</strong>) has been successfully verified. Your Passli personal vault is fully activated with high-security notification routing.</p>
+
+    <div class="info-card">
+        <p style="margin: 0; font-size: 14px; color: #f1f5f9;">
+            ✅ <strong>Vault Status:</strong> Email Verified & Protected<br>
+            <span style="font-size: 13px; color: #94a3b8;">Security alerts, access notifications, and password recovery workflows are active for this address.</span>
+        </p>
+    </div>
+
+    <div style="text-align: center;">
+        <a href="{{ dashboard_url }}" class="btn-primary">Launch Vault Dashboard</a>
+    </div>
+
+    <p style="font-size: 13px; color: #94a3b8; margin-top: 24px;">
+        If you did not confirm this verification, please contact your security administrator or update your vault credentials immediately.
+    </p>
+{% endblock %}

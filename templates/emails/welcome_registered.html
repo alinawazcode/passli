@@ -1,0 +1,30 @@
+{% extends "emails/base_email.html" %}
+
+{% block email_title %}Welcome to Passli Vault{% endblock %}
+
+{% block email_content %}
+    <h1 class="email-title">Welcome to Passli, {{ username }}!</h1>
+    <p>Your zero-knowledge personal cryptographic vault is now initialized.</p>
+
+    <div class="info-card">
+        <p style="margin: 0; font-size: 14px; color: #f1f5f9;">
+            🔒 <strong>Client-Side Security:</strong> Passli is engineered around strict zero-knowledge principles. Your uploaded files are encrypted with industry-standard cryptography, and only you hold access authority.
+        </p>
+    </div>
+
+    <p>With Passli you can:</p>
+    <ul style="padding-left: 20px; margin: 0 0 20px 0; font-size: 14px; color: #cbd5e1;">
+        <li style="margin-bottom: 6px;">Securely store identity documents, tax records, and medical files.</li>
+        <li style="margin-bottom: 6px;">Generate time-gated Share Passes with single-use or expiration timers.</li>
+        <li style="margin-bottom: 6px;">Require cryptographic passcodes and QR authentication for recipients.</li>
+        <li>Monitor immutable access logs and real-time security alerts.</li>
+    </ul>
+
+    <div style="text-align: center; margin: 24px 0;">
+        <a href="{{ dashboard_url }}" class="btn-primary">Launch Vault Dashboard</a>
+    </div>
+
+    <p style="font-size: 13px; color: #94a3b8; margin-top: 24px;">
+        Need to verify your email address? If an email verification OTP code was sent to you, enter it on your verification page to activate recovery and security alerts.
+    </p>
+{% endblock %}

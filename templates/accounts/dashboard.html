@@ -27,6 +27,18 @@
             </div>
         </div>
 
+        {% if not is_email_verified %}
+        <div class="alert alert-warning" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 0.75rem;" data-testid="unverified-email-banner">
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <span class="material-symbols-outlined" style="font-size: 20px; color: #f59e0b;">mark_email_unread</span>
+                <span>Your email address (<strong>{{ request.user.email }}</strong>) is unverified. Verify to activate password recovery & security alerts.</span>
+            </div>
+            <div style="display: flex; gap: 0.5rem; align-items: center;">
+                <a href="{% url 'verify_email' %}" class="btn btn-primary btn-sm">Enter Code</a>
+            </div>
+        </div>
+        {% endif %}
+
         <!-- Security Status Bar -->
         <div class="vault-status-bar" data-testid="vault-status-bar" style="flex-wrap: wrap; gap: 0.75rem;">
             <div class="vault-status-item">

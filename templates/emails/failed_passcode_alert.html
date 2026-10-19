@@ -1,0 +1,63 @@
+{% extends "emails/base_email.html" %}
+
+{% block email_title %}Security Alert: Failed QR Passcode Attempts — Passli{% endblock %}
+
+{% block email_content %}
+    <div class="alert-card" style="margin-top: 0;">
+        <h2 style="color: #ef4444; font-size: 18px; margin-bottom: 8px;">⚠️ Security Alert: Failed Passcode Verification</h2>
+        <p style="margin: 0; font-size: 14px; color: #fca5a5;">
+            <strong>Authentication Status: FAILED.</strong> Unauthorized access was blocked. None of your vault records or documents were decrypted or viewed.
+        </p>
+    </div>
+
+    <p>Hello <strong>{{ owner_name }}</strong>,</p>
+    <p>
+        We detected <strong>{{ attempts_count }}</strong> consecutive failed passcode attempt(s) against your active Share Pass: <strong>"{{ pass_title }}"</strong>.
+    </p>
+
+    <div class="info-card">
+        <table class="info-table" style="margin: 0;">
+            <tr>
+                <td class="label">Target Share Pass</td>
+                <td class="value">{{ pass_title }} (Pass ID: {{ pass_id|slice:':8' }}...)</td>
+            </tr>
+            <tr>
+                <td class="label">Incident Timestamp</td>
+                <td class="value">{{ timestamp_utc }} UTC</td>
+            </tr>
+            <tr>
+                <td class="label">Client IP Address</td>
+                <td class="value">{{ ip_address }}</td>
+            </tr>
+            <tr>
+                <td class="label">Inferred Device</td>
+                <td class="value">{{ device_type }} ({{ os }} — {{ browser }})</td>
+            </tr>
+            <tr>
+                <td class="label">Recent Failed Attempts</td>
+                <td class="value" style="color: #f87171; font-weight: 700;">{{ attempts_count }} failure(s)</td>
+            </tr>
+        </table>
+    </div>
+
+    <h3 style="font-size: 15px; margin: 24px 0 12px 0;">Recommended Immediate Actions</h3>
+    <ul style="padding-left: 20px; margin: 0 0 20px 0; font-size: 14px; color: #cbd5e1;">
+        <li style="margin-bottom: 8px;">
+            <strong>Revoke the Share Pass:</strong> If you did not share this pass recently or suspect an unauthorized party obtained the link/QR code, immediately revoke access from your vault.
+        </li>
+        <li style="margin-bottom: 8px;">
+            <strong>Issue a New Pass:</strong> Create a new Share Pass with a fresh, random 8-character cryptographic key and shorter expiration window.
+        </li>
+        <li>
+            <strong>Check Audit Logs:</strong> Inspect access timestamps and IP addresses in your pass security console.
+        </li>
+    </ul>
+
+    <div style="text-align: center; margin: 24px 0;">
+        <a href="{{ pass_manage_url }}" class="btn-danger">Manage & Revoke Share Pass</a>
+    </div>
+
+    <p style="font-size: 12px; color: #64748b; line-height: 1.5;">
+        * Device and browser details are inferred from HTTP client headers and should be treated as diagnostic indicators rather than definitive forensic proof.
+    </p>
+{% endblock %}
