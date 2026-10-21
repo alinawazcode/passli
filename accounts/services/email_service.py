@@ -104,6 +104,35 @@ def send_templated_email(
             raise
         return False
     except (smtplib.SMTPException, socket.error, OSError) as smtp_err:
+        # If default port is 465 (SSL) and failed due to network / firewall, attempt fallback to port 587 STARTTLS
+        if getattr(settings, 'EMAIL_PORT', 465) == 465 and getattr(settings, 'EMAIL_BACKEND', '').endswith('smtp.EmailBackend'):
+            logger.warning(
+                f"SMTP connection to port 465 failed ({type(smtp_err).__name__}). "
+                "Attempting automatic fallback via port 587 STARTTLS..."
+            )
+            try:
+                from django.core.mail import get_connection
+                fallback_conn = get_connection(
+                    backend='django.core.mail.backends.smtp.EmailBackend',
+                    host=settings.EMAIL_HOST,
+                    port=587,
+                    username=settings.EMAIL_HOST_USER,
+                    password=settings.EMAIL_HOST_PASSWORD,
+                    use_tls=True,
+                    use_ssl=False,
+                    timeout=settings.EMAIL_TIMEOUT,
+                )
+                msg.connection = fallback_conn
+                sent_count = msg.send(fail_silently=False)
+                if sent_count > 0:
+                    logger.info(
+                        f"Email successfully dispatched via port 587 STARTTLS fallback: "
+                        f"subject='{subject}', recipients={masked_recipients}"
+                    )
+                    return True
+            except Exception as fb_err:
+                logger.error(f"Port 587 fallback failed as well: {type(fb_err).__name__} - {fb_err}")
+
         logger.error(
             f"SMTP Transport error during email dispatch: {type(smtp_err).__name__} - {str(smtp_err)}, "
             f"recipients={masked_recipients}"

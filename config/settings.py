@@ -243,28 +243,43 @@ LOGGING = {
 # Email & SMTP Service Configuration (Gmail SMTP & Railway Environment Compatible)
 # ==============================================================================
 EMAIL_BACKEND = os.environ.get('EMAIL_BACKEND', 'django.core.mail.backends.smtp.EmailBackend')
-EMAIL_HOST = os.environ.get('SMTP_HOST', os.environ.get('EMAIL_HOST', 'smtp.gmail.com'))
-EMAIL_PORT = int(os.environ.get('SMTP_PORT', os.environ.get('EMAIL_PORT', '465')))
+
+raw_host = os.environ.get('SMTP_HOST', os.environ.get('EMAIL_HOST', 'smtp.gmail.com'))
+EMAIL_HOST = raw_host.strip().strip("'\"") if raw_host else 'smtp.gmail.com'
+
+raw_port = str(os.environ.get('SMTP_PORT', os.environ.get('EMAIL_PORT', '465'))).strip().strip("'\"")
+EMAIL_PORT = int(raw_port) if raw_port.isdigit() else 465
 
 # SMTP Security: port 465 uses SSL directly (EMAIL_USE_SSL = True); port 587 uses STARTTLS (EMAIL_USE_TLS = True)
-smtp_secure_env = os.environ.get('SMTP_SECURE', 'true').lower() in ('true', '1', 't', 'yes')
-if EMAIL_PORT == 465 or (smtp_secure_env and EMAIL_PORT != 587):
+smtp_secure_env = str(os.environ.get('SMTP_SECURE', 'true')).strip().strip("'\"").lower() in ('true', '1', 't', 'yes')
+if EMAIL_PORT == 465:
     EMAIL_USE_SSL = True
     EMAIL_USE_TLS = False
-else:
+elif EMAIL_PORT == 587 or not smtp_secure_env:
     EMAIL_USE_SSL = False
     EMAIL_USE_TLS = True
+else:
+    EMAIL_USE_SSL = True
+    EMAIL_USE_TLS = False
 
-EMAIL_HOST_USER = os.environ.get('SMTP_USER', os.environ.get('EMAIL_HOST_USER', ''))
-EMAIL_HOST_PASSWORD = os.environ.get('SMTP_PASS', os.environ.get('EMAIL_HOST_PASSWORD', ''))
-DEFAULT_FROM_EMAIL = os.environ.get('EMAIL_FROM', os.environ.get('DEFAULT_FROM_EMAIL', EMAIL_HOST_USER or 'noreply@passli.dev'))
+raw_user = os.environ.get('SMTP_USER', os.environ.get('EMAIL_HOST_USER', ''))
+EMAIL_HOST_USER = raw_user.strip().strip("'\"") if raw_user else ''
+
+# Clean Google App Password: strip quotes, trim whitespace, and REMOVE SPACES
+# (Google generates app passwords formatted like 'abcd efgh ijkl mnop' which fail if spaces aren't stripped)
+raw_pass = os.environ.get('SMTP_PASS', os.environ.get('EMAIL_HOST_PASSWORD', ''))
+EMAIL_HOST_PASSWORD = raw_pass.strip().strip("'\"").replace(' ', '') if raw_pass else ''
+
+raw_from = os.environ.get('EMAIL_FROM', os.environ.get('DEFAULT_FROM_EMAIL', EMAIL_HOST_USER or 'noreply@passli.dev'))
+DEFAULT_FROM_EMAIL = raw_from.strip().strip("'\"") if raw_from else (EMAIL_HOST_USER or 'noreply@passli.dev')
 SERVER_EMAIL = DEFAULT_FROM_EMAIL
-EMAIL_TIMEOUT = 10  # 10-second timeout to prevent blocking thread
+EMAIL_TIMEOUT = 12  # 12-second timeout
 
 # Public Application Base URL (for generating trusted reset, verification, and alert links)
-APP_URL = os.environ.get('APP_URL', '').rstrip('/')
-if not APP_URL and railway_domain:
-    APP_URL = f"https://{railway_domain}"
-if not APP_URL:
-    APP_URL = 'http://localhost:8000'
+raw_app_url = os.environ.get('APP_URL', '').strip().strip("'\"").rstrip('/')
+if not raw_app_url and railway_domain:
+    raw_app_url = f"https://{railway_domain}"
+if not raw_app_url:
+    raw_app_url = 'http://localhost:8000'
+APP_URL = raw_app_url
 
