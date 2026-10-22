@@ -27,6 +27,10 @@ DEBUG = os.environ.get('DEBUG', 'True').lower() in ('true', '1', 't')
 if not DEBUG and (SECRET_KEY == DEFAULT_INSECURE_SECRET or SECRET_KEY.startswith('django-insecure-')):
     raise ImproperlyConfigured("SECRET_KEY must be configured with a secure value in production when DEBUG=False.")
 
+# Vault Master Encryption Key (AES-256-GCM 32-byte key, hex or base64)
+VAULT_MASTER_KEY = os.environ.get('VAULT_MASTER_KEY')
+
+
 # Allowed Hosts configuration
 allowed_hosts_env = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1')
 ALLOWED_HOSTS = [h.strip() for h in allowed_hosts_env.split(',') if h.strip()]
