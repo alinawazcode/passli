@@ -5,30 +5,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
-## [1.3.0] - 2026-10-22
-
-### Added
-- **AES-256-GCM Vault Encryption at Rest (PASS-001)**:
-  - Cryptographic engine (`documents.services.crypto_service`) implementing AES-256-GCM AEAD encryption.
-  - 12-byte CSPRNG per-file nonce and 16-byte GCM authentication tag with 28-byte wire format.
-  - Transparent dual-mode compatibility: `Document.is_encrypted` flag with `get_decrypted_content()` fallback for legacy files.
-  - In-memory decrypted streaming for owner preview/download and recipient portal without writing unencrypted temporary files to disk.
-  - Migration command: `python manage.py encrypt_vault_storage` with `--dry-run`, `--batch-size`, and `--force` options.
-  - Dedicated unit test suite (`tests/unit/test_vault_encryption.py`) covering cryptographic roundtrips, tamper resistance, and streaming.
-- **Transactional Email Integration & Security Alerts (PASS-002, PASS-003, PASS-004)**:
-  - Production-ready Gmail SMTP / TLS email delivery engine (`accounts.emails`).
-  - Email verification with time-gated 6-digit OTP codes.
-  - Cryptographically secure password reset flow using Django's `PasswordResetTokenGenerator`.
-  - Transactional security alert emails: password reset confirmation, welcome onboarding, and failed QR passcode lockout notifications.
-  - Diagnostic CLI tool: `python manage.py test_smtp [recipient]` to inspect credentials and verify dispatch.
-  - Dedicated unit test suite (`tests/unit/test_email_integration.py`).
-- **Security Hardening & PII Protection (PASS-005 through PASS-008)**:
-  - Sanitized audit logging: masked email addresses and anonymized event details in database logs.
-  - Defensive HTTP security headers (`nosniff`, `no-store`, `no-cache`, `private`) on all preview and download streams.
-  - Multi-tenant IDOR protection across document and recipient view endpoints.
-
----
-
 ## [1.2.0] - 2026-10-01
 
 ### Added

@@ -1,7 +1,6 @@
 # Security Policy & Cryptographic Architecture
 
 Passli is engineered with an ephemeral, privacy-first access control architecture designed for secure, time-gated document sharing without master credential exposure or plaintext data retention.
-
 ---
 
 ## ⚠️ Security Model & Limitations
