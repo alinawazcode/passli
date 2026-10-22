@@ -66,7 +66,7 @@
     <circle cx="127" cy="-28" r="4.5" fill="url(#pll-emerald)"/>
     <circle cx="127" cy="-28" r="7.5" fill="none" stroke="#10b981" stroke-width="1.4" opacity="0.8"/>
 
-    <!-- Subtitle: ZERO-KNOWLEDGE VAULT -->
+    <!-- Subtitle: CONTROLLED DOCUMENT VAULT -->
     <text x="2" 
           y="18" 
           font-family="'JetBrains Mono', monospace" 

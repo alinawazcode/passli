@@ -113,3 +113,49 @@ class SharePass(models.Model):
             return request.build_absolute_uri(path)
         return path
 
+
+class SharePassLockout(models.Model):
+    """
+    Persistent database-backed rate-limiting lockout tracker for SharePass access.
+    Tracks failed verification attempts per pass and per IP address with exponential backoff.
+    """
+    share_pass = models.ForeignKey(
+        'sharing.SharePass',
+        on_delete=models.CASCADE,
+        related_name='lockouts',
+        db_index=True
+    )
+    ip_address = models.CharField(max_length=45, db_index=True, default='127.0.0.1')
+    failed_attempts = models.PositiveIntegerField(default=0)
+    locked_until = models.DateTimeField(null=True, blank=True, db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['share_pass', 'ip_address'], name='unique_share_pass_ip_lockout')
+        ]
+        indexes = [
+            models.Index(fields=['share_pass', 'ip_address']),
+            models.Index(fields=['locked_until']),
+        ]
+        verbose_name = 'Share Pass Lockout'
+        verbose_name_plural = 'Share Pass Lockouts'
+
+    def __str__(self):
+        return f"Lockout for {self.share_pass_id} from {self.ip_address} ({self.failed_attempts} fails)"
+
+    @property
+    def is_locked(self) -> bool:
+        if self.locked_until and self.locked_until > timezone.now():
+            return True
+        return False
+
+    @property
+    def retry_after_seconds(self) -> int:
+        if not self.locked_until:
+            return 0
+        diff = (self.locked_until - timezone.now()).total_seconds()
+        return max(1, int(diff + 0.999))
+
+

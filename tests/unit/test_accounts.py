@@ -145,7 +145,7 @@ class AccountsAndDashboardTests(TestCase):
         content = response.content.decode('utf-8')
         self.assertIn('Personal Vault Dashboard', content)
         self.assertIn(self.email, content)
-        self.assertIn('Zero-Knowledge Envelope: <strong>ACTIVE</strong>', content)
+        self.assertIn('Vault Storage: AES-256-GCM', content)
         self.assertIn('VAULT RECORDS', content)
         self.assertIn('ACTIVE PASSES', content)
         self.assertIn('STORAGE QUOTA', content)

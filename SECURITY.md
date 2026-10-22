@@ -1,6 +1,14 @@
 # Security Policy & Cryptographic Architecture
 
 Passli is engineered with an ephemeral, privacy-first access control architecture designed for secure, time-gated document sharing without master credential exposure or plaintext data retention.
+---
+
+## ⚠️ Security Model & Limitations
+
+Passli operates with complete architectural transparency:
+- **Not Zero-Knowledge**: Passli is not zero-knowledge. Files are encrypted at rest server-side using AES-256-GCM with a master key held by the server. Because the server holds the key, the server can read documents.
+- **Server-Side Enforcement**: Expiry, access control, and revocation are enforced by the server; there is no hardware-based key destruction.
+- **No Independent Audit**: Passli has not been independently audited or certified by SOC 2 or any external security agency.
 
 ---
 
@@ -20,7 +28,7 @@ We actively support and release security updates for the following versions of P
 
 ### 1. Authenticated Encryption at Rest (AES-256-GCM)
 - **Engine**: Industry-standard **AES-256-GCM** (Galois/Counter Mode) with Authenticated Encryption with Associated Data (AEAD) via Python's `cryptography` library.
-- **Envelope Wire Format**: `[12-byte Nonce][Ciphertext + 16-byte Poly1305/GCM Authentication Tag]`. Total cryptographic overhead is exactly 28 bytes per stored file.
+- **Storage Wire Format**: `[12-byte Nonce][Ciphertext + 16-byte GCM Authentication Tag]`. Total cryptographic overhead is exactly 28 bytes per stored file.
 - **Nonce Uniqueness**: Each document encryption operation generates a unique, non-repeating 12-byte CSPRNG nonce (`os.urandom(12)`), preventing replay attacks and cryptographic pattern leakage across identical files.
 - **Tamper Resistance**: Any modification, bit-flip, or byte truncation of stored files triggers an immediate `VaultDecryptionError` upon tag verification failure, preventing corrupted or tampered payloads from ever reaching application memory.
 - **Key Management**: Primary vault key is supplied via `VAULT_MASTER_KEY` (32-byte hexadecimal key). In local/development environments without explicit configuration, a deterministic 256-bit key is derived using **HKDF-SHA256** from Django's `SECRET_KEY`.
