@@ -1,6 +1,6 @@
 # Security Policy & Cryptographic Architecture
 
-Passli is engineered with an ephemeral, privacy-first access control architecture designed for secure, time-gated document sharing without master credential exposure.
+Passli is engineered with an ephemeral, privacy-first access control architecture designed for secure, time-gated document sharing without master credential exposure or plaintext data retention.
 
 ---
 
@@ -8,43 +8,58 @@ Passli is engineered with an ephemeral, privacy-first access control architectur
 
 We actively support and release security updates for the following versions of Passli:
 
-| Version | Supported | Security Maintenance |
-| :--- | :--- | :--- |
-| `1.x.x` (Current Main) | :white_check_mark: | Active Security Patches |
-| `< 1.0.0` | :x: | Deprecated |
+| Version | Supported | Security Maintenance | Cryptographic Engine |
+| :--- | :--- | :--- | :--- |
+| `1.3.x` (Current Main) | :white_check_mark: | Active Security Patches & Threat Mitigation | AES-256-GCM + PBKDF2-HMAC-SHA256 |
+| `1.2.x` | :white_check_mark: | Bugfixes & Maintenance | AES-256-GCM Migration Compatible |
+| `< 1.2.0` | :x: | Deprecated | Legacy |
 
 ---
 
 ## 🔒 Security Specifications & Threat Model
 
-1. **Ephemeral Key Access Control**:
-   - Plaintext 8-character Share Keys (`XXXX-XXXX`) are generated dynamically using cryptographically secure random sources (`secrets.choice` from a 31-character unambiguous alphabet).
-   - Plaintext keys are **never stored** in the database or written to server logs; only salted **PBKDF2-HMAC-SHA256** hashes are retained (`django.contrib.auth.hashers.make_password`).
-   - The server verifies submitted keys against the PBKDF2 hash using constant-time comparison to establish ephemeral, session-bound recipient access.
+### 1. Authenticated Encryption at Rest (AES-256-GCM)
+- **Engine**: Industry-standard **AES-256-GCM** (Galois/Counter Mode) with Authenticated Encryption with Associated Data (AEAD) via Python's `cryptography` library.
+- **Envelope Wire Format**: `[12-byte Nonce][Ciphertext + 16-byte Poly1305/GCM Authentication Tag]`. Total cryptographic overhead is exactly 28 bytes per stored file.
+- **Nonce Uniqueness**: Each document encryption operation generates a unique, non-repeating 12-byte CSPRNG nonce (`os.urandom(12)`), preventing replay attacks and cryptographic pattern leakage across identical files.
+- **Tamper Resistance**: Any modification, bit-flip, or byte truncation of stored files triggers an immediate `VaultDecryptionError` upon tag verification failure, preventing corrupted or tampered payloads from ever reaching application memory.
+- **Key Management**: Primary vault key is supplied via `VAULT_MASTER_KEY` (32-byte hexadecimal key). In local/development environments without explicit configuration, a deterministic 256-bit key is derived using **HKDF-SHA256** from Django's `SECRET_KEY`.
 
-2. **Storage Architecture & Server-Side Security**:
-   - Uploaded vault documents are stored on server-side media storage (with randomized UUID filenames preventing path traversal) and served strictly through authenticated view endpoints with `X-Content-Type-Options: nosniff` and `no-store` cache controls.
-   - *Note on Threat Model*: Passli enforces strict server-side multi-tenant access controls, IDOR defenses, and time-gated authorization tokens. It is not currently a client-side end-to-end zero-knowledge system; files are stored in server-managed storage.
+### 2. In-Memory Decrypted Streaming (Zero Plaintext Disk Writes)
+- Owner previews, owner downloads, and verified recipient views decrypt ciphertext **strictly in-memory** using `io.BytesIO` streams.
+- **No plaintext files are ever written to the physical file system or temp directories** during inspection or streaming.
+- Responses enforce defensive security headers:
+  ```http
+  X-Content-Type-Options: nosniff
+  Cache-Control: no-store, no-cache, must-revalidate, private
+  Pragma: no-cache
+  ```
 
-3. **Binary Digest Integrity**:
-   - Every uploaded vault document is processed through **SHA-256** checksum hashing on ingestion.
-   - Binary digests allow instant verification of document integrity and detect unauthorized alteration or corrupted uploads.
+### 3. Ephemeral Key Access Control & Hashed Storage
+- Plaintext 8-character Share Keys (`XXXX-XXXX`) are generated dynamically using cryptographically secure random sources (`secrets.choice` from a 31-character unambiguous alphabet excluding lookalike characters `0/O`, `1/I/L`).
+- Plaintext keys are **never stored** in the database or written to server logs; only salted **PBKDF2-HMAC-SHA256** hashes are retained (`django.contrib.auth.hashers.make_password`).
+- The server verifies submitted keys against the PBKDF2 hash using constant-time comparison to establish ephemeral, session-bound recipient access.
 
-4. **Multi-Tenant IDOR Protection**:
-   - All vault access handlers strictly filter by `user=request.user` or authenticated session ID before serving document contents.
-   - Direct object reference tampering is caught at the view boundary with HTTP 404/403 responses.
+### 4. Binary Digest Integrity (SHA-256)
+- Every uploaded vault document is processed through **SHA-256** checksum hashing on the *original plaintext* on ingestion.
+- The binary digest is preserved in the database for client and recipient verification against source documents, even while stored files are encrypted at rest.
 
-5. **Brute-Force & Rate-Limiting Defenses**:
-   - Failed Share Key attempts trigger structured security logs and increment attempt counters.
-   - Excess attempts enforce exponential lockouts to defeat automated credential stuffing and key enumeration.
+### 5. Multi-Tenant IDOR Protection
+- All vault access handlers strictly filter by `user=request.user` or authenticated recipient session ID before serving document contents.
+- Direct object reference tampering across tenant boundaries is caught at the view boundary with HTTP 404/403 responses.
 
-6. **Server-Enforced Expiration & Revocation**:
-   - Expiration timestamps (`expires_at`) and single-use usage limits (`max_uses`) are atomically validated on recipient verification requests.
-   - When a pass expires or is revoked, access is immediately terminated, and session memory is wiped.
+### 6. Brute-Force & Rate-Limiting Defenses
+- Failed Share Key attempts trigger structured security logs and increment attempt counters.
+- Five consecutive failed key attempts enforce immediate lockout and trigger an automated security notification email to the pass owner.
 
-7. **Structured Audit Logging**:
-   - Access events are recorded in an application-level append-only relational audit table (`ShareAccessLog`), capturing client IP, user agent, event type, and outcome timestamp for owner visibility.
+### 7. Cryptographically Secure Email Auth & Alerts
+- Password reset workflows utilize time-sensitive, single-use cryptographic tokens generated by Django's `PasswordResetTokenGenerator`.
+- Email verification codes utilize time-gated 6-digit numeric OTPs stored with expiration timestamps.
+- Critical security events (password resets, failed passcode attempts, onboarding) trigger automated transactional emails via SMTP/TLS.
 
+### 8. Structured Audit Logging & PII Sanitization
+- Access events are recorded in an append-only relational audit table (`ShareAccessLog`), capturing client IP, user agent, event type, and outcome timestamp for owner visibility.
+- Sensitive values (passcode characters, authorization tokens, full email addresses) are sanitized and masked before log persistence.
 
 ---
 
