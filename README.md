@@ -197,7 +197,7 @@ cp .env.example .env
 Key `.env` configuration options:
 ```env
 DEBUG=False
-SECRET_KEY=your-secure-django-secret-key
+SECRET_KEY=replace-with-a-secure-random-key-in-production
 
 # Vault Master Encryption Key (32-byte hex string)
 # Optional in development (derived automatically from SECRET_KEY via HKDF-SHA256 if unset)
@@ -206,7 +206,7 @@ VAULT_MASTER_KEY=
 
 # Initial Superadmin Configuration (for ensure_superadmin command)
 DJANGO_SUPERUSER_USERNAME=admin
-DJANGO_SUPERUSER_PASSWORD=YourStrongPassword123!
+DJANGO_SUPERUSER_PASSWORD=replace-with-a-strong-admin-password
 DJANGO_SUPERUSER_EMAIL=admin@passli.dev
 
 # Host & Origin Whitelisting
@@ -219,7 +219,7 @@ SMTP_HOST=smtp.gmail.com
 SMTP_PORT=465
 SMTP_SECURE=true
 SMTP_USER=your-email@gmail.com
-SMTP_PASS=your-16-character-google-app-password
+SMTP_PASS=replace-with-your-16-char-google-app-password
 EMAIL_FROM=your-email@gmail.com
 ```
 
