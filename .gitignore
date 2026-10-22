@@ -41,3 +41,8 @@ recordings/
 selenium_testing/reports/
 selenium_testing/screenshots/
 
+# AI Agent configuration & local customizations
+.agents/
+AGENTS.md
+
+
