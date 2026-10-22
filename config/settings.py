@@ -12,19 +12,23 @@ import dj_database_url
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Load environment variables from .env file
+from django.core.exceptions import ImproperlyConfigured
+
+# Load environment variables from .env file
 load_dotenv(BASE_DIR / '.env')
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get(
-    'SECRET_KEY',
-    'django-insecure-_h5!zlxj*wxis-s=)i3a1^jqlwol@8@^%-m(bec8nznl0s4ybm'
-)
+DEFAULT_INSECURE_SECRET = 'django-insecure-_h5!zlxj*wxis-s=)i3a1^jqlwol@8@^%-m(bec8nznl0s4ybm'
+SECRET_KEY = os.environ.get('SECRET_KEY', DEFAULT_INSECURE_SECRET)
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get('DEBUG', 'True').lower() in ('true', '1', 't')
 
+if not DEBUG and (SECRET_KEY == DEFAULT_INSECURE_SECRET or SECRET_KEY.startswith('django-insecure-')):
+    raise ImproperlyConfigured("SECRET_KEY must be configured with a secure value in production when DEBUG=False.")
+
 # Allowed Hosts configuration
-allowed_hosts_env = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1,*.railway.app,*.up.railway.app')
+allowed_hosts_env = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1')
 ALLOWED_HOSTS = [h.strip() for h in allowed_hosts_env.split(',') if h.strip()]
 
 # Add Railway public domain dynamically if present
@@ -32,10 +36,10 @@ railway_domain = os.environ.get('RAILWAY_PUBLIC_DOMAIN')
 if railway_domain and railway_domain not in ALLOWED_HOSTS:
     ALLOWED_HOSTS.append(railway_domain)
 
-# CSRF Trusted Origins (required for POST forms on Railway HTTPS domains)
+# CSRF Trusted Origins (required for POST forms on HTTPS domains)
 csrf_origins_env = os.environ.get(
     'CSRF_TRUSTED_ORIGINS',
-    'https://*.railway.app,https://*.up.railway.app,http://localhost:8000,http://127.0.0.1:8000'
+    'http://localhost:8000,http://127.0.0.1:8000'
 )
 CSRF_TRUSTED_ORIGINS = [o.strip() for o in csrf_origins_env.split(',') if o.strip()]
 if railway_domain:
@@ -54,6 +58,15 @@ SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_AGE = 86400  # 24-hour expiration
 SESSION_COOKIE_SAMESITE = 'Lax'
 CSRF_COOKIE_SAMESITE = 'Lax'
+SESSION_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_SECURE = not DEBUG
+SECURE_SSL_REDIRECT = os.environ.get('SECURE_SSL_REDIRECT', 'True' if not DEBUG else 'False').lower() in ('true', '1', 't')
+
+if not DEBUG:
+    SECURE_HSTS_SECONDS = int(os.environ.get('SECURE_HSTS_SECONDS', 31536000))
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+
 
 
 # Application definition

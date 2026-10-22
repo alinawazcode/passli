@@ -151,3 +151,71 @@ class AccountsAndDashboardTests(TestCase):
         self.assertIn('STORAGE QUOTA', content)
         self.assertIn('No Active Share Passes', content)
         self.assertIn('Your Vault is Empty', content)
+
+    def test_ensure_superadmin_fails_safe_when_no_env_vars(self):
+        """Verify ensure_superadmin does not create users or hardcode default credentials when env vars are missing."""
+        import os
+        from io import StringIO
+        from django.core.management import call_command
+
+        # Ensure env vars are unset
+        old_u = os.environ.pop('DJANGO_SUPERUSER_USERNAME', None)
+        old_p = os.environ.pop('DJANGO_SUPERUSER_PASSWORD', None)
+        old_e = os.environ.pop('DJANGO_SUPERUSER_EMAIL', None)
+        try:
+            out = StringIO()
+            initial_count = User.objects.filter(is_superuser=True).count()
+            call_command('ensure_superadmin', stdout=out)
+            self.assertEqual(User.objects.filter(is_superuser=True).count(), initial_count)
+            self.assertIn('Skipping primary superadmin creation', out.getvalue())
+        finally:
+            if old_u:
+                os.environ['DJANGO_SUPERUSER_USERNAME'] = old_u
+            if old_p:
+                os.environ['DJANGO_SUPERUSER_PASSWORD'] = old_p
+            if old_e:
+                os.environ['DJANGO_SUPERUSER_EMAIL'] = old_e
+
+    def test_ensure_superadmin_creates_admin_and_preserves_password(self):
+        """Verify ensure_superadmin creates admin from env and never resets changed password on subsequent runs."""
+        import os
+        from io import StringIO
+        from django.core.management import call_command
+        from django.contrib.auth import authenticate
+
+        test_user = "test_ops_admin"
+        initial_pw = "InitialEnvSecretPassword2026!"
+        changed_pw = "UserModifiedAdminPassword2026!"
+
+        os.environ['DJANGO_SUPERUSER_USERNAME'] = test_user
+        os.environ['DJANGO_SUPERUSER_PASSWORD'] = initial_pw
+        os.environ['DJANGO_SUPERUSER_EMAIL'] = "ops@passli.dev"
+
+        try:
+            out = StringIO()
+            # 1. First run creates superadmin
+            call_command('ensure_superadmin', stdout=out)
+            admin_user = User.objects.get(username=test_user)
+            self.assertTrue(admin_user.is_superuser)
+            self.assertTrue(admin_user.is_staff)
+            self.assertIsNotNone(authenticate(username=test_user, password=initial_pw))
+
+            # 2. Admin changes their password in production/UI
+            admin_user.set_password(changed_pw)
+            admin_user.save()
+            self.assertIsNotNone(authenticate(username=test_user, password=changed_pw))
+
+            # 3. Subsequent redeploy / startup run must NOT reset password
+            out2 = StringIO()
+            call_command('ensure_superadmin', stdout=out2)
+            self.assertIn("preserved existing password", out2.getvalue())
+
+            # Password should still be the modified password, NOT reset to initial_pw
+            self.assertIsNotNone(authenticate(username=test_user, password=changed_pw))
+            self.assertIsNone(authenticate(username=test_user, password=initial_pw))
+        finally:
+            os.environ.pop('DJANGO_SUPERUSER_USERNAME', None)
+            os.environ.pop('DJANGO_SUPERUSER_PASSWORD', None)
+            os.environ.pop('DJANGO_SUPERUSER_EMAIL', None)
+            User.objects.filter(username=test_user).delete()
+

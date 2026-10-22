@@ -212,25 +212,38 @@ class AdministrationConsoleTests(TestCase):
         self.assertContains(response, "192.168.1.50")
 
     def test_ensure_superadmin_command(self):
-        """Verify ensure_superadmin creates both primary and secondary superadmins with valid credentials."""
+        """Verify ensure_superadmin creates configured superadmins from environment variables."""
+        import os
         from django.core.management import call_command
         from django.contrib.auth import authenticate
         from io import StringIO
 
-        out = StringIO()
-        call_command('ensure_superadmin', stdout=out)
+        os.environ['DJANGO_SUPERUSER_USERNAME'] = 'admin'
+        os.environ['DJANGO_SUPERUSER_PASSWORD'] = 'TestSecureAdmin2026!'
+        os.environ['DJANGO_SECONDARY_SUPERUSER_USERNAME'] = 'superadmin'
+        os.environ['DJANGO_SECONDARY_SUPERUSER_PASSWORD'] = 'TestSecureSuperAdmin2026!'
 
-        # Verify superadmin user exists and is fully privileged
-        superadmin = User.objects.get(username='superadmin')
-        self.assertTrue(superadmin.is_superuser)
-        self.assertTrue(superadmin.is_staff)
-        self.assertTrue(superadmin.is_active)
-        self.assertIsNotNone(authenticate(username='superadmin', password='PassliSuperAdmin2026!'))
+        try:
+            out = StringIO()
+            call_command('ensure_superadmin', stdout=out)
 
-        # Verify admin user exists and is fully privileged
-        admin = User.objects.get(username='admin')
-        self.assertTrue(admin.is_superuser)
-        self.assertTrue(admin.is_staff)
-        self.assertTrue(admin.is_active)
-        self.assertIsNotNone(authenticate(username='admin', password='PassliAdminDefault2026!'))
+            # Verify superadmin user exists and is fully privileged
+            superadmin = User.objects.get(username='superadmin')
+            self.assertTrue(superadmin.is_superuser)
+            self.assertTrue(superadmin.is_staff)
+            self.assertTrue(superadmin.is_active)
+            self.assertIsNotNone(authenticate(username='superadmin', password='TestSecureSuperAdmin2026!'))
+
+            # Verify admin user exists and is fully privileged
+            admin = User.objects.get(username='admin')
+            self.assertTrue(admin.is_superuser)
+            self.assertTrue(admin.is_staff)
+            self.assertTrue(admin.is_active)
+            self.assertIsNotNone(authenticate(username='admin', password='TestSecureAdmin2026!'))
+        finally:
+            os.environ.pop('DJANGO_SUPERUSER_USERNAME', None)
+            os.environ.pop('DJANGO_SUPERUSER_PASSWORD', None)
+            os.environ.pop('DJANGO_SECONDARY_SUPERUSER_USERNAME', None)
+            os.environ.pop('DJANGO_SECONDARY_SUPERUSER_PASSWORD', None)
+
 

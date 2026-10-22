@@ -315,3 +315,44 @@ class RecipientPortalTests(TestCase):
         self.assertContains(response, '198.51.100.42')
         self.assertContains(response, 'UNAUTHORIZED CAPTURE PROHIBITED')
 
+    def test_recipient_single_use_pass_atomic_burn(self):
+        """Verify single-use pass (max_uses=1) atomically permits only first recipient session and denies subsequent ones."""
+        single_pass = SharePass.objects.create(
+            owner=self.owner,
+            title="Single Use KYC Verification",
+            expires_at=timezone.now() + timedelta(hours=1),
+            can_download=False,
+            max_uses=1,
+            access_count=0
+        )
+        single_pass.set_key("BURN1234")
+        single_pass.save()
+        single_pass.documents.add(self.doc1)
+
+        # 1. First recipient client verifies key successfully
+        client1 = Client()
+        verify_url = reverse('recipient_verify', kwargs={'pass_id': single_pass.id})
+        res1 = client1.post(verify_url, {'access_key': 'BURN1234'})
+        self.assertEqual(res1.status_code, 302)
+        self.assertRedirects(res1, reverse('recipient_portal', kwargs={'pass_id': single_pass.id}))
+
+        single_pass.refresh_from_db()
+        self.assertEqual(single_pass.access_count, 1)
+        self.assertTrue(single_pass.is_limit_reached())
+
+        # 2. First client can view the portal in their session
+        portal_res1 = client1.get(reverse('recipient_portal', kwargs={'pass_id': single_pass.id}))
+        self.assertEqual(portal_res1.status_code, 200)
+
+        # 3. Second client (different session) tries to verify the same pass
+        client2 = Client()
+        res2 = client2.post(verify_url, {'access_key': 'BURN1234'})
+        self.assertEqual(res2.status_code, 410)
+        self.assertTemplateUsed(res2, 'sharing/recipient_error.html')
+        self.assertContains(res2, 'Usage Limit Reached', status_code=410)
+
+        # 4. Verify access_count remains 1 and is not incremented
+        single_pass.refresh_from_db()
+        self.assertEqual(single_pass.access_count, 1)
+
+

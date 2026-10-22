@@ -3,8 +3,7 @@
 [![Python Version](https://img.shields.io/badge/python-3.11%20%7C%203.12-blue.svg)](https://www.python.org/)
 [![Django](https://img.shields.io/badge/django-5.1%2B-green.svg)](https://www.djangoproject.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/tests-100%25%20passing-brightgreen.svg)](tests/)
-[![Security: Zero-Knowledge](https://img.shields.io/badge/security-Zero--Knowledge-informational.svg)](SECURITY.md)
+[![Security: Ephemeral Vault](https://img.shields.io/badge/security-Ephemeral%20Vault-informational.svg)](SECURITY.md)
 
 **Passli** is an enterprise-grade, privacy-first personal records vault and ephemeral cryptographic sharing platform. It enables individuals and organizations to share sensitive documents (e.g., medical records, identity credentials, diplomas, vehicle papers) with recipients via time-gated **Share Passes** without exposing master cloud credentials, unencrypted email attachments, or cascading folder permissions.
 
@@ -17,7 +16,7 @@ When sharing sensitive records with doctors, employers, financial institutions, 
 2. **Share master cloud storage links** (e.g., Google Drive, Dropbox), risking account leakage and folder cascading.
 3. **Hand over unlocked physical devices** to third parties.
 
-**Passli replaces these vulnerabilities with time-gated, cryptographic Share Passes.** You select specific records, define an expiration window (15m, 30m, 1h, 2h, 24h, or 1-time view), set download or view-only constraints, and present an isolated QR code and 8-character Share Key. When the session expires or is revoked by the owner, recipient access is mathematically severed.
+**Passli replaces these vulnerabilities with time-gated, cryptographic Share Passes.** You select specific records, define an expiration window (15m, 30m, 1h, 2h, 24h, or 1-time view), set download or view-only constraints, and present an isolated QR code and 8-character Share Key. When the session expires or is revoked by the owner, recipient access is severed.
 
 ---
 
@@ -26,11 +25,11 @@ When sharing sensitive records with doctors, employers, financial institutions, 
 ### 🗄️ 1. Personal Document Vault
 - **Domain Taxonomy**: Organize records into structured categories (`Medical`, `Education`, `Vehicle`, `Personal & Identity`, `Professional`, `Other`).
 - **Cryptographic Integrity**: Automatic SHA-256 binary hash digests computed on ingestion for tamper validation.
-- **In-Browser Secure Preview**: Stream decrypted PDF documents and high-resolution image records safely without local disk leakage.
+- **In-Browser Secure Preview**: Stream protected PDF documents and high-resolution image records safely with `nosniff` headers without client disk retention.
 
 ### 🔑 2. Cryptographic Share Passes & Ephemeral QR Protocol
-- **Zero-Knowledge Key Storage**: Plaintext 8-character Share Keys (`XXXX-XXXX`) are never saved to disk; only salted PBKDF2 hashes are stored.
-- **Two-Factor Access Guard**: Decryption requires scanning the isolated session URL **plus** entering the valid Share Key.
+- **Hashed Key Storage**: Plaintext 8-character Share Keys (`XXXX-XXXX`) are never stored in the database; only salted PBKDF2 hashes are retained.
+- **Two-Factor Access Guard**: Access requires scanning the isolated session URL **plus** entering the valid Share Key.
 - **Granular Permissions**: Restrict recipients to in-browser viewing only or grant file download permissions.
 - **Server-Enforced Expirations**: Hardware session termination on timer expiry (15 min to 24 hrs) or burn-after-reading 1-time access.
 - **Immediate 1-Click Revocation**: Instantly terminate any active pass and sever recipient sessions in real-time.
@@ -38,10 +37,10 @@ When sharing sensitive records with doctors, employers, financial institutions, 
 ### 📱 3. Responsive Recipient Portal
 - **Mobile-First Experience**: Optimized for smartphones scanning QR codes, with swipeable document selector chips and touch-friendly viewers.
 - **Session Countdown Timer**: Real-time ticker notifying recipients of remaining access duration.
-- **Memory Wipe on Exit**: Explicit session termination button clearing decrypted in-browser memory.
+- **Memory Wipe on Exit**: Explicit session termination button clearing in-browser session cookies.
 
 ### 🛡️ 4. Security & Audit Threat Feed
-- **Structured Audit Logging**: Immutable access trail recording IP addresses, user agents, verification successes, failed attempts, and brute-force lockouts.
+- **Structured Audit Logging**: Structured access trail recording IP addresses, user agents, verification successes, failed attempts, and brute-force lockouts.
 - **Rate-Limiting & Lockouts**: Exponential backoff and lockouts protecting share passes against automated brute-force attempts.
 
 ### ⚡ 5. Custom Platform Administration Console
@@ -105,7 +104,7 @@ passli/
 
 ### 2. Clone the Repository
 ```bash
-git clone https://github.com/Ali-Nawaz-devt/passli.git
+git clone https://github.com/alinawazcode/passli.git
 cd passli
 ```
 
@@ -122,7 +121,11 @@ source .venv/bin/activate
 
 ### 4. Install Dependencies
 ```bash
+# Production dependencies
 pip install -r requirements.txt
+
+# For local testing and development (includes Selenium & test drivers)
+pip install -r requirements-dev.txt
 ```
 
 ### 5. Configure Environment Variables
@@ -132,9 +135,10 @@ cp .env.example .env
 ```
 Key `.env` configuration options:
 ```env
-DEBUG=True
+DEBUG=False
 SECRET_KEY=your-secure-django-secret-key
-ALLOWED_HOSTS=localhost,127.0.0.1
+ALLOWED_HOSTS=localhost,127.0.0.1,your-app.up.railway.app
+CSRF_TRUSTED_ORIGINS=https://your-app.up.railway.app
 DJANGO_SUPERUSER_USERNAME=admin
 DJANGO_SUPERUSER_PASSWORD=YourStrongPassword123!
 DJANGO_SUPERUSER_EMAIL=admin@passli.dev
@@ -155,16 +159,35 @@ Navigate to `http://localhost:8000/` in your browser.
 
 ---
 
+## 💾 Media Storage & Persistence (PaaS / Railway)
+
+By default, uploaded vault files are stored in `media/` via Django's file storage.
+Because PaaS container instances (Railway, Render, Fly.io) have ephemeral local filesystems that reset on container redeployment or restart, **uploaded documents will not survive a redeployment without persistent storage**:
+
+1. **Railway Persistent Volume (Recommended)**:
+   - In Railway Project Settings, add a **Volume**.
+   - Set the mount path to `/app/media` (or your application's `media/` directory).
+   - This ensures uploaded records persist across container restarts and new deployments.
+2. **Cloud Object Storage (S3 / Cloudflare R2)**:
+   - In production enterprise setups, install `django-storages[boto3]` and configure `DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'` pointing to your private S3 or Cloudflare R2 bucket.
+
+---
+
 ## 🧪 Automated Testing
 
 Passli enforces strict automated test verification across all platform features.
 
 ```bash
-# Run entire test suite
-python manage.py test
+# Install development test dependencies
+pip install -r requirements-dev.txt
 
-# Run administration test suite
-python manage.py test tests.unit.test_administration
+# Run entire unit test suite
+python manage.py test tests.unit
+
+# Run specific domain test suite
+python manage.py test tests.unit.test_accounts
+python manage.py test tests.unit.test_documents
+python manage.py test tests.unit.test_sharing
 
 # Run tests with verbose output
 python manage.py test -v 2
@@ -177,11 +200,12 @@ python manage.py test -v 2
 Passli is production-ready for deployment on **Railway**, **Render**, **Fly.io**, or **Heroku**.
 
 1. Connect your GitHub repository to Railway.
-2. Railway detects `railway.json` and `Procfile` automatically.
-3. The build executes:
+2. Railway detects `railway.json` and `nixpacks.toml` automatically.
+3. Assets are compiled during the build phase (`python manage.py collectstatic --no-input`), and the runtime start command executes:
    ```bash
-   python manage.py migrate && python manage.py ensure_superadmin && python manage.py collectstatic --no-input && gunicorn config.wsgi:application --bind 0.0.0.0:$PORT
+   python manage.py migrate && python manage.py ensure_superadmin && gunicorn config.wsgi:application --bind 0.0.0.0:$PORT
    ```
+   > **Multi-Replica Notice**: If scaling to multiple concurrent web container replicas, execute database migrations in a dedicated release phase or one-off task rather than concurrently across starting web containers to avoid migration lock contention.
 4. Configure production environment variables (`SECRET_KEY`, `ALLOWED_HOSTS`, `CSRF_TRUSTED_ORIGINS`, `DEBUG=False`).
 
 ---
