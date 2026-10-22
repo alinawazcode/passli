@@ -1,6 +1,6 @@
 # Security Policy & Cryptographic Architecture
 
-Passli is engineered with a strict privacy-first, zero-knowledge security posture designed for controlled document sharing without credential exposure.
+Passli is engineered with an ephemeral, privacy-first access control architecture designed for secure, time-gated document sharing without master credential exposure.
 
 ---
 
@@ -15,28 +15,36 @@ We actively support and release security updates for the following versions of P
 
 ---
 
-## 🔒 Cryptographic Specifications & Threat Model
+## 🔒 Security Specifications & Threat Model
 
-1. **Zero-Knowledge Key Storage**:
-   - Plaintext 8-character Share Keys (`XXXX-XXXX`) are generated dynamically using cryptographically secure random sources (`secrets.choice`).
-   - Plaintext keys are **never stored** in the database or written to disk logs.
-   - Keys are hashed with salted **PBKDF2-HMAC-SHA256** (`django.contrib.auth.hashers.make_password`).
+1. **Ephemeral Key Access Control**:
+   - Plaintext 8-character Share Keys (`XXXX-XXXX`) are generated dynamically using cryptographically secure random sources (`secrets.choice` from a 31-character unambiguous alphabet).
+   - Plaintext keys are **never stored** in the database or written to server logs; only salted **PBKDF2-HMAC-SHA256** hashes are retained (`django.contrib.auth.hashers.make_password`).
+   - The server verifies submitted keys against the PBKDF2 hash using constant-time comparison to establish ephemeral, session-bound recipient access.
 
-2. **Binary Digest Integrity**:
+2. **Storage Architecture & Server-Side Security**:
+   - Uploaded vault documents are stored on server-side media storage (with randomized UUID filenames preventing path traversal) and served strictly through authenticated view endpoints with `X-Content-Type-Options: nosniff` and `no-store` cache controls.
+   - *Note on Threat Model*: Passli enforces strict server-side multi-tenant access controls, IDOR defenses, and time-gated authorization tokens. It is not currently a client-side end-to-end zero-knowledge system; files are stored in server-managed storage.
+
+3. **Binary Digest Integrity**:
    - Every uploaded vault document is processed through **SHA-256** checksum hashing on ingestion.
-   - Binary digests allow instant verification of document integrity and detect unauthorized alteration.
+   - Binary digests allow instant verification of document integrity and detect unauthorized alteration or corrupted uploads.
 
-3. **Multi-Tenant IDOR Protection**:
+4. **Multi-Tenant IDOR Protection**:
    - All vault access handlers strictly filter by `user=request.user` or authenticated session ID before serving document contents.
    - Direct object reference tampering is caught at the view boundary with HTTP 404/403 responses.
 
-4. **Brute-Force & Rate-Limiting Defenses**:
+5. **Brute-Force & Rate-Limiting Defenses**:
    - Failed Share Key attempts trigger structured security logs and increment attempt counters.
    - Excess attempts enforce exponential lockouts to defeat automated credential stuffing and key enumeration.
 
-5. **Server-Enforced Expiration & Revocation**:
-   - Expiration timestamps (`expires_at`) are validated on every recipient request.
+6. **Server-Enforced Expiration & Revocation**:
+   - Expiration timestamps (`expires_at`) and single-use usage limits (`max_uses`) are atomically validated on recipient verification requests.
    - When a pass expires or is revoked, access is immediately terminated, and session memory is wiped.
+
+7. **Structured Audit Logging**:
+   - Access events are recorded in an application-level append-only relational audit table (`ShareAccessLog`), capturing client IP, user agent, event type, and outcome timestamp for owner visibility.
+
 
 ---
 

@@ -6,43 +6,80 @@ User = get_user_model()
 
 
 class Command(BaseCommand):
-    help = 'Ensures default and secondary superadmin users exist in the production database (Railway/Deployment).'
+    help = 'Ensures superadmin users exist from environment variables without resetting existing passwords.'
 
     def handle(self, *args, **options):
-        admin_accounts = [
-            {
-                'username': os.getenv('DJANGO_SUPERUSER_USERNAME', 'admin'),
-                'email': os.getenv('DJANGO_SUPERUSER_EMAIL', 'admin@passli.dev'),
-                'password': os.getenv('DJANGO_SUPERUSER_PASSWORD', 'PassliAdminDefault2026!'),
-            },
-            {
-                'username': os.getenv('DJANGO_SECONDARY_SUPERUSER_USERNAME', 'superadmin'),
-                'email': os.getenv('DJANGO_SECONDARY_SUPERUSER_EMAIL', 'superadmin@passli.dev'),
-                'password': os.getenv('DJANGO_SECONDARY_SUPERUSER_PASSWORD', 'PassliSuperAdmin2026!'),
-            },
-            {
-                'username': 'alinawazcode',
-                'email': 'alinawaz@passli.dev',
-                'password': os.getenv('DJANGO_ALINAWAZ_PASSWORD', 'PassliAdminDefault2026!'),
-            },
-        ]
+        # Configure primary superadmin from environment
+        primary_username = os.getenv('DJANGO_SUPERUSER_USERNAME')
+        primary_email = os.getenv('DJANGO_SUPERUSER_EMAIL', '')
+        primary_password = os.getenv('DJANGO_SUPERUSER_PASSWORD')
 
-        for account in admin_accounts:
-            user, created = User.objects.get_or_create(
-                username=account['username'],
-                defaults={'email': account['email']}
+        admin_configs = []
+        if primary_username and primary_password:
+            admin_configs.append({
+                'username': primary_username,
+                'email': primary_email,
+                'password': primary_password,
+            })
+        else:
+            self.stdout.write(
+                self.style.WARNING(
+                    "DJANGO_SUPERUSER_USERNAME or DJANGO_SUPERUSER_PASSWORD not set in environment. Skipping primary superadmin creation."
+                )
             )
 
-            user.set_password(account['password'])
-            user.is_staff = True
-            user.is_superuser = True
-            user.is_active = True
-            if account['email']:
-                user.email = account['email']
-            user.save()
+        # Optional secondary superadmin from environment
+        secondary_username = os.getenv('DJANGO_SECONDARY_SUPERUSER_USERNAME')
+        secondary_email = os.getenv('DJANGO_SECONDARY_SUPERUSER_EMAIL', '')
+        secondary_password = os.getenv('DJANGO_SECONDARY_SUPERUSER_PASSWORD')
+        if secondary_username and secondary_password:
+            admin_configs.append({
+                'username': secondary_username,
+                'email': secondary_email,
+                'password': secondary_password,
+            })
 
-            if created:
-                self.stdout.write(self.style.SUCCESS(f"Superadmin '{account['username']}' created successfully."))
+        if not admin_configs:
+            self.stdout.write("No superadmin accounts configured in environment variables to ensure.")
+            return
+
+        for account in admin_configs:
+            username = account['username']
+            email = account['email']
+            password = account['password']
+
+            existing_user = User.objects.filter(username=username).first()
+            if existing_user:
+                # Idempotent safeguard: Never overwrite or reset existing passwords
+                changed = False
+                if not existing_user.is_staff:
+                    existing_user.is_staff = True
+                    changed = True
+                if not existing_user.is_superuser:
+                    existing_user.is_superuser = True
+                    changed = True
+                if not existing_user.is_active:
+                    existing_user.is_active = True
+                    changed = True
+                if email and existing_user.email != email:
+                    existing_user.email = email
+                    changed = True
+
+                if changed:
+                    existing_user.save(update_fields=['is_staff', 'is_superuser', 'is_active', 'email'])
+                self.stdout.write(
+                    self.style.SUCCESS(
+                        f"Superadmin '{username}' already exists; preserved existing password and verified permissions."
+                    )
+                )
             else:
-                self.stdout.write(self.style.SUCCESS(f"Superadmin '{account['username']}' credentials synchronized."))
+                User.objects.create_superuser(
+                    username=username,
+                    email=email,
+                    password=password
+                )
+                self.stdout.write(
+                    self.style.SUCCESS(f"Superadmin '{username}' created successfully.")
+                )
+
 

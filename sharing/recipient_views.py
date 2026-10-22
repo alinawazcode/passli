@@ -1,3 +1,4 @@
+from django.db import transaction
 import logging
 import os
 from django.shortcuts import render, redirect, get_object_or_404
@@ -53,7 +54,23 @@ def recipient_verify_view(request, pass_id):
             'error_message': 'The vault owner has immediately terminated access to this Share Pass. No files can be viewed or downloaded.',
         }, status=403)
 
-    # 2. Check time expiration
+    # 2. Check single-use / usage limit
+    if share_pass.is_limit_reached() and not request.session.get(auth_key):
+        log_share_event(
+            share_pass,
+            ShareAccessLog.EventType.RATE_LOCKED,
+            request=request,
+            status=ShareAccessLog.Status.LOCKED,
+            details=f'Usage limit reached ({share_pass.access_count}/{share_pass.max_uses})'
+        )
+        return render(request, 'sharing/recipient_error.html', {
+            'pass': share_pass,
+            'status': 'limit_reached',
+            'title': 'Usage Limit Reached',
+            'error_message': f'This single-use Share Pass has already reached its maximum limit of {share_pass.max_uses} access session(s).',
+        }, status=410)
+
+    # 3. Check time expiration
     if share_pass.is_expired():
         request.session.pop(auth_key, None)
         log_share_event(
@@ -70,21 +87,6 @@ def recipient_verify_view(request, pass_id):
             'error_message': f'This time-gated Share Pass expired on {share_pass.expires_at.strftime("%b %d, %Y at %H:%M UTC") if share_pass.expires_at else "its expiration timer"}.',
         }, status=410)
 
-    # 3. Check single-use / usage limit
-    if share_pass.is_limit_reached() and not request.session.get(auth_key):
-        log_share_event(
-            share_pass,
-            ShareAccessLog.EventType.RATE_LOCKED,
-            request=request,
-            status=ShareAccessLog.Status.LOCKED,
-            details=f'Usage limit reached ({share_pass.access_count}/{share_pass.max_uses})'
-        )
-        return render(request, 'sharing/recipient_error.html', {
-            'pass': share_pass,
-            'status': 'limit_reached',
-            'title': 'Usage Limit Reached',
-            'error_message': f'This single-use Share Pass has already reached its maximum limit of {share_pass.max_uses} access session(s).',
-        }, status=410)
 
     # 4. Check brute-force lockout
     failures = request.session.get(fail_key, 0)
@@ -115,13 +117,37 @@ def recipient_verify_view(request, pass_id):
         if form.is_valid():
             submitted_key = form.cleaned_data['access_key']
             if share_pass.verify_key(submitted_key):
-                # Valid key! Reset failure counter and establish ephemeral session
+                # Valid key! Re-check lifecycle and atomically increment access_count
+                with transaction.atomic():
+                    locked_pass = SharePass.objects.select_for_update().get(id=share_pass.id)
+                    if locked_pass.is_revoked:
+                        return render(request, 'sharing/recipient_error.html', {
+                            'pass': locked_pass,
+                            'status': 'revoked',
+                            'title': 'Access Pass Revoked',
+                            'error_message': 'The vault owner has revoked this Share Pass.',
+                        }, status=403)
+                    if locked_pass.is_expired():
+                        return render(request, 'sharing/recipient_error.html', {
+                            'pass': locked_pass,
+                            'status': 'expired',
+                            'title': 'Access Pass Expired',
+                            'error_message': 'This Share Pass has reached its expiration timestamp.',
+                        }, status=410)
+                    if locked_pass.is_limit_reached():
+                        return render(request, 'sharing/recipient_error.html', {
+                            'pass': locked_pass,
+                            'status': 'limit_reached',
+                            'title': 'Usage Limit Reached',
+                            'error_message': f'This single-use Share Pass has already reached its maximum limit of {locked_pass.max_uses} access session(s).',
+                        }, status=410)
+
+                    locked_pass.access_count += 1
+                    locked_pass.save(update_fields=['access_count', 'updated_at'])
+
+                # Reset failure counter and establish ephemeral session
                 request.session.pop(fail_key, None)
                 request.session[auth_key] = True
-
-                # Record access event count
-                share_pass.access_count += 1
-                share_pass.save(update_fields=['access_count', 'updated_at'])
 
                 log_share_event(
                     share_pass,
@@ -236,13 +262,24 @@ def recipient_portal_view(request, pass_id):
         }, status=403)
 
     if share_pass.is_expired():
-        request.session.pop(auth_key, None)
-        return render(request, 'sharing/recipient_error.html', {
-            'pass': share_pass,
-            'status': 'expired',
-            'title': 'Access Pass Expired',
-            'error_message': 'This Share Pass has reached its expiration timestamp.',
-        }, status=410)
+        # Allow an active, authenticated recipient session to view until timer expiration
+        if not (share_pass.is_limit_reached() and request.session.get(auth_key)):
+            request.session.pop(auth_key, None)
+            return render(request, 'sharing/recipient_error.html', {
+                'pass': share_pass,
+                'status': 'expired',
+                'title': 'Access Pass Expired',
+                'error_message': 'This Share Pass has reached its expiration timestamp.',
+            }, status=410)
+        elif timezone.now() >= share_pass.expires_at:
+            request.session.pop(auth_key, None)
+            return render(request, 'sharing/recipient_error.html', {
+                'pass': share_pass,
+                'status': 'expired',
+                'title': 'Access Pass Expired',
+                'error_message': 'This Share Pass has reached its expiration timestamp.',
+            }, status=410)
+
 
     documents = list(share_pass.documents.all())
     if not documents:
@@ -293,7 +330,8 @@ def recipient_doc_preview_view(request, pass_id, doc_id):
     if not request.session.get(auth_key):
         return HttpResponseForbidden("Recipient authorization required.")
 
-    if share_pass.is_revoked or share_pass.is_expired():
+    is_time_expired = bool(timezone.now() >= share_pass.expires_at)
+    if share_pass.is_revoked or is_time_expired:
         return HttpResponseForbidden("Share Pass is no longer active.")
 
     # IDOR Check: Ensure document is attached to this pass
@@ -341,12 +379,14 @@ def recipient_doc_download_view(request, pass_id, doc_id):
     if not request.session.get(auth_key):
         return HttpResponseForbidden("Recipient authorization required.")
 
-    if share_pass.is_revoked or share_pass.is_expired():
+    is_time_expired = bool(timezone.now() >= share_pass.expires_at)
+    if share_pass.is_revoked or is_time_expired:
         return HttpResponseForbidden("Share Pass is no longer active.")
 
     # Strict Permission Check
     if not share_pass.can_download:
         return HttpResponseForbidden("Raw file download is disabled for this Share Pass by the owner.")
+
 
     # IDOR Check: Ensure document is attached to this pass
     doc = share_pass.documents.filter(id=doc_id).first()
