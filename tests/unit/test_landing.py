@@ -1,7 +1,7 @@
 """
-Phase 1 Comprehensive Test Suite
-Validates Landing Page, Anti-Slop UI Standards, Responsive Navbar Navigation,
-Interactive Simulator Elements, Security Matrix, and Authentic Photography.
+Landing Page & UI Presentation Test Suite
+Validates landing page presentation, responsive navigation, interactive simulator elements,
+security matrix, and asset integrity.
 """
 
 from django.test import TestCase, Client
@@ -11,8 +11,8 @@ from django.urls import reverse
 User = get_user_model()
 
 
-class Phase1LandingPageTests(TestCase):
-    """Test suite covering Phase 1 Landing Page presentation and responsive routing."""
+class LandingPageTests(TestCase):
+    """Test suite covering Landing Page presentation and responsive routing."""
 
     def setUp(self):
         self.client = Client()

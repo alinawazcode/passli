@@ -20,7 +20,7 @@ from sharing.utils import (
 User = get_user_model()
 
 
-class Phase4SharePassModelTests(TestCase):
+class SharePassModelTests(TestCase):
     """Unit tests for the SharePass domain model and cryptographic hashing."""
 
     def setUp(self):
@@ -146,7 +146,7 @@ class Phase4SharePassModelTests(TestCase):
         self.assertEqual(active_pass.status_label, 'Revoked')
 
 
-class Phase4QRUtilityTests(TestCase):
+class QRUtilityTests(TestCase):
     """Unit tests for dynamic QR code generation."""
 
     def test_qr_data_uri_and_image_buffer(self):
@@ -161,7 +161,7 @@ class Phase4QRUtilityTests(TestCase):
         self.assertTrue(content.startswith(b'\x89PNG\r\n\x1a\n'))
 
 
-class Phase4FormsAndViewsTests(TestCase):
+class ShareFormsAndViewsTests(TestCase):
     """Integration tests for SharePass forms, views, and security controls."""
 
     def setUp(self):

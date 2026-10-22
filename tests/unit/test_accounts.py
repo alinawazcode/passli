@@ -1,5 +1,5 @@
 """
-Phase 2 Comprehensive Test Suite
+User Accounts & Dashboard Test Suite
 Validates User Registration, Authentication, Session Lifecycle,
 Protected Dashboard Routing, and Vault Statistics Metrics.
 """
@@ -11,8 +11,8 @@ from django.urls import reverse
 User = get_user_model()
 
 
-class Phase2AuthAndDashboardTests(TestCase):
-    """Test suite covering Phase 2 Authentication flows and Dashboard views."""
+class AccountsAndDashboardTests(TestCase):
+    """Test suite covering Authentication flows and Dashboard views."""
 
     def setUp(self):
         self.client = Client()

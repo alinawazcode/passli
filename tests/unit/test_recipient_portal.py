@@ -1,5 +1,5 @@
 """
-Phase 5 Comprehensive Test Suite
+Recipient Portal & Verification Security Test Suite
 Validates Recipient Verification Portal, Two-Factor Access Flow,
 Cryptographic Share Key Validation, Brute-Force Rate Limiting,
 Session-Gated Document Streaming, Download Permission Gating, and IDOR Defense.
@@ -20,8 +20,8 @@ from sharing.utils import generate_share_key
 User = get_user_model()
 
 
-class Phase5RecipientPortalTests(TestCase):
-    """Test suite covering Phase 5 Recipient Portal & Verification Security."""
+class RecipientPortalTests(TestCase):
+    """Test suite covering Recipient Portal & Verification Security."""
 
     def setUp(self):
         self.client = Client()

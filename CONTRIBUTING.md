@@ -63,7 +63,7 @@ git checkout -b feat/your-feature-name
    - Plaintext cryptographic keys must **never** be persisted to the database.
 
 3. **UI / UX Design Aesthetics**:
-   - Follow the Passli human-crafted design system (`no-slop-ui` and `unslop-ui v2` standards).
+   - Follow the Passli modern minimalist design system and styling standards.
    - Use clean, semantic HTML5 and Vanilla CSS tokens from `static/css/styles.css`.
    - Maintain full mobile responsiveness and avoid bloated CSS frameworks.
 

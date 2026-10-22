@@ -1,5 +1,5 @@
 """
-Phase 6 Comprehensive Test Suite:
+Audit Trail & Security Event Logging Test Suite
 Validates Cryptographic Access Audit Trail, Structured Logging Triggers,
 Rate-Limiting Lockout Auditing, In-Browser Preview & Download Logging,
 Owner Audit Dashboard, and Strict Multi-Tenant IDOR Isolation.
@@ -21,8 +21,8 @@ from audit.models import ShareAccessLog, log_share_event
 User = get_user_model()
 
 
-class Phase6AuditTrailTests(TestCase):
-    """Test suite covering Phase 6 Audit Trail & Security Event Logging."""
+class AuditTrailTests(TestCase):
+    """Test suite covering Audit Trail & Security Event Logging."""
 
     def setUp(self):
         self.client = Client()

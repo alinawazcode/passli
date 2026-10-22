@@ -1,5 +1,5 @@
 """
-Phase 3 Comprehensive Test Suite
+Document Vault & Storage Security Test Suite
 Validates Encrypted Document Vault, File Validation, SHA-256 Checksums,
 Category Filtering, In-Browser Previews, Secure Downloads, and IDOR Defense.
 """
@@ -16,8 +16,8 @@ from documents.models import Document
 User = get_user_model()
 
 
-class Phase3DocumentVaultTests(TestCase):
-    """Test suite covering Phase 3 Document Vault Management & Security."""
+class DocumentVaultTests(TestCase):
+    """Test suite covering Document Vault Management & Storage Security."""
 
     def setUp(self):
         self.client = Client()

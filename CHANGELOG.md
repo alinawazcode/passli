@@ -39,8 +39,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
   - Brute-force lockout and rate-limiting defenses.
   - User-facing audit dashboard with timestamped security events and IP tracking.
 - **Automated Verification & E2E Testing**:
-  - Comprehensive unit test coverage across all 6 core phases.
-  - Selenium E2E automated test suite and demo runner (`run_browser_e2e_demo.py`).
+  - Comprehensive unit test coverage across all core modules.
+  - Integration testing and security audit suites.
 
 ---
 
@@ -52,4 +52,4 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
   - Categorization into Medical, Education, Vehicle, Personal, and Professional records.
   - Ephemeral Share Pass generation with isolated QR codes and 8-character PBKDF2 Share Keys.
   - Time-gated session termination and 1-click immediate owner revocation.
-  - Human-crafted Vanilla CSS design system following anti-AI-slop standards.
+  - Modern, responsive Vanilla CSS design system.

@@ -5,7 +5,6 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Tests](https://img.shields.io/badge/tests-100%25%20passing-brightgreen.svg)](tests/)
 [![Security: Zero-Knowledge](https://img.shields.io/badge/security-Zero--Knowledge-informational.svg)](SECURITY.md)
-[![Design: Anti--AI--Slop](https://img.shields.io/badge/design-no--slop--ui%20v2-purple.svg)](https://github.com/Ali-Nawaz-devt/passli)
 
 **Passli** is an enterprise-grade, privacy-first personal records vault and ephemeral cryptographic sharing platform. It enables individuals and organizations to share sensitive documents (e.g., medical records, identity credentials, diplomas, vehicle papers) with recipients via time-gated **Share Passes** without exposing master cloud credentials, unencrypted email attachments, or cascading folder permissions.
 
@@ -89,7 +88,7 @@ passli/
 │   ├── sharing/       # Recipient verify, portal, and create templates
 │   └── base.html      # Master responsive layout with glassmorphic navbar
 ├── static/            # Human-crafted Vanilla CSS (styles.css) & client JS (main.js)
-├── tests/             # Comprehensive unit test suites (Phases 1-6 & Administration)
+├── tests/             # Comprehensive unit test suites (Auth, Documents, Sharing, Audit, Security)
 ├── Procfile           # Production Gunicorn deployment process
 ├── railway.json       # Railway PaaS deployment configuration
 └── manage.py          # Django CLI management entry point
