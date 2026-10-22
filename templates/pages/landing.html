@@ -31,11 +31,11 @@
                 <div class="hero-trust-list">
                     <div class="trust-row-item">
                         <span class="material-symbols-outlined">check_circle</span>
-                        <span>Client-side AES-256 envelope encryption before upload</span>
+                        <span>Server-side AES-256-GCM encryption at rest</span>
                     </div>
                     <div class="trust-row-item">
                         <span class="material-symbols-outlined">check_circle</span>
-                        <span>Hardware-enforced expiration & 1-click revocation</span>
+                        <span>Server-enforced expiration & 1-click revocation</span>
                     </div>
                     <div class="trust-row-item">
                         <span class="material-symbols-outlined">check_circle</span>
@@ -55,7 +55,7 @@
                 <div class="hero-floating-chip font-mono-data">
                     <div style="display: flex; align-items: center; gap: 0.4rem;">
                         <span class="pulse-dot"></span>
-                        <span>ACTIVE PASS ENVELOPE</span>
+                        <span>ACTIVE SECURE PASS</span>
                     </div>
                     <span style="color: var(--brand-emerald); font-weight: 600;">AES-256-GCM</span>
                 </div>
@@ -69,7 +69,7 @@
     <div class="container">
         <div class="section-header">
             <h2 class="section-title">Interactive Share Pass Generator</h2>
-            <p class="section-subtitle">Experience how client-side cryptographic constraints and real-time key derivation protect your documents.</p>
+            <p class="section-subtitle">Experience how cryptographic constraints and real-time key derivation protect your documents.</p>
         </div>
 
         <!-- Main Generator Component Card -->
@@ -81,7 +81,7 @@
                     <div class="generator-card-header">
                         <div>
                             <div class="card-title-main">Create Controlled Share Pass</div>
-                            <div class="card-subtitle-main">Define access envelope and file boundary</div>
+                            <div class="card-subtitle-main">Define access rules and file boundary</div>
                         </div>
                         <div class="status-badge font-mono-data">
                             <span class="pulse-dot"></span>
@@ -409,10 +409,10 @@
                 </div>
                 <h3 style="font-size: 1.05rem; font-weight: 700; margin-bottom: 0.4rem;">Encrypted Vault</h3>
                 <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.55;">
-                    Client-side envelope encryption ensures your documents never hit disk unencrypted. Zero knowledge by default across every sector.
+                    Server-side authenticated encryption ensures your documents are protected at rest.
                 </p>
                 <div style="margin-top: 1rem; padding-top: 0.75rem; border-top: 1px solid var(--border-light); font-size: 0.7rem; color: var(--text-dim);" class="font-mono-data">
-                    Argon2id + AES-256-GCM
+                    AES-256-GCM
                 </div>
             </div>
 
@@ -482,34 +482,16 @@
                 </thead>
                 <tbody>
                     <tr>
-                        <td style="font-weight: 600; color: var(--text-primary);">Encryption Standard</td>
-                        <td class="highlight-col">Client-side AES-256-GCM + XChaCha20</td>
-                        <td>Server-side at rest only (Provider master keys)</td>
-                        <td style="color: #e11d48;">Unencrypted MIME payload in transit</td>
-                    </tr>
-                    <tr>
                         <td style="font-weight: 600; color: var(--text-primary);">Account Credential Exposure</td>
                         <td class="highlight-col">Zero exposure (Ephemeral recipient token)</td>
                         <td>Shared access exposes account / folders</td>
                         <td style="color: #e11d48;">Replicated permanently on recipient host</td>
                     </tr>
                     <tr>
-                        <td style="font-weight: 600; color: var(--text-primary);">Ephemeral Auto-Shredding</td>
-                        <td class="highlight-col">Hardware key erasure on timer / 1-view</td>
-                        <td>Manual link disabling; persists in cloud</td>
-                        <td style="color: #e11d48;">Impossible; static copies stored indefinitely</td>
-                    </tr>
-                    <tr>
                         <td style="font-weight: 600; color: var(--text-primary);">Granular Sub-File Permissions</td>
                         <td class="highlight-col">Itemized bundle isolation</td>
                         <td>All-or-nothing folder permission cascades</td>
                         <td style="color: var(--text-dim);">None (Static detached files)</td>
-                    </tr>
-                    <tr>
-                        <td style="font-weight: 600; color: var(--text-primary);">Zero-Knowledge Compliance</td>
-                        <td class="highlight-col">Mathematically enforced by client proof</td>
-                        <td>Cloud employees possess administrative overrides</td>
-                        <td style="color: #e11d48;">Completely open to SMTP relay inspection</td>
                     </tr>
                 </tbody>
             </table>

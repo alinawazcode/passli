@@ -4,9 +4,9 @@ WELCOME TO PASSLI PERSONAL VAULT
 
 Hello {{ username }},
 
-Your zero-knowledge personal cryptographic vault is now initialized.
+Your personal cryptographic vault is now initialized.
 
-Passli is engineered around strict zero-knowledge principles. Your uploaded files are encrypted with industry-standard cryptography, and only you hold access authority.
+Your uploaded files are encrypted with industry-standard cryptography at rest.
 
 Access your vault dashboard:
 {{ dashboard_url }}

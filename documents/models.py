@@ -84,7 +84,7 @@ class Document(models.Model):
     is_encrypted = models.BooleanField(
         default=True,
         verbose_name='Encrypted at Rest',
-        help_text='Indicates if file content is stored with AES-256-GCM envelope encryption.'
+        help_text='Indicates if file content is stored with AES-256-GCM authenticated encryption.'
     )
     created_at = models.DateTimeField(
         auto_now_add=True,

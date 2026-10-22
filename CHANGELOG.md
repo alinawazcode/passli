@@ -10,7 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Added
 - **AES-256-GCM Vault Encryption at Rest (PASS-001)**:
   - Cryptographic engine (`documents.services.crypto_service`) implementing AES-256-GCM AEAD encryption.
-  - 12-byte CSPRNG per-file nonce and 16-byte Poly1305 authentication tag with 28-byte envelope format.
+  - 12-byte CSPRNG per-file nonce and 16-byte GCM authentication tag with 28-byte wire format.
   - Transparent dual-mode compatibility: `Document.is_encrypted` flag with `get_decrypted_content()` fallback for legacy files.
   - In-memory decrypted streaming for owner preview/download and recipient portal without writing unencrypted temporary files to disk.
   - Migration command: `python manage.py encrypt_vault_storage` with `--dry-run`, `--batch-size`, and `--force` options.
@@ -72,7 +72,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Added
 - **Initial Release & Core Protocol**:
-  - Document vault with AES-256 envelope and SHA-256 digest computation.
+  - Document vault with AES-256-GCM encryption and SHA-256 digest computation.
   - Categorization into Medical, Education, Vehicle, Personal, and Professional records.
   - Ephemeral Share Pass generation with isolated QR codes and 8-character PBKDF2 Share Keys.
   - Time-gated session termination and 1-click immediate owner revocation.

@@ -13,7 +13,7 @@
                     <span class="user-avatar-badge font-mono-data">{{ request.user.username|make_list|first|upper }}</span>
                     <div>
                         <h1 class="dashboard-title">Personal Vault Dashboard</h1>
-                        <p class="dashboard-subtitle">Active security envelope for <strong>{{ request.user.email|default:request.user.username }}</strong></p>
+                        <p class="dashboard-subtitle">Active security controls for <strong>{{ request.user.email|default:request.user.username }}</strong></p>
                     </div>
                 </div>
             </div>
@@ -43,11 +43,11 @@
         <div class="vault-status-bar" data-testid="vault-status-bar" style="flex-wrap: wrap; gap: 0.75rem;">
             <div class="vault-status-item">
                 <span class="pulse-dot"></span>
-                <span class="font-mono-data">Zero-Knowledge Envelope: <strong>ACTIVE</strong></span>
+                <span class="font-mono-data">Vault Storage: AES-256-GCM</span>
             </div>
             <div class="vault-status-item">
                 <span class="material-symbols-outlined" style="font-size: 16px; color: var(--brand-emerald);">verified</span>
-                <span>Argon2id + AES-256-GCM Hashed Keys</span>
+                <span>PBKDF2-SHA256 Hashed Keys</span>
             </div>
             <div class="vault-status-item">
                 <span class="material-symbols-outlined" style="font-size: 16px; color: var(--brand-blue);">timer</span>
@@ -81,7 +81,7 @@
                 </div>
                 <div class="stat-card-value" style="color: var(--brand-emerald);">{{ active_passes }}</div>
                 <div class="stat-card-footer">
-                    <span>Live time-gated access envelopes</span>
+                    <span>Live time-gated access passes</span>
                 </div>
             </div>
 
@@ -110,7 +110,7 @@
                 <div class="stat-card-value">{{ storage_used_mb }} <span style="font-size: 1rem; color: var(--text-muted); font-weight: 400;">/ {{ storage_quota_mb }} MB</span></div>
                 <div class="stat-card-footer">
                     <div class="storage-bar-track">
-                        <div class="storage-bar-fill" style="width: {{ storage_pct }}%;"></div>
+                        <div class="storage-bar-fill" id="storageBarFill" data-storage-pct="{{ storage_pct }}"></div>
                     </div>
                 </div>
             </div>
@@ -169,7 +169,7 @@
                 <div class="bento-panel-header">
                     <div>
                         <h2 class="bento-panel-title">Personal Document Vault</h2>
-                        <p class="bento-panel-subtitle">Client-encrypted records categorized by security domain</p>
+                        <p class="bento-panel-subtitle">Encrypted vault records categorized by security domain</p>
                     </div>
                     <a href="{% url 'documents_upload' %}" class="btn btn-sm btn-secondary">
                         <span class="material-symbols-outlined" style="font-size: 15px;">upload</span> Upload
@@ -214,7 +214,7 @@
             <h3 style="font-size: 1rem; font-weight: 700; margin-bottom: 0.5rem;">How to Share Safely with Passli</h3>
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; font-size: 0.85rem; color: var(--text-secondary);">
                 <div>
-                    <strong>1. Upload to Vault:</strong> Store PDF, PNG, or JPG files with client-side envelope encryption.
+                    <strong>1. Upload to Vault:</strong> Store PDF, PNG, or JPG files with server-side AES-256-GCM encryption.
                 </div>
                 <div>
                     <strong>2. Select & Set TTL:</strong> Select specific files and choose pass lifetime (15 mins to 24 hours).
@@ -230,3 +230,16 @@
     </div>
 </div>
 {% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var bar = document.getElementById('storageBarFill');
+        if (bar) {
+            var pct = parseFloat(bar.getAttribute('data-storage-pct')) || 0;
+            bar.style.width = Math.min(100, Math.max(0, pct)) + '%';
+        }
+    });
+</script>
+{% endblock %}
+

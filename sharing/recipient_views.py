@@ -1,14 +1,16 @@
 import io
 import logging
 import os
-from django.db import transaction
+import time
+from datetime import timedelta
+from django.db import transaction, OperationalError
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import FileResponse, Http404, HttpResponseForbidden
 from django.urls import reverse
 from django.utils import timezone
-from .models import SharePass
+from .models import SharePass, SharePassLockout
 from .forms import RecipientKeyVerificationForm
-from audit.models import ShareAccessLog, log_share_event
+from audit.models import ShareAccessLog, log_share_event, get_client_ip
 from accounts.emails import check_and_send_failed_passcode_alert
 from documents.services.crypto_service import VaultDecryptionError
 
@@ -90,139 +92,165 @@ def recipient_verify_view(request, pass_id):
         }, status=410)
 
 
-    # 4. Check brute-force lockout
-    failures = request.session.get(fail_key, 0)
-    if failures >= MAX_FAILED_ATTEMPTS:
-        log_share_event(
-            share_pass,
-            ShareAccessLog.EventType.RATE_LOCKED,
-            request=request,
-            status=ShareAccessLog.Status.LOCKED,
-            details=f'Brute-force limit reached ({failures}/{MAX_FAILED_ATTEMPTS})'
-        )
-        return render(request, 'sharing/recipient_error.html', {
-            'pass': share_pass,
-            'status': 'locked',
-            'title': 'Access Temporarily Locked',
-            'error_message': f'Too many failed key verification attempts ({failures}/{MAX_FAILED_ATTEMPTS}). For cryptographic security, access is temporarily locked for this browser.',
-        }, status=429)
+    client_ip = get_client_ip(request) or '127.0.0.1'
+
+    # 4. Check persistent database-backed brute-force lockout per pass and IP
+    if request.method == 'GET':
+        lockout = SharePassLockout.objects.filter(share_pass=share_pass, ip_address=client_ip).first()
+        if lockout and lockout.is_locked:
+            retry_after = lockout.retry_after_seconds
+            log_share_event(
+                share_pass,
+                ShareAccessLog.EventType.RATE_LOCKED,
+                request=request,
+                status=ShareAccessLog.Status.LOCKED,
+                details=f'Locked out until {lockout.locked_until} ({retry_after}s remaining)'
+            )
+            response = render(request, 'sharing/recipient_error.html', {
+                'pass': share_pass,
+                'status': 'locked',
+                'title': 'Access Temporarily Locked',
+                'error_message': f'Too many failed key verification attempts ({lockout.failed_attempts}/{MAX_FAILED_ATTEMPTS}). For cryptographic security, access is temporarily locked for this IP address. Please retry in {retry_after} seconds.',
+                'retry_after': retry_after,
+            }, status=429)
+            response['Retry-After'] = str(retry_after)
+            return response
+    else:
+        lockout = None
 
     # 5. If already authenticated in session, forward straight to document portal
     if request.session.get(auth_key):
         return redirect('recipient_portal', pass_id=share_pass.id)
 
     # 6. Process key submission
-    remaining_attempts = MAX_FAILED_ATTEMPTS - failures
+    failures = lockout.failed_attempts if lockout else 0
+    remaining_attempts = max(0, MAX_FAILED_ATTEMPTS - failures)
 
     if request.method == 'POST':
         form = RecipientKeyVerificationForm(request.POST)
-        if form.is_valid():
-            submitted_key = form.cleaned_data['access_key']
-            if share_pass.verify_key(submitted_key):
-                # Valid key! Re-check lifecycle and atomically increment access_count
+        is_form_valid = form.is_valid()
+        submitted_key = form.cleaned_data['access_key'] if is_form_valid else ''
+
+        max_retries = 6
+        for attempt in range(max_retries):
+            try:
                 with transaction.atomic():
-                    locked_pass = SharePass.objects.select_for_update().get(id=share_pass.id)
-                    if locked_pass.is_revoked:
-                        return render(request, 'sharing/recipient_error.html', {
-                            'pass': locked_pass,
-                            'status': 'revoked',
-                            'title': 'Access Pass Revoked',
-                            'error_message': 'The vault owner has revoked this Share Pass.',
-                        }, status=403)
-                    if locked_pass.is_expired():
-                        return render(request, 'sharing/recipient_error.html', {
-                            'pass': locked_pass,
-                            'status': 'expired',
-                            'title': 'Access Pass Expired',
-                            'error_message': 'This Share Pass has reached its expiration timestamp.',
-                        }, status=410)
-                    if locked_pass.is_limit_reached():
-                        return render(request, 'sharing/recipient_error.html', {
-                            'pass': locked_pass,
-                            'status': 'limit_reached',
-                            'title': 'Usage Limit Reached',
-                            'error_message': f'This single-use Share Pass has already reached its maximum limit of {locked_pass.max_uses} access session(s).',
-                        }, status=410)
-
-                    locked_pass.access_count += 1
-                    locked_pass.save(update_fields=['access_count', 'updated_at'])
-
-                # Reset failure counter and establish ephemeral session
-                request.session.pop(fail_key, None)
-                request.session[auth_key] = True
-
-                log_share_event(
-                    share_pass,
-                    ShareAccessLog.EventType.KEY_SUCCESS,
-                    request=request,
-                    status=ShareAccessLog.Status.SUCCESS,
-                    details='Share Key successfully verified'
-                )
-
-                return redirect('recipient_portal', pass_id=share_pass.id)
-            else:
-                failures += 1
-                request.session[fail_key] = failures
-                remaining_attempts = max(0, MAX_FAILED_ATTEMPTS - failures)
-
-                check_and_send_failed_passcode_alert(share_pass, request, failures)
-
-                log_share_event(
-                    share_pass,
-                    ShareAccessLog.EventType.KEY_FAILED,
-                    request=request,
-                    status=ShareAccessLog.Status.DENIED,
-                    details=f'Invalid key submitted ({failures}/{MAX_FAILED_ATTEMPTS})'
-                )
-
-                if failures >= MAX_FAILED_ATTEMPTS:
-                    log_share_event(
-                        share_pass,
-                        ShareAccessLog.EventType.RATE_LOCKED,
-                        request=request,
-                        status=ShareAccessLog.Status.LOCKED,
-                        details='Maximum invalid key attempts reached'
+                    lockout_record, _ = SharePassLockout.objects.get_or_create(
+                        share_pass=share_pass,
+                        ip_address=client_ip,
+                        defaults={'failed_attempts': 0}
                     )
-                    return render(request, 'sharing/recipient_error.html', {
-                        'pass': share_pass,
-                        'status': 'locked',
-                        'title': 'Access Temporarily Locked',
-                        'error_message': f'Maximum invalid attempts reached ({failures}/{MAX_FAILED_ATTEMPTS}). Access is locked.',
-                    }, status=429)
+                    lockout_record = SharePassLockout.objects.select_for_update().get(id=lockout_record.id)
 
-                form.add_error(
-                    'access_key',
-                    f"Invalid Share Key. {remaining_attempts} attempt(s) remaining before security lockout."
-                )
-        else:
-            failures += 1
-            request.session[fail_key] = failures
-            remaining_attempts = max(0, MAX_FAILED_ATTEMPTS - failures)
+                    now = timezone.now()
+                    if lockout_record.locked_until and lockout_record.locked_until > now:
+                        retry_after = lockout_record.retry_after_seconds
+                        response = render(request, 'sharing/recipient_error.html', {
+                            'pass': share_pass,
+                            'status': 'locked',
+                            'title': 'Access Temporarily Locked',
+                            'error_message': f'Too many failed key verification attempts ({lockout_record.failed_attempts}/{MAX_FAILED_ATTEMPTS}). Access is locked. Please retry in {retry_after} seconds.',
+                            'retry_after': retry_after,
+                        }, status=429)
+                        response['Retry-After'] = str(retry_after)
+                        return response
 
+                    if is_form_valid and share_pass.verify_key(submitted_key):
+                        # Valid key! Reset failure counter and unlock
+                        lockout_record.failed_attempts = 0
+                        lockout_record.locked_until = None
+                        lockout_record.save(update_fields=['failed_attempts', 'locked_until', 'updated_at'])
+
+                        locked_pass = SharePass.objects.select_for_update().get(id=share_pass.id)
+                        if locked_pass.is_revoked:
+                            return render(request, 'sharing/recipient_error.html', {
+                                'pass': locked_pass,
+                                'status': 'revoked',
+                                'title': 'Access Pass Revoked',
+                                'error_message': 'The vault owner has revoked this Share Pass.',
+                            }, status=403)
+                        if locked_pass.is_expired():
+                            return render(request, 'sharing/recipient_error.html', {
+                                'pass': locked_pass,
+                                'status': 'expired',
+                                'title': 'Access Pass Expired',
+                                'error_message': 'This Share Pass has reached its expiration timestamp.',
+                            }, status=410)
+                        if locked_pass.is_limit_reached():
+                            return render(request, 'sharing/recipient_error.html', {
+                                'pass': locked_pass,
+                                'status': 'limit_reached',
+                                'title': 'Usage Limit Reached',
+                                'error_message': f'This single-use Share Pass has already reached its maximum limit of {locked_pass.max_uses} access session(s).',
+                            }, status=410)
+
+                        locked_pass.access_count += 1
+                        locked_pass.save(update_fields=['access_count', 'updated_at'])
+
+                        request.session.pop(fail_key, None)
+                        request.session[auth_key] = True
+
+                        log_share_event(
+                            share_pass,
+                            ShareAccessLog.EventType.KEY_SUCCESS,
+                            request=request,
+                            status=ShareAccessLog.Status.SUCCESS,
+                            details='Share Key successfully verified'
+                        )
+                        return redirect('recipient_portal', pass_id=share_pass.id)
+
+                    else:
+                        lockout_record.failed_attempts += 1
+                        failures = lockout_record.failed_attempts
+                        if failures >= MAX_FAILED_ATTEMPTS:
+                            power = failures - MAX_FAILED_ATTEMPTS
+                            lockout_seconds = min(60 * (2 ** power), 86400)
+                            lockout_record.locked_until = now + timedelta(seconds=lockout_seconds)
+                            lockout_record.save(update_fields=['failed_attempts', 'locked_until', 'updated_at'])
+                            retry_after = lockout_seconds
+                        else:
+                            lockout_record.save(update_fields=['failed_attempts', 'updated_at'])
+                            retry_after = 0
+                break
+            except OperationalError:
+                if attempt == max_retries - 1:
+                    raise
+                time.sleep(0.05 * (attempt + 1))
+
+        # Actions after transaction completes
+        if failures >= MAX_FAILED_ATTEMPTS:
             check_and_send_failed_passcode_alert(share_pass, request, failures)
-
+            log_share_event(
+                share_pass,
+                ShareAccessLog.EventType.RATE_LOCKED,
+                request=request,
+                status=ShareAccessLog.Status.LOCKED,
+                details=f'Maximum invalid key attempts reached ({failures}) - locked for {retry_after}s'
+            )
+            response = render(request, 'sharing/recipient_error.html', {
+                'pass': share_pass,
+                'status': 'locked',
+                'title': 'Access Temporarily Locked',
+                'error_message': f'Maximum invalid attempts reached ({failures}/{MAX_FAILED_ATTEMPTS}). Access is locked for {retry_after} seconds.',
+                'retry_after': retry_after,
+            }, status=429)
+            response['Retry-After'] = str(retry_after)
+            return response
+        else:
+            remaining_attempts = max(0, MAX_FAILED_ATTEMPTS - failures)
+            check_and_send_failed_passcode_alert(share_pass, request, failures)
             log_share_event(
                 share_pass,
                 ShareAccessLog.EventType.KEY_FAILED,
                 request=request,
                 status=ShareAccessLog.Status.DENIED,
-                details=f'Invalid key format submitted ({failures}/{MAX_FAILED_ATTEMPTS})'
+                details=f'Invalid key submitted ({failures}/{MAX_FAILED_ATTEMPTS})'
             )
-
-            if failures >= MAX_FAILED_ATTEMPTS:
-                log_share_event(
-                    share_pass,
-                    ShareAccessLog.EventType.RATE_LOCKED,
-                    request=request,
-                    status=ShareAccessLog.Status.LOCKED,
-                    details='Maximum invalid key attempts reached'
+            if is_form_valid:
+                form.add_error(
+                    'access_key',
+                    f"Invalid Share Key. {remaining_attempts} attempt(s) remaining before security lockout."
                 )
-                return render(request, 'sharing/recipient_error.html', {
-                    'pass': share_pass,
-                    'status': 'locked',
-                    'title': 'Access Temporarily Locked',
-                    'error_message': f'Maximum invalid attempts reached ({failures}/{MAX_FAILED_ATTEMPTS}). Access is locked.',
-                }, status=429)
     else:
         form = RecipientKeyVerificationForm()
 

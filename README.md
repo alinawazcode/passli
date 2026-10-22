@@ -24,7 +24,7 @@ When sharing sensitive records with doctors, employers, financial institutions, 
 ## ✨ Core Platform Capabilities
 
 ### 🗄️ 1. Encrypted Document Vault (AES-256-GCM at Rest)
-- **Envelope Encryption**: Uploaded documents are encrypted on ingestion using **AES-256-GCM** with a unique 12-byte CSPRNG nonce per file and a 16-byte Poly1305 authentication tag (`[12-byte Nonce][Ciphertext + 16-byte Tag]`).
+- **Authenticated Encryption**: Uploaded documents are encrypted on ingestion using **AES-256-GCM** with a unique 12-byte CSPRNG nonce per file and a 16-byte GCM authentication tag (`[12-byte Nonce][Ciphertext + 16-byte Tag]`).
 - **Binary Digest Integrity**: Pre-encryption **SHA-256** checksums verify data authenticity against original files.
 - **In-Memory Decrypted Streaming**: Files are decrypted directly into memory (`io.BytesIO`) during owner previews and downloads—**no plaintext files are ever written to server disk**.
 - **Defensive Headers**: Preview and download streams enforce `X-Content-Type-Options: nosniff`, `Cache-Control: no-store, private`, and `Pragma: no-cache`.
@@ -35,7 +35,7 @@ When sharing sensitive records with doctors, employers, financial institutions, 
 - **Hashed Key Storage**: Plaintext 8-character Share Keys (`XXXX-XXXX`) are never persisted in the database; only salted **PBKDF2-HMAC-SHA256** hashes are retained.
 - **Two-Factor Access Guard**: Access requires scanning the isolated session URL **plus** entering the valid Share Key.
 - **Granular Permissions**: Restrict recipients to in-browser viewing only or grant file download permissions.
-- **Server-Enforced Expirations**: Hardware session termination on timer expiry (15 min to 24 hrs) or burn-after-reading single-use access.
+- **Server-Enforced Expirations**: Session termination on timer expiry (15 min to 24 hrs) or burn-after-reading single-use access.
 - **Immediate 1-Click Revocation**: Instantly terminate any active pass and sever recipient sessions in real-time.
 
 ### 📱 3. Responsive Recipient Portal
@@ -55,7 +55,7 @@ When sharing sensitive records with doctors, employers, financial institutions, 
 ### 🛡️ 5. Security & Audit Threat Feed
 - **Structured Audit Logging**: Structured access trail recording IP addresses, user agents, verification successes, failed attempts, and brute-force lockouts.
 - **PII Sanitization**: Sensitive parameters (Share Keys, email addresses, file names) are automatically masked before logging.
-- **Rate-Limiting & Lockouts**: Exponential backoff and lockouts protecting share passes against automated brute-force attempts.
+- **Database-Backed Rate-Limiting & Lockouts**: Persistent tracking per pass and IP address inside atomic transactions with `select_for_update()`. Enforces a 1-minute lockout after 5 consecutive failures, doubling up to 24 hours on subsequent failures, and returns HTTP 429 with `Retry-After`.
 
 ### ⚡ 6. Custom Platform Administration Console
 - **System Telemetry & Storage Analytics**: Real-time storage consumption (MB/GB), category breakdown bars, and active pass monitors at `/admin-dashboard/`.
@@ -92,10 +92,10 @@ flowchart TD
 
 | Specification | Passli Share Pass | Cloud Shared Folders | Email Attachments |
 | :--- | :--- | :--- | :--- |
-| **Vault Storage** | **AES-256-GCM Envelope Encryption at Rest** | Server-side at rest only | Unencrypted MIME transit |
-| **Tamper Resistance** | **16-byte Poly1305 / GCM AEAD Tag** | Cloud provider internal | None (MIME easily altered) |
+| **Vault Storage** | **AES-256-GCM Encryption at Rest** | Server-side at rest only | Unencrypted MIME transit |
+| **Tamper Resistance** | **16-byte GCM AEAD Tag** | Cloud provider internal | None (MIME easily altered) |
 | **Credential Exposure** | **Zero exposure** (Ephemeral session) | Exposes folder trees & account metadata | Permanent static copies on recipient host |
-| **Session Expiration** | **Strict server & hardware timer** | Manual disabling; indefinite persistence | Impossible; persists forever in inboxes |
+| **Session Expiration** | **Strict server-enforced timer** | Manual disabling; indefinite persistence | Impossible; persists forever in inboxes |
 | **Granular Access** | **Itemized per-pass document bundling** | All-or-nothing folder cascades | Detached static payloads |
 | **Audit Visibility** | **Real-time structured access logs & IP feed** | Basic access history (Enterprise only) | Zero visibility after send |
 
@@ -309,6 +309,14 @@ Passli is production-ready for deployment on **Railway**, **Render**, **Fly.io**
    - `APP_URL`
    - `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_SECURE`, `EMAIL_FROM`
    - `DEBUG=False`
+
+---
+
+## ⚠️ Limitations
+
+- **Not Zero-Knowledge**: Passli uses server-side AES-256-GCM encryption with a server-held master key. The server can decrypt and read documents. There is no client-side encryption.
+- **Server-Enforced Access**: Pass expiry and revocation are enforced by server-side business logic and authentication controls rather than hardware-based cryptographic destruction.
+- **No Independent Security Audit**: Passli is an independent open-source project and has not undergone third-party cryptographic audits or SOC 2 certification.
 
 ---
 

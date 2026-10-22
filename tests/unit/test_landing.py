@@ -125,7 +125,7 @@ class LandingPageTests(TestCase):
         self.assertIn('Passli Secure Pass', content)
         self.assertIn('Cloud Storage Folders', content)
         self.assertIn('Email Attachments', content)
-        self.assertIn('Client-side AES-256-GCM + XChaCha20', content)
+        self.assertIn('Account Credential Exposure', content)
 
     def test_navbar_links_match_page_section_ids(self):
         """Verify all navigation links correspond to existing section IDs on the landing page."""
