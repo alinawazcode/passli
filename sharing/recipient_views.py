@@ -1,6 +1,7 @@
-from django.db import transaction
+import io
 import logging
 import os
+from django.db import transaction
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import FileResponse, Http404, HttpResponseForbidden
 from django.urls import reverse
@@ -9,6 +10,7 @@ from .models import SharePass
 from .forms import RecipientKeyVerificationForm
 from audit.models import ShareAccessLog, log_share_event
 from accounts.emails import check_and_send_failed_passcode_alert
+from documents.services.crypto_service import VaultDecryptionError
 
 logger = logging.getLogger(__name__)
 
@@ -340,9 +342,13 @@ def recipient_doc_preview_view(request, pass_id, doc_id):
         raise Http404("Document record not found in this Share Pass.")
 
     try:
-        file_obj = doc.file.open('rb')
+        content_bytes = doc.get_decrypted_content()
+        file_obj = io.BytesIO(content_bytes)
     except (FileNotFoundError, OSError, ValueError):
         raise Http404("Document file could not be opened from storage.")
+    except VaultDecryptionError:
+        logger.error("Vault decryption failed for document %s in pass %s", doc.id, pass_id)
+        raise Http404("Document cryptographic verification failed.")
 
     ext = os.path.splitext(doc.file.name)[1]
     filename = doc.original_filename or f"{doc.title}{ext}"
@@ -394,9 +400,13 @@ def recipient_doc_download_view(request, pass_id, doc_id):
         raise Http404("Document record not found in this Share Pass.")
 
     try:
-        file_obj = doc.file.open('rb')
+        content_bytes = doc.get_decrypted_content()
+        file_obj = io.BytesIO(content_bytes)
     except (FileNotFoundError, OSError, ValueError):
         raise Http404("Document file could not be opened from storage.")
+    except VaultDecryptionError:
+        logger.error("Vault decryption failed for download of document %s in pass %s", doc.id, pass_id)
+        raise Http404("Document cryptographic verification failed.")
 
     ext = os.path.splitext(doc.file.name)[1]
     download_filename = doc.original_filename or f"{doc.title}{ext}"

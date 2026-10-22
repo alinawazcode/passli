@@ -1,9 +1,13 @@
 import os
 import uuid
 import hashlib
+import logging
 from django.db import models
 from django.contrib.auth import get_user_model
+from django.core.files.base import ContentFile
+from .services.crypto_service import encrypt_bytes, decrypt_bytes, VaultDecryptionError
 
+logger = logging.getLogger(__name__)
 User = get_user_model()
 
 
@@ -77,6 +81,11 @@ class Document(models.Model):
         blank=True,
         verbose_name='SHA-256 Checksum'
     )
+    is_encrypted = models.BooleanField(
+        default=True,
+        verbose_name='Encrypted at Rest',
+        help_text='Indicates if file content is stored with AES-256-GCM envelope encryption.'
+    )
     created_at = models.DateTimeField(
         auto_now_add=True,
         verbose_name='Created At'
@@ -99,7 +108,7 @@ class Document(models.Model):
         return f"{self.title} ({self.get_category_display()})"
 
     def save(self, *args, **kwargs):
-        """Compute SHA-256 checksum and record size safely before saving."""
+        """Compute SHA-256 checksum and encrypt file content with AES-256-GCM before saving."""
         if self.file and hasattr(self.file, 'name'):
             # Record original filename if not already set
             if not self.original_filename:
@@ -116,29 +125,61 @@ class Document(models.Model):
                 }
                 self.file_type = mime_map.get(ext, 'application/octet-stream')
 
-            # Calculate SHA-256 digest safely using chunks()
-            if not self.file_hash:
-                hasher = hashlib.sha256()
-                size = 0
+            # Check if this is an uncommitted (newly uploaded or modified) file object
+            is_uncommitted = not getattr(self.file, '_committed', True) or getattr(self, '_force_encrypt', False)
+            if is_uncommitted:
                 try:
-                    if hasattr(self.file, 'chunks'):
-                        for chunk in self.file.chunks():
-                            hasher.update(chunk)
-                            size += len(chunk)
-                        self.file_hash = hasher.hexdigest()
-                        self.file_size = size or getattr(self.file, 'size', 0)
-                    elif hasattr(self.file, 'file'):
+                    if hasattr(self.file, 'seek'):
                         self.file.seek(0)
-                        for chunk in iter(lambda: self.file.read(65536), b''):
-                            hasher.update(chunk)
-                            size += len(chunk)
-                        self.file_hash = hasher.hexdigest()
-                        self.file_size = size or getattr(self.file, 'size', 0)
+                    raw_bytes = self.file.read()
+                    if hasattr(self.file, 'seek'):
                         self.file.seek(0)
+
+                    # Compute SHA-256 digest of original plaintext content
+                    if not self.file_hash:
+                        self.file_hash = hashlib.sha256(raw_bytes).hexdigest()
+                    if not self.file_size:
+                        self.file_size = len(raw_bytes)
+
+                    # Encrypt plaintext bytes using AES-256-GCM
+                    encrypted_bytes = encrypt_bytes(raw_bytes)
+                    self.file = ContentFile(encrypted_bytes, name=self.original_filename or self.file.name)
+                    self.is_encrypted = True
+                except Exception as e:
+                    logger.error("Failed to encrypt document '%s' during save: %s", getattr(self, 'title', 'untitled'), e)
+                    raise
+            elif not self.file_hash:
+                try:
+                    self.file.open('rb')
+                    data = self.file.read()
+                    self.file_hash = hashlib.sha256(data).hexdigest()
+                    self.file_size = len(data)
                 except Exception:
                     pass
+                finally:
+                    self.file.close()
 
         super().save(*args, **kwargs)
+
+    def get_decrypted_content(self) -> bytes:
+        """
+        Reads and returns decrypted document bytes from storage.
+        If is_encrypted is True, verifies AES-256-GCM tag and decrypts payload.
+        If is_encrypted is False (legacy unencrypted file), returns raw bytes directly.
+        """
+        if not self.file:
+            return b""
+
+        self.file.open('rb')
+        try:
+            raw_bytes = self.file.read()
+        finally:
+            self.file.close()
+
+        if self.is_encrypted:
+            return decrypt_bytes(raw_bytes)
+        return raw_bytes
+
 
     @property
     def formatted_size(self):

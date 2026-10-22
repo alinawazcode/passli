@@ -114,6 +114,10 @@
                                 <span class="spec-val font-mono-data">{{ document.created_at|date:"M d, Y H:i" }}</span>
                             </div>
                             <div class="spec-row">
+                                <span class="spec-label">Vault Cipher:</span>
+                                <span class="spec-val font-mono-data" style="color: var(--brand-emerald);">{% if document.is_encrypted %}AES-256-GCM (Authenticated){% else %}Legacy Plaintext{% endif %}</span>
+                            </div>
+                            <div class="spec-row">
                                 <span class="spec-label">Vault Storage:</span>
                                 <span class="spec-val font-mono-data" style="color: var(--brand-emerald);">Isolated User Partition</span>
                             </div>

@@ -1,5 +1,6 @@
 import logging
 import os
+import io
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
@@ -7,6 +8,7 @@ from django.http import FileResponse, Http404
 from django.db.models import Q, Sum
 from .models import Document
 from .forms import DocumentUploadForm, DocumentEditForm
+from .services.crypto_service import VaultDecryptionError
 
 logger = logging.getLogger(__name__)
 
@@ -110,7 +112,7 @@ def document_preview_view(request, pk):
     """
     Secure in-browser document preview stream.
     Protected against IDOR: only the document owner can preview.
-    Uses 'inline' Content-Disposition for browser rendering (PDF/PNG/JPG).
+    Decrypts AES-256-GCM vault payload in-memory and renders inline (PDF/PNG/JPG).
     """
     document = get_object_or_404(Document, pk=pk, user=request.user)
     
@@ -118,13 +120,15 @@ def document_preview_view(request, pk):
         raise Http404("Document file could not be found.")
 
     try:
-        file_obj = document.file.open('rb')
+        content_bytes = document.get_decrypted_content()
     except (FileNotFoundError, OSError, ValueError):
         raise Http404("Document file could not be opened on storage.")
+    except VaultDecryptionError:
+        raise Http404("Document content corrupted or cryptographic verification failed.")
 
     filename = document.original_filename or f"{document.title}{os.path.splitext(document.file.name)[1]}"
     response = FileResponse(
-        file_obj,
+        io.BytesIO(content_bytes),
         as_attachment=False,
         filename=filename,
         content_type=document.file_type or 'application/octet-stream'
@@ -140,6 +144,7 @@ def document_download_view(request, pk):
     """
     Secure document download stream.
     Protected against IDOR: only the document owner can download.
+    Decrypts AES-256-GCM vault payload in-memory and streams attachment.
     """
     document = get_object_or_404(Document, pk=pk, user=request.user)
     
@@ -147,13 +152,15 @@ def document_download_view(request, pk):
         raise Http404("Document file could not be found.")
 
     try:
-        file_obj = document.file.open('rb')
+        content_bytes = document.get_decrypted_content()
     except (FileNotFoundError, OSError, ValueError):
         raise Http404("Document file could not be opened on storage.")
+    except VaultDecryptionError:
+        raise Http404("Document content corrupted or cryptographic verification failed.")
 
     download_filename = document.original_filename or f"{document.title}{os.path.splitext(document.file.name)[1]}"
     response = FileResponse(
-        file_obj,
+        io.BytesIO(content_bytes),
         as_attachment=True,
         filename=download_filename,
         content_type=document.file_type or 'application/octet-stream'
@@ -162,6 +169,7 @@ def document_download_view(request, pk):
     response['Pragma'] = 'no-cache'
     response['X-Content-Type-Options'] = 'nosniff'
     return response
+
 
 
 @login_required(login_url='login')
