@@ -38,6 +38,17 @@ class Document(models.Model):
         ('other', 'Other Records'),
     ]
 
+    uuid = models.UUIDField(
+        default=uuid.uuid4,
+        unique=True,
+        editable=False,
+        db_index=True,
+        verbose_name='Document UUID'
+    )
+    key_version = models.PositiveIntegerField(
+        default=1,
+        help_text='Vault encryption key version used for this document'
+    )
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
@@ -109,6 +120,11 @@ class Document(models.Model):
 
     def save(self, *args, **kwargs):
         """Compute SHA-256 checksum and encrypt file content with AES-256-GCM before saving."""
+        from django.conf import settings
+
+        if not self.uuid:
+            self.uuid = uuid.uuid4()
+
         if self.file and hasattr(self.file, 'name'):
             # Record original filename if not already set
             if not self.original_filename:
@@ -141,8 +157,12 @@ class Document(models.Model):
                     if not self.file_size:
                         self.file_size = len(raw_bytes)
 
-                    # Encrypt plaintext bytes using AES-256-GCM
-                    encrypted_bytes = encrypt_bytes(raw_bytes)
+                    # Set key version from current settings
+                    self.key_version = getattr(settings, 'VAULT_KEY_VERSION', 1)
+
+                    # Encrypt plaintext bytes using AES-256-GCM with document UUID as AAD
+                    aad = str(self.uuid).encode('utf-8')
+                    encrypted_bytes = encrypt_bytes(raw_bytes, associated_data=aad)
                     self.file = ContentFile(encrypted_bytes, name=self.original_filename or self.file.name)
                     self.is_encrypted = True
                 except Exception as e:
@@ -164,7 +184,8 @@ class Document(models.Model):
     def get_decrypted_content(self) -> bytes:
         """
         Reads and returns decrypted document bytes from storage.
-        If is_encrypted is True, verifies AES-256-GCM tag and decrypts payload.
+        If is_encrypted is True, verifies AES-256-GCM tag and decrypts payload using
+        the document UUID as associated data (AAD) and the recorded key_version.
         If is_encrypted is False (legacy unencrypted file), returns raw bytes directly.
         """
         if not self.file:
@@ -177,7 +198,13 @@ class Document(models.Model):
             self.file.close()
 
         if self.is_encrypted:
-            return decrypt_bytes(raw_bytes)
+            aad = str(self.uuid).encode('utf-8') if self.uuid else None
+            return decrypt_bytes(
+                raw_bytes,
+                key_version=self.key_version,
+                associated_data=aad,
+                allow_legacy=True
+            )
         return raw_bytes
 
 

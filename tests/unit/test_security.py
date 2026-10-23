@@ -13,6 +13,8 @@ from django.urls import reverse
 from documents.models import Document
 from documents.forms import DocumentUploadForm
 
+from tests.unit import get_test_password
+
 User = get_user_model()
 
 
@@ -23,15 +25,18 @@ class SecurityAndVulnerabilityTests(TestCase):
         self.client_alice = Client()
         self.client_bob = Client()
 
+        self.alice_password = get_test_password()
+        self.bob_password = get_test_password()
+
         self.alice = User.objects.create_user(
             username="alice_security",
             email="alice@passli.dev",
-            password="AliceStrongPassword2026!"
+            password=self.alice_password
         )
         self.bob = User.objects.create_user(
             username="bob_security",
             email="bob@passli.dev",
-            password="BobStrongPassword2026!"
+            password=self.bob_password
         )
 
         self.client_alice.force_login(self.alice)
@@ -269,7 +274,7 @@ class SecurityAndVulnerabilityTests(TestCase):
         for evil_url in malicious_urls:
             login_res = self.client_bob.post(
                 f"{reverse('login')}?next={evil_url}",
-                {'username': 'bob_security', 'password': 'BobStrongPassword2026!'},
+                {'username': 'bob_security', 'password': self.bob_password},
                 follow=False
             )
             # Must redirect safely to internal dashboard, not the evil target

@@ -34,6 +34,9 @@ from sharing.utils import generate_share_key
 User = get_user_model()
 
 
+from tests.unit import get_test_password
+
+
 @override_settings(
     EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend',
     APP_URL='https://test-passli.up.railway.app'
@@ -42,10 +45,11 @@ class EmailIntegrationServiceTests(TestCase):
     """Tests covering SMTP email service dispatch, multi-part rendering, and safe failure handling."""
 
     def setUp(self):
+        self.password = get_test_password()
         self.user = User.objects.create_user(
             username='service_tester',
             email='tester@passli.dev',
-            password='TestPassword123!'
+            password=self.password
         )
 
     def test_app_url_and_link_builder(self):
@@ -122,11 +126,12 @@ class UserRegistrationAndEmailOTPTests(TestCase):
 
     def test_register_creates_profile_and_sends_verification_otp(self):
         """Verify new registration creates profile, generates OTP code, and dispatches email."""
+        reg_pw = get_test_password()
         reg_data = {
             'username': 'registered_hero',
             'email': 'hero@passli.dev',
-            'password1': 'StrongPassphrase2026!',
-            'password2': 'StrongPassphrase2026!',
+            'password1': reg_pw,
+            'password2': reg_pw,
         }
         response = self.client.post(reverse('register'), data=reg_data, follow=True)
         self.assertEqual(response.status_code, 200)
@@ -149,7 +154,7 @@ class UserRegistrationAndEmailOTPTests(TestCase):
 
     def test_verify_email_otp_success_updates_profile(self):
         """Verify entering the correct 6-digit OTP code sets is_email_verified to True."""
-        user = User.objects.create_user(username='otp_user', email='otp@passli.dev', password='Password123!')
+        user = User.objects.create_user(username='otp_user', email='otp@passli.dev', password=get_test_password())
         code_record = EmailVerificationCode(
             user=user,
             email=user.email,
@@ -175,7 +180,7 @@ class UserRegistrationAndEmailOTPTests(TestCase):
 
     def test_verify_email_otp_invalid_code_decrements_remaining(self):
         """Verify invalid OTP submission increments attempt counter and returns remaining attempts."""
-        user = User.objects.create_user(username='otp_fail_user', email='fail@passli.dev', password='Password123!')
+        user = User.objects.create_user(username='otp_fail_user', email='fail@passli.dev', password=get_test_password())
         code_record = EmailVerificationCode(
             user=user,
             email=user.email,
@@ -195,7 +200,7 @@ class UserRegistrationAndEmailOTPTests(TestCase):
 
     def test_verify_email_otp_lockout_after_max_attempts(self):
         """Verify 5 failed OTP attempts locks out the code."""
-        user = User.objects.create_user(username='otp_lock_user', email='lock@passli.dev', password='Password123!')
+        user = User.objects.create_user(username='otp_lock_user', email='lock@passli.dev', password=get_test_password())
         code_record = EmailVerificationCode(
             user=user,
             email=user.email,
@@ -217,7 +222,7 @@ class UserRegistrationAndEmailOTPTests(TestCase):
 
     def test_resend_verification_otp_cooldown(self):
         """Verify resend enforces 60-second cooldown."""
-        user = User.objects.create_user(username='resend_user', email='resend@passli.dev', password='Password123!')
+        user = User.objects.create_user(username='resend_user', email='resend@passli.dev', password=get_test_password())
         EmailVerificationCode.objects.create(
             user=user,
             email=user.email,
@@ -243,10 +248,11 @@ class ForgotPasswordAndResetTests(TestCase):
 
     def setUp(self):
         self.client = Client()
+        self.password = get_test_password()
         self.user = User.objects.create_user(
             username='reset_target',
             email='reset_target@passli.dev',
-            password='InitialStrongPassphrase2026!'
+            password=self.password
         )
         mail.outbox = []
 
@@ -285,9 +291,10 @@ class ForgotPasswordAndResetTests(TestCase):
         self.assertTemplateUsed(response, 'accounts/password_reset_confirm.html')
 
         mail.outbox = []
+        new_pw = get_test_password()
         new_data = {
-            'password1': 'UpdatedBrandNewPassphrase2026!',
-            'password2': 'UpdatedBrandNewPassphrase2026!',
+            'password1': new_pw,
+            'password2': new_pw,
         }
         post_response = self.client.post(url, data=new_data, follow=True)
         self.assertRedirects(post_response, reverse('login'))
@@ -298,7 +305,7 @@ class ForgotPasswordAndResetTests(TestCase):
 
         # Check password actually changed
         self.user.refresh_from_db()
-        self.assertTrue(self.user.check_password('UpdatedBrandNewPassphrase2026!'))
+        self.assertTrue(self.user.check_password(new_pw))
 
         # Check confirmation email
         self.assertEqual(len(mail.outbox), 1)
@@ -338,7 +345,7 @@ class FailedPasscodeSecurityAlertTests(TestCase):
         self.owner = User.objects.create_user(
             username='alert_owner',
             email='alert_owner@passli.dev',
-            password='OwnerPassword2026!'
+            password=get_test_password()
         )
         self.raw_key = generate_share_key()
         self.share_pass = SharePass.objects.create(

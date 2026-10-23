@@ -10,6 +10,7 @@ from django.contrib.auth import get_user_model
 from django.urls import reverse
 from django.template.loader import render_to_string
 from django.conf import settings
+from tests.unit import get_test_password
 
 User = get_user_model()
 
@@ -29,10 +30,11 @@ class SecurityClaimsTests(TestCase):
 
     def setUp(self):
         self.client = Client()
+        self.password = get_test_password()
         self.user = User.objects.create_user(
             username="claimstestuser",
             email="claims@passli.dev",
-            password="SecurePassphrase2026!",
+            password=self.password,
             is_active=True,
         )
 

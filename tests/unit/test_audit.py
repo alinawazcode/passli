@@ -18,6 +18,8 @@ from sharing.models import SharePass
 from sharing.utils import generate_share_key
 from audit.models import ShareAccessLog, log_share_event
 
+from tests.unit import get_test_password
+
 User = get_user_model()
 
 
@@ -26,15 +28,16 @@ class AuditTrailTests(TestCase):
 
     def setUp(self):
         self.client = Client()
+        self.password = get_test_password()
         self.owner = User.objects.create_user(
             username="auditowner",
             email="auditowner@passli.dev",
-            password="SecurePassphrase2026!"
+            password=self.password
         )
         self.other_user = User.objects.create_user(
             username="otheruser",
             email="otheruser@passli.dev",
-            password="SecurePassphrase2026!"
+            password=self.password
         )
 
         # Upload sample test documents
@@ -235,7 +238,7 @@ class AuditTrailTests(TestCase):
 
     def test_owner_revoke_pass_logged(self):
         """Verify owner revoking a pass logs PASS_REVOKED event."""
-        self.client.login(username="auditowner", password="SecurePassphrase2026!")
+        self.client.login(username="auditowner", password=self.password)
         revoke_url = reverse('share_revoke', kwargs={'pass_id': self.active_pass.id})
         self.client.post(revoke_url)
 
@@ -252,7 +255,7 @@ class AuditTrailTests(TestCase):
 
     def test_audit_list_view_authenticated_renders(self):
         """Verify logged-in owner can load the audit dashboard with metric counters."""
-        self.client.login(username="auditowner", password="SecurePassphrase2026!")
+        self.client.login(username="auditowner", password=self.password)
         
         # Create a few audit logs
         log_share_event(self.active_pass, ShareAccessLog.EventType.KEY_SUCCESS, status=ShareAccessLog.Status.SUCCESS)
@@ -281,7 +284,7 @@ class AuditTrailTests(TestCase):
         )
 
         # Login as owner
-        self.client.login(username="auditowner", password="SecurePassphrase2026!")
+        self.client.login(username="auditowner", password=self.password)
         response = self.client.get(reverse('audit:audit_list'))
         self.assertEqual(response.status_code, 200)
 
@@ -294,7 +297,7 @@ class AuditTrailTests(TestCase):
         log_share_event(self.active_pass, ShareAccessLog.EventType.KEY_SUCCESS, details="Clinic Success Alpha")
         log_share_event(self.active_pass, ShareAccessLog.EventType.KEY_FAILED, status=ShareAccessLog.Status.DENIED, details="Failed Attempt Beta")
 
-        self.client.login(username="auditowner", password="SecurePassphrase2026!")
+        self.client.login(username="auditowner", password=self.password)
 
         # Filter by event_type=key_failed
         res_filter = self.client.get(reverse('audit:audit_list') + '?event=key_failed')

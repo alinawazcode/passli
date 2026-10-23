@@ -1,0 +1,106 @@
+name: Passli Continuous Integration
+
+on:
+  push:
+    branches: [main, close-remaining-gaps]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint-and-audit:
+    name: Lint & Security Audit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install Lint & Audit Tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install ruff pip-audit
+
+      - name: Run Ruff Code Quality Linter
+        run: |
+          ruff check .
+
+      - name: Run pip-audit Vulnerability Scanner
+        run: |
+          pip-audit -r requirements.txt
+
+  test-and-coverage:
+    name: Test Suite & Coverage
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: passli_ci_test
+          POSTGRES_USER: passli_ci_user
+          POSTGRES_PASSWORD: passli_ci_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DJANGO_SETTINGS_MODULE: config.settings
+      DATABASE_URL: postgres://passli_ci_user:passli_ci_password@localhost:5432/passli_ci_test
+      SECRET_KEY: ci-environment-dummy-secret-key-32-chars-long-or-more
+      VAULT_MASTER_KEY: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+      DEBUG: 'False'
+      TRUSTED_PROXY_COUNT: '1'
+      SECURE_SSL_REDIRECT: 'False'
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install Project Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+
+      - name: Django Deploy Check
+        run: |
+          python manage.py check --deploy
+
+      - name: Execute Full Test Suite with Coverage
+        run: |
+          coverage run --source=. manage.py test tests.unit tests.selenium
+
+      - name: Coverage Threshold Gate
+        run: |
+          coverage report --fail-under=80
+
+  docker-build:
+    name: Docker Image Build Validation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Passli Docker Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: false
+          tags: passli:latest

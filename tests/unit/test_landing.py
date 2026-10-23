@@ -8,6 +8,8 @@ from django.test import TestCase, Client
 from django.contrib.auth import get_user_model
 from django.urls import reverse
 
+from tests.unit import get_test_password
+
 User = get_user_model()
 
 
@@ -16,10 +18,11 @@ class LandingPageTests(TestCase):
 
     def setUp(self):
         self.client = Client()
+        self.password = get_test_password()
         self.user = User.objects.create_user(
             username="testsecurityuser",
             email="security@passli.dev",
-            password="SecurePassphrase2026!"
+            password=self.password
         )
 
     def test_landing_page_status_and_templates(self):

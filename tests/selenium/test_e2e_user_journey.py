@@ -22,6 +22,8 @@ from documents.models import Document
 from sharing.models import SharePass
 from audit.models import ShareAccessLog
 
+from tests.unit import get_test_password
+
 User = get_user_model()
 
 
@@ -33,8 +35,8 @@ class EndToEndSystemUserJourneyTests(TestCase):
 
     def setUp(self):
         self.owner_client = Client()
-        self.recipient_client = Client()
-        self.adversary_client = Client()
+        self.recipient_client = Client(REMOTE_ADDR='203.0.113.50')
+        self.adversary_client = Client(REMOTE_ADDR='198.51.100.44')
 
     def tearDown(self):
         # Clean up any files created during tests
@@ -54,12 +56,13 @@ class EndToEndSystemUserJourneyTests(TestCase):
         # ==========================================
         # STEP 1: Owner Registration & Authentication
         # ==========================================
+        test_pw = get_test_password()
         register_url = reverse('register')
         reg_response = self.owner_client.post(register_url, {
             'username': 'dr_harrison',
             'email': 'harrison@cardiology-partners.com',
-            'password1': 'SecureClinicPassphrase2026!',
-            'password2': 'SecureClinicPassphrase2026!',
+            'password1': test_pw,
+            'password2': test_pw,
         })
         self.assertEqual(reg_response.status_code, 302)
         self.assertEqual(reg_response.url, reverse('dashboard'))

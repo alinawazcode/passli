@@ -17,6 +17,10 @@ from django.utils import timezone
 from sharing.models import SharePass, SharePassLockout
 from documents.models import Document
 
+from tests.unit import get_test_password
+from audit.models import get_client_ip
+from django.test import override_settings
+
 User = get_user_model()
 
 
@@ -24,10 +28,11 @@ class RecipientLockoutTests(TestCase):
     """Unit tests for recipient lockout behavior and exponential backoff."""
 
     def setUp(self):
+        self.password = get_test_password()
         self.owner = User.objects.create_user(
             username="lockoutowner",
             email="owner@passli.dev",
-            password="SecureOwnerPassword2026!",
+            password=self.password,
             is_active=True,
         )
         self.doc = Document.objects.create(
@@ -207,6 +212,104 @@ class RecipientLockoutTests(TestCase):
         self.assertEqual(lockout.failed_attempts, 0)
         self.assertIsNone(lockout.locked_until)
 
+    def test_spoofed_x_forwarded_for_still_ends_in_lockout(self):
+        """
+        Spoofing a different leftmost entry in X-Forwarded-For on every attempt
+        still resolves to the legitimate client IP (via TRUSTED_PROXY_COUNT) and ends in lockout.
+        """
+        client = Client()
+        proxy_ip = "198.51.100.25"
+
+        for i in range(5):
+            spoofed_header = f"fake.{i}.1.1, {proxy_ip}"
+            res = client.post(
+                self.verify_url,
+                {"access_key": "WRON-GKEY"},
+                HTTP_X_FORWARDED_FOR=spoofed_header,
+                REMOTE_ADDR="127.0.0.1",
+            )
+            if i < 4:
+                self.assertEqual(res.status_code, 200)
+            else:
+                self.assertEqual(res.status_code, 429)
+                self.assertIn("Retry-After", res.headers)
+
+        # Confirm lockout row was created for proxy_ip, NOT the fake leftmost IP
+        lockout = SharePassLockout.objects.filter(share_pass=self.share_pass, ip_address=proxy_ip).first()
+        self.assertIsNotNone(lockout)
+        self.assertEqual(lockout.failed_attempts, 5)
+
+        # 6th attempt with yet another spoofed IP is immediately rejected with 429
+        res6 = client.post(
+            self.verify_url,
+            {"access_key": "WRON-GKEY"},
+            HTTP_X_FORWARDED_FOR=f"another.fake.ip, {proxy_ip}",
+            REMOTE_ADDR="127.0.0.1",
+        )
+        self.assertEqual(res6.status_code, 429)
+
+    def test_global_counter_locks_pass_across_many_ips(self):
+        """
+        50 total failed attempts across 50 different IP addresses locks the pass globally
+        for 15 minutes regardless of IP, returning HTTP 429 and Retry-After.
+        """
+        client = Client()
+
+        for i in range(50):
+            ip = f"10.0.{i // 250}.{(i % 250) + 1}"
+            res = client.post(
+                self.verify_url,
+                {"access_key": "WRON-GKEY"},
+                REMOTE_ADDR=ip,
+            )
+            if i < 49:
+                self.assertEqual(res.status_code, 200)
+            else:
+                # 50th attempt triggers global lockout
+                self.assertEqual(res.status_code, 429)
+                self.assertEqual(res.headers.get("Retry-After"), "900")
+
+        self.share_pass.refresh_from_db()
+        self.assertTrue(self.share_pass.is_globally_locked)
+        self.assertEqual(self.share_pass.global_failed_attempts, 50)
+
+        # Fresh 51st IP gets locked out immediately on GET or POST
+        fresh_client = Client()
+        res_post = fresh_client.post(
+            self.verify_url,
+            {"access_key": "WRON-GKEY"},
+            REMOTE_ADDR="192.168.200.1",
+        )
+        self.assertEqual(res_post.status_code, 429)
+        self.assertTrue(int(res_post.headers.get("Retry-After", 0)) > 0)
+
+        res_get = fresh_client.get(
+            self.verify_url,
+            REMOTE_ADDR="192.168.200.1",
+        )
+        self.assertEqual(res_get.status_code, 429)
+        self.assertTrue(int(res_get.headers.get("Retry-After", 0)) > 0)
+
+    def test_legitimate_proxy_request_resolves_correctly(self):
+        """Legitimate proxy header resolves to expected hop according to TRUSTED_PROXY_COUNT."""
+        from django.test.client import RequestFactory
+        factory = RequestFactory()
+
+        # TRUSTED_PROXY_COUNT = 1: takes 1st from right
+        with override_settings(TRUSTED_PROXY_COUNT=1):
+            req = factory.get("/", HTTP_X_FORWARDED_FOR="client.a.com, proxy1.net", REMOTE_ADDR="127.0.0.1")
+            self.assertEqual(get_client_ip(req), "proxy1.net")
+
+        # TRUSTED_PROXY_COUNT = 2: takes 2nd from right
+        with override_settings(TRUSTED_PROXY_COUNT=2):
+            req = factory.get("/", HTTP_X_FORWARDED_FOR="client.a.com, proxy1.net, proxy2.net", REMOTE_ADDR="127.0.0.1")
+            self.assertEqual(get_client_ip(req), "proxy1.net")
+
+        # Header has fewer entries than TRUSTED_PROXY_COUNT: falls back to REMOTE_ADDR
+        with override_settings(TRUSTED_PROXY_COUNT=3):
+            req = factory.get("/", HTTP_X_FORWARDED_FOR="one.entry.com", REMOTE_ADDR="127.0.0.1")
+            self.assertEqual(get_client_ip(req), "127.0.0.1")
+
 
 class ConcurrentLockoutTests(TransactionTestCase):
     """Concurrency verification ensuring select_for_update handles parallel requests without race conditions."""
@@ -215,7 +318,7 @@ class ConcurrentLockoutTests(TransactionTestCase):
         self.owner = User.objects.create_user(
             username="concurrentowner",
             email="concurrent@passli.dev",
-            password="SecureOwnerPassword2026!",
+            password=get_test_password(),
             is_active=True,
         )
         self.doc = Document.objects.create(

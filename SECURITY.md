@@ -30,8 +30,13 @@ We actively support and release security updates for the following versions of P
 - **Engine**: Industry-standard **AES-256-GCM** (Galois/Counter Mode) with Authenticated Encryption with Associated Data (AEAD) via Python's `cryptography` library.
 - **Storage Wire Format**: `[12-byte Nonce][Ciphertext + 16-byte GCM Authentication Tag]`. Total cryptographic overhead is exactly 28 bytes per stored file.
 - **Nonce Uniqueness**: Each document encryption operation generates a unique, non-repeating 12-byte CSPRNG nonce (`os.urandom(12)`), preventing replay attacks and cryptographic pattern leakage across identical files.
+- **Associated Data (AAD) Record Binding**: Every document's unique UUID is passed as Associated Data (AAD) during AES-GCM encryption and decryption. Ciphertext cannot be swapped between records or tenants without failing cryptographic authentication.
 - **Tamper Resistance**: Any modification, bit-flip, or byte truncation of stored files triggers an immediate `VaultDecryptionError` upon tag verification failure, preventing corrupted or tampered payloads from ever reaching application memory.
-- **Key Management**: Primary vault key is supplied via `VAULT_MASTER_KEY` (32-byte hexadecimal key). In local/development environments without explicit configuration, a deterministic 256-bit key is derived using **HKDF-SHA256** from Django's `SECRET_KEY`.
+- **Key Management & Critical Notice**:
+  - **Unrecoverability Warning**: Losing `VAULT_MASTER_KEY` makes all vault documents permanently unrecoverable. Back up your master key securely outside the repository.
+  - In production (`DEBUG=False`), `VAULT_MASTER_KEY` (32 bytes, hex or base64) is strictly required at startup; key derivation from `SECRET_KEY` is disabled.
+  - Key rotation is supported via `VAULT_KEY_VERSION` and `VAULT_MASTER_KEY_PREVIOUS`. Legacy files can be re-encrypted using `python manage.py encrypt_vault_storage --reencrypt-legacy`.
+  - In local development mode (`DEBUG=True`) without explicit configuration, a deterministic 256-bit key is derived using **HKDF-SHA256** from Django's `SECRET_KEY`.
 
 ### 2. In-Memory Decrypted Streaming (Zero Plaintext Disk Writes)
 - Owner previews, owner downloads, and verified recipient views decrypt ciphertext **strictly in-memory** using `io.BytesIO` streams.

@@ -16,6 +16,8 @@ from sharing.models import SharePass
 from sharing.utils import generate_share_key
 from audit.models import ShareAccessLog
 
+from tests.unit import get_test_password
+
 User = get_user_model()
 
 
@@ -24,19 +26,20 @@ class AdministrationConsoleTests(TestCase):
 
     def setUp(self):
         self.client = Client()
+        self.password = get_test_password()
 
         # Regular non-staff user
         self.regular_user = User.objects.create_user(
             username="regularuser",
             email="regular@passli.dev",
-            password="SecurePassphrase2026!"
+            password=self.password
         )
 
         # Staff admin user
         self.staff_user = User.objects.create_user(
             username="staffadmin",
             email="staff@passli.dev",
-            password="SecurePassphrase2026!",
+            password=self.password,
             is_staff=True
         )
 
@@ -44,7 +47,7 @@ class AdministrationConsoleTests(TestCase):
         self.super_user = User.objects.create_superuser(
             username="rootadmin",
             email="root@passli.dev",
-            password="SecurePassphrase2026!"
+            password=self.password
         )
 
         # Create sample documents
@@ -218,10 +221,12 @@ class AdministrationConsoleTests(TestCase):
         from django.contrib.auth import authenticate
         from io import StringIO
 
+        admin_pw = get_test_password()
+        superadmin_pw = get_test_password()
         os.environ['DJANGO_SUPERUSER_USERNAME'] = 'admin'
-        os.environ['DJANGO_SUPERUSER_PASSWORD'] = 'TestSecureAdmin2026!'
+        os.environ['DJANGO_SUPERUSER_PASSWORD'] = admin_pw
         os.environ['DJANGO_SECONDARY_SUPERUSER_USERNAME'] = 'superadmin'
-        os.environ['DJANGO_SECONDARY_SUPERUSER_PASSWORD'] = 'TestSecureSuperAdmin2026!'
+        os.environ['DJANGO_SECONDARY_SUPERUSER_PASSWORD'] = superadmin_pw
 
         try:
             out = StringIO()
@@ -232,14 +237,14 @@ class AdministrationConsoleTests(TestCase):
             self.assertTrue(superadmin.is_superuser)
             self.assertTrue(superadmin.is_staff)
             self.assertTrue(superadmin.is_active)
-            self.assertIsNotNone(authenticate(username='superadmin', password='TestSecureSuperAdmin2026!'))
+            self.assertIsNotNone(authenticate(username='superadmin', password=superadmin_pw))
 
             # Verify admin user exists and is fully privileged
             admin = User.objects.get(username='admin')
             self.assertTrue(admin.is_superuser)
             self.assertTrue(admin.is_staff)
             self.assertTrue(admin.is_active)
-            self.assertIsNotNone(authenticate(username='admin', password='TestSecureAdmin2026!'))
+            self.assertIsNotNone(authenticate(username='admin', password=admin_pw))
         finally:
             os.environ.pop('DJANGO_SUPERUSER_USERNAME', None)
             os.environ.pop('DJANGO_SUPERUSER_PASSWORD', None)
