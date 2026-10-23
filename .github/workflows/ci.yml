@@ -41,6 +41,7 @@ jobs:
         image: postgres:16
         env:
           POSTGRES_DB: passli_ci_test
+          POSTGRES_USER: postgres
           POSTGRES_HOST_AUTH_METHOD: trust
         ports:
           - 5432:5432
@@ -72,11 +73,6 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements-dev.txt
           mkdir -p staticfiles media vault_storage
-
-      - name: Generate CI Ephemeral Cryptographic Keys
-        run: |
-          echo "SECRET_KEY=$(python -c 'import secrets; print(secrets.token_urlsafe(50))')" >> $GITHUB_ENV
-          echo "VAULT_MASTER_KEY=$(python -c 'import secrets; print(secrets.token_hex(32))')" >> $GITHUB_ENV
 
       - name: Generate CI Ephemeral Cryptographic Keys
         run: |

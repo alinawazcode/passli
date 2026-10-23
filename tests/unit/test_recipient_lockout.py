@@ -221,7 +221,7 @@ class RecipientLockoutTests(TestCase):
         proxy_ip = "198.51.100.25"
 
         for i in range(5):
-            spoofed_header = f"fake.{i}.1.1, {proxy_ip}"
+            spoofed_header = f"192.0.2.{i + 1}, {proxy_ip}"
             res = client.post(
                 self.verify_url,
                 {"access_key": "WRON-GKEY"},
@@ -243,7 +243,7 @@ class RecipientLockoutTests(TestCase):
         res6 = client.post(
             self.verify_url,
             {"access_key": "WRON-GKEY"},
-            HTTP_X_FORWARDED_FOR=f"another.fake.ip, {proxy_ip}",
+            HTTP_X_FORWARDED_FOR=f"192.0.2.99, {proxy_ip}",
             REMOTE_ADDR="127.0.0.1",
         )
         self.assertEqual(res6.status_code, 429)
@@ -297,17 +297,17 @@ class RecipientLockoutTests(TestCase):
 
         # TRUSTED_PROXY_COUNT = 1: takes 1st from right
         with override_settings(TRUSTED_PROXY_COUNT=1):
-            req = factory.get("/", HTTP_X_FORWARDED_FOR="client.a.com, proxy1.net", REMOTE_ADDR="127.0.0.1")
-            self.assertEqual(get_client_ip(req), "proxy1.net")
+            req = factory.get("/", HTTP_X_FORWARDED_FOR="192.0.2.1, 198.51.100.10", REMOTE_ADDR="127.0.0.1")
+            self.assertEqual(get_client_ip(req), "198.51.100.10")
 
         # TRUSTED_PROXY_COUNT = 2: takes 2nd from right
         with override_settings(TRUSTED_PROXY_COUNT=2):
-            req = factory.get("/", HTTP_X_FORWARDED_FOR="client.a.com, proxy1.net, proxy2.net", REMOTE_ADDR="127.0.0.1")
-            self.assertEqual(get_client_ip(req), "proxy1.net")
+            req = factory.get("/", HTTP_X_FORWARDED_FOR="192.0.2.1, 198.51.100.10, 203.0.113.20", REMOTE_ADDR="127.0.0.1")
+            self.assertEqual(get_client_ip(req), "198.51.100.10")
 
         # Header has fewer entries than TRUSTED_PROXY_COUNT: falls back to REMOTE_ADDR
         with override_settings(TRUSTED_PROXY_COUNT=3):
-            req = factory.get("/", HTTP_X_FORWARDED_FOR="one.entry.com", REMOTE_ADDR="127.0.0.1")
+            req = factory.get("/", HTTP_X_FORWARDED_FOR="192.0.2.1", REMOTE_ADDR="127.0.0.1")
             self.assertEqual(get_client_ip(req), "127.0.0.1")
 
 

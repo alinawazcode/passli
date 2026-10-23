@@ -233,8 +233,8 @@ def send_password_reset_success_email(user, request=None) -> bool:
     ua_info = {'browser': 'Unknown', 'os': 'Unknown', 'device_type': 'Desktop'}
 
     if request:
-        x_forwarded = request.META.get('HTTP_X_FORWARDED_FOR')
-        ip_address = x_forwarded.split(',')[0].strip() if x_forwarded else request.META.get('REMOTE_ADDR', 'Unavailable')
+        from audit.models import get_client_ip
+        ip_address = get_client_ip(request) or 'Unavailable'
         ua_info = parse_user_agent(request.META.get('HTTP_USER_AGENT'))
 
     context = {
@@ -264,14 +264,9 @@ def send_security_alert_failed_passcode(share_pass, request, attempts_count: int
         logger.info(f"Failed passcode security alert suppressed: pass {share_pass.id} owner has no email.")
         return False
 
-    # Inferred IP
-    x_forwarded = request.META.get('HTTP_X_FORWARDED_FOR') if request else None
-    if x_forwarded:
-        client_ip = x_forwarded.split(',')[0].strip()
-    elif request:
-        client_ip = request.META.get('REMOTE_ADDR', 'Unknown')
-    else:
-        client_ip = 'Unknown'
+    # Inferred IP using TRUSTED_PROXY_COUNT and validation
+    from audit.models import get_client_ip
+    client_ip = get_client_ip(request) or 'Unknown'
 
     # Inferred User-Agent details
     user_agent_str = request.META.get('HTTP_USER_AGENT', '') if request else ''
