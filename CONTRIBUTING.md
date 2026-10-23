@@ -67,11 +67,16 @@ git checkout -b feat/your-feature-name
    - Use clean, semantic HTML5 and Vanilla CSS tokens from `static/css/styles.css`.
    - Maintain full mobile responsiveness and avoid bloated CSS frameworks.
 
-4. **Testing Discipline**:
+4. **Testing & Code Quality Discipline**:
    - Write comprehensive unit tests for all new models, views, forms, and utilities.
-   - Before submitting a pull request, verify that all test suites pass with 0 errors:
+   - Run Ruff linter to verify code formatting and standards:
      ```bash
-     python manage.py test
+     ruff check accounts audit config documents sharing tests
+     ```
+   - Verify that all test suites pass with zero errors and meet the 80% coverage threshold:
+     ```bash
+     coverage run --source=accounts,audit,config,documents,sharing manage.py test tests.unit tests.selenium
+     coverage report --fail-under=80
      ```
 
 ---

@@ -5,6 +5,43 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
+## [1.3.0] - 2026-10-23
+
+### Added
+- **Cryptographic Envelope Hardening & AAD Binding**:
+  - Bound document UUID as Associated Data (AAD) in AES-256-GCM AEAD encryption, preventing ciphertext swap and cross-tenant tampering.
+  - Zero-downtime key rotation architecture supporting `VAULT_KEY_VERSION` and `VAULT_MASTER_KEY_PREVIOUS`.
+  - Added `--reencrypt-legacy` and `--force` flags to `encrypt_vault_storage` management command.
+- **Transactional Email Infrastructure & Automated Security Alerts**:
+  - Direct Gmail / custom SMTP service with TLS/SSL auto-negotiation (`EMAIL_USE_SSL` / `EMAIL_USE_TLS`).
+  - 6-digit numeric OTP code dispatch for user email registration verification.
+  - Cryptographic single-use token links for secure password reset workflows.
+  - Automated brute-force QR passcode alert emails triggered after 5 consecutive failed verification attempts.
+  - Added `python manage.py test_smtp [recipient]` CLI diagnostic for connectivity verification.
+- **Persistent Database Rate-Limiting & Lockout Defense**:
+  - Atomic transaction tracking per pass and IP address using `select_for_update()`.
+  - Exponential backoff lockout (1 minute initial, doubling up to 24 hours) returning standard `HTTP 429` with `Retry-After` headers.
+  - Standardized client IP extraction via `TRUSTED_PROXY_COUNT` with strict RFC 5737 and PostgreSQL `inet` data type compliance.
+- **Superadmin Auto-Provisioning**:
+  - Idempotent `ensure_superadmin` command supporting both primary and optional secondary superuser accounts (`DJANGO_SECONDARY_SUPERUSER_*`).
+- **Selenium 4 Automated Presentation Testing Suite (`selenium_presentation_suite/`)**:
+  - Standalone presentation test suite with 16 end-to-end lifecycle test cases (TC01–TC16) and 3 controlled negative demonstration tests.
+  - Thread-safe desktop Tkinter GUI dashboard with live telemetry, progress tracking, and pacing slowdown controls (Slow Process, Narration, Ultra Slow).
+  - Persistent Chrome window mode (`KEEP_BROWSER_OPEN = True`) for live presentation and recording without browser restarts.
+  - Standalone dark-mode HTML test execution report generation (`report.html`) and automated timestamped screenshots.
+- **Hardened Continuous Integration (CI/CD)**:
+  - Multi-stage GitHub Actions workflow testing across PostgreSQL 16 service containers.
+  - Automated Ruff code quality linter and pip-audit vulnerability scanning.
+  - Automated Docker image build validation.
+  - Test suite coverage gate enforcing >= 80% coverage on every push and pull request.
+
+### Fixed
+- Fixed PostgreSQL `DataError: invalid input syntax for type inet` in lockout unit tests by standardizing on RFC 5737 test IP blocks.
+- Fixed duplicate cryptographic key generation steps in GitHub Actions CI workflow.
+- Updated security claims and documentation to reflect architectural transparency (server-side AES-256-GCM encryption with server-held master key).
+
+---
+
 ## [1.2.0] - 2026-10-01
 
 ### Added
