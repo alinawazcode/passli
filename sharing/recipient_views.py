@@ -19,6 +19,11 @@ logger = logging.getLogger(__name__)
 MAX_FAILED_ATTEMPTS = 5
 
 
+GLOBAL_MAX_FAILURES = 50
+GLOBAL_WINDOW_MINUTES = 15
+GLOBAL_LOCKOUT_MINUTES = 15
+
+
 def _session_auth_key(pass_id) -> str:
     return f"recipient_authenticated_{str(pass_id)}"
 
@@ -33,10 +38,19 @@ def recipient_verify_view(request, pass_id):
     Evaluates pass lifecycle (revoked, expired, max uses, rate-limiting lockout).
     Prompts recipient for 8-character Share Key and verifies against PBKDF2 hash.
     """
-    share_pass = get_object_or_404(
-        SharePass.objects.prefetch_related('documents'),
-        id=pass_id
-    )
+    max_retries = 6
+    share_pass = None
+    for attempt in range(max_retries):
+        try:
+            share_pass = get_object_or_404(
+                SharePass.objects.prefetch_related('documents'),
+                id=pass_id
+            )
+            break
+        except OperationalError:
+            if attempt == max_retries - 1:
+                raise
+            time.sleep(0.05 * (attempt + 1))
 
     auth_key = _session_auth_key(pass_id)
     fail_key = _session_failures_key(pass_id)
@@ -91,10 +105,29 @@ def recipient_verify_view(request, pass_id):
             'error_message': f'This time-gated Share Pass expired on {share_pass.expires_at.strftime("%b %d, %Y at %H:%M UTC") if share_pass.expires_at else "its expiration timer"}.',
         }, status=410)
 
+    # 4a. Check global rate limit lockout (across all IPs)
+    if share_pass.is_globally_locked:
+        retry_after = share_pass.global_retry_after_seconds
+        log_share_event(
+            share_pass,
+            ShareAccessLog.EventType.RATE_LOCKED,
+            request=request,
+            status=ShareAccessLog.Status.LOCKED,
+            details=f'Global lockout until {share_pass.global_locked_until} ({retry_after}s remaining)'
+        )
+        response = render(request, 'sharing/recipient_error.html', {
+            'pass': share_pass,
+            'status': 'locked',
+            'title': 'Access Temporarily Locked',
+            'error_message': f'This Share Pass has been temporarily locked across all connections due to excessive verification failures ({share_pass.global_failed_attempts}/{GLOBAL_MAX_FAILURES}). Please retry in {retry_after} seconds.',
+            'retry_after': retry_after,
+        }, status=429)
+        response['Retry-After'] = str(retry_after)
+        return response
 
     client_ip = get_client_ip(request) or '127.0.0.1'
 
-    # 4. Check persistent database-backed brute-force lockout per pass and IP
+    # 4b. Check persistent database-backed brute-force lockout per pass and IP
     if request.method == 'GET':
         lockout = SharePassLockout.objects.filter(share_pass=share_pass, ip_address=client_ip).first()
         if lockout and lockout.is_locked:
@@ -131,22 +164,41 @@ def recipient_verify_view(request, pass_id):
         is_form_valid = form.is_valid()
         submitted_key = form.cleaned_data['access_key'] if is_form_valid else ''
 
-        max_retries = 6
+        is_global_lock = False
+        global_retry_after = 0
+        is_ip_lock = False
+        ip_retry_after = 0
+
         for attempt in range(max_retries):
             try:
                 with transaction.atomic():
+                    locked_pass = SharePass.objects.select_for_update().get(id=share_pass.id)
+                    now = timezone.now()
+
+                    # Re-check global lockout inside transaction
+                    if locked_pass.is_globally_locked:
+                        retry_after = locked_pass.global_retry_after_seconds
+                        response = render(request, 'sharing/recipient_error.html', {
+                            'pass': locked_pass,
+                            'status': 'locked',
+                            'title': 'Access Temporarily Locked',
+                            'error_message': f'This Share Pass has been temporarily locked across all connections due to excessive verification failures ({locked_pass.global_failed_attempts}/{GLOBAL_MAX_FAILURES}). Please retry in {retry_after} seconds.',
+                            'retry_after': retry_after,
+                        }, status=429)
+                        response['Retry-After'] = str(retry_after)
+                        return response
+
                     lockout_record, _ = SharePassLockout.objects.get_or_create(
-                        share_pass=share_pass,
+                        share_pass=locked_pass,
                         ip_address=client_ip,
                         defaults={'failed_attempts': 0}
                     )
                     lockout_record = SharePassLockout.objects.select_for_update().get(id=lockout_record.id)
 
-                    now = timezone.now()
                     if lockout_record.locked_until and lockout_record.locked_until > now:
                         retry_after = lockout_record.retry_after_seconds
                         response = render(request, 'sharing/recipient_error.html', {
-                            'pass': share_pass,
+                            'pass': locked_pass,
                             'status': 'locked',
                             'title': 'Access Temporarily Locked',
                             'error_message': f'Too many failed key verification attempts ({lockout_record.failed_attempts}/{MAX_FAILED_ATTEMPTS}). Access is locked. Please retry in {retry_after} seconds.',
@@ -155,13 +207,16 @@ def recipient_verify_view(request, pass_id):
                         response['Retry-After'] = str(retry_after)
                         return response
 
-                    if is_form_valid and share_pass.verify_key(submitted_key):
-                        # Valid key! Reset failure counter and unlock
+                    if is_form_valid and locked_pass.verify_key(submitted_key):
+                        # Valid key! Reset per-IP and global failure counters
                         lockout_record.failed_attempts = 0
                         lockout_record.locked_until = None
                         lockout_record.save(update_fields=['failed_attempts', 'locked_until', 'updated_at'])
 
-                        locked_pass = SharePass.objects.select_for_update().get(id=share_pass.id)
+                        locked_pass.global_failed_attempts = 0
+                        locked_pass.global_window_start = None
+                        locked_pass.global_locked_until = None
+
                         if locked_pass.is_revoked:
                             return render(request, 'sharing/recipient_error.html', {
                                 'pass': locked_pass,
@@ -185,13 +240,13 @@ def recipient_verify_view(request, pass_id):
                             }, status=410)
 
                         locked_pass.access_count += 1
-                        locked_pass.save(update_fields=['access_count', 'updated_at'])
+                        locked_pass.save(update_fields=['access_count', 'global_failed_attempts', 'global_window_start', 'global_locked_until', 'updated_at'])
 
                         request.session.pop(fail_key, None)
                         request.session[auth_key] = True
 
                         log_share_event(
-                            share_pass,
+                            locked_pass,
                             ShareAccessLog.EventType.KEY_SUCCESS,
                             request=request,
                             status=ShareAccessLog.Status.SUCCESS,
@@ -200,6 +255,24 @@ def recipient_verify_view(request, pass_id):
                         return redirect('recipient_portal', pass_id=share_pass.id)
 
                     else:
+                        # 1. Update global per-pass counter
+                        window_duration = timedelta(minutes=GLOBAL_WINDOW_MINUTES)
+                        lockout_duration = timedelta(minutes=GLOBAL_LOCKOUT_MINUTES)
+
+                        if not locked_pass.global_window_start or (now - locked_pass.global_window_start) > window_duration:
+                            locked_pass.global_window_start = now
+                            locked_pass.global_failed_attempts = 1
+                        else:
+                            locked_pass.global_failed_attempts += 1
+
+                        if locked_pass.global_failed_attempts >= GLOBAL_MAX_FAILURES:
+                            locked_pass.global_locked_until = now + lockout_duration
+                            is_global_lock = True
+                            global_retry_after = int(lockout_duration.total_seconds())
+
+                        locked_pass.save(update_fields=['global_failed_attempts', 'global_window_start', 'global_locked_until', 'updated_at'])
+
+                        # 2. Update per-IP counter
                         lockout_record.failed_attempts += 1
                         failures = lockout_record.failed_attempts
                         if failures >= MAX_FAILED_ATTEMPTS:
@@ -207,10 +280,11 @@ def recipient_verify_view(request, pass_id):
                             lockout_seconds = min(60 * (2 ** power), 86400)
                             lockout_record.locked_until = now + timedelta(seconds=lockout_seconds)
                             lockout_record.save(update_fields=['failed_attempts', 'locked_until', 'updated_at'])
-                            retry_after = lockout_seconds
+                            is_ip_lock = True
+                            ip_retry_after = lockout_seconds
                         else:
                             lockout_record.save(update_fields=['failed_attempts', 'updated_at'])
-                            retry_after = 0
+                            ip_retry_after = 0
                 break
             except OperationalError:
                 if attempt == max_retries - 1:
@@ -218,23 +292,41 @@ def recipient_verify_view(request, pass_id):
                 time.sleep(0.05 * (attempt + 1))
 
         # Actions after transaction completes
-        if failures >= MAX_FAILED_ATTEMPTS:
+        if is_global_lock:
+            log_share_event(
+                share_pass,
+                ShareAccessLog.EventType.RATE_LOCKED,
+                request=request,
+                status=ShareAccessLog.Status.LOCKED,
+                details=f'Global brute-force lockout triggered ({GLOBAL_MAX_FAILURES} failures) - locked for {global_retry_after}s'
+            )
+            response = render(request, 'sharing/recipient_error.html', {
+                'pass': share_pass,
+                'status': 'locked',
+                'title': 'Access Temporarily Locked',
+                'error_message': f'This Share Pass has been temporarily locked across all connections due to excessive verification failures ({GLOBAL_MAX_FAILURES}). Please retry in {global_retry_after} seconds.',
+                'retry_after': global_retry_after,
+            }, status=429)
+            response['Retry-After'] = str(global_retry_after)
+            return response
+
+        if is_ip_lock:
             check_and_send_failed_passcode_alert(share_pass, request, failures)
             log_share_event(
                 share_pass,
                 ShareAccessLog.EventType.RATE_LOCKED,
                 request=request,
                 status=ShareAccessLog.Status.LOCKED,
-                details=f'Maximum invalid key attempts reached ({failures}) - locked for {retry_after}s'
+                details=f'Maximum invalid key attempts reached ({failures}) - locked for {ip_retry_after}s'
             )
             response = render(request, 'sharing/recipient_error.html', {
                 'pass': share_pass,
                 'status': 'locked',
                 'title': 'Access Temporarily Locked',
-                'error_message': f'Maximum invalid attempts reached ({failures}/{MAX_FAILED_ATTEMPTS}). Access is locked for {retry_after} seconds.',
-                'retry_after': retry_after,
+                'error_message': f'Maximum invalid attempts reached ({failures}/{MAX_FAILED_ATTEMPTS}). Access is locked for {ip_retry_after} seconds.',
+                'retry_after': ip_retry_after,
             }, status=429)
-            response['Retry-After'] = str(retry_after)
+            response['Retry-After'] = str(ip_retry_after)
             return response
         else:
             remaining_attempts = max(0, MAX_FAILED_ATTEMPTS - failures)
@@ -301,7 +393,7 @@ def recipient_portal_view(request, pass_id):
                 'title': 'Access Pass Expired',
                 'error_message': 'This Share Pass has reached its expiration timestamp.',
             }, status=410)
-        elif timezone.now() >= share_pass.expires_at:
+        elif share_pass.expires_at and timezone.now() >= share_pass.expires_at:
             request.session.pop(auth_key, None)
             return render(request, 'sharing/recipient_error.html', {
                 'pass': share_pass,
@@ -360,8 +452,8 @@ def recipient_doc_preview_view(request, pass_id, doc_id):
     if not request.session.get(auth_key):
         return HttpResponseForbidden("Recipient authorization required.")
 
-    is_time_expired = bool(timezone.now() >= share_pass.expires_at)
-    if share_pass.is_revoked or is_time_expired:
+    # Re-check is_revoked and expiry on each call
+    if share_pass.is_revoked or share_pass.is_expired():
         return HttpResponseForbidden("Share Pass is no longer active.")
 
     # IDOR Check: Ensure document is attached to this pass
@@ -413,8 +505,8 @@ def recipient_doc_download_view(request, pass_id, doc_id):
     if not request.session.get(auth_key):
         return HttpResponseForbidden("Recipient authorization required.")
 
-    is_time_expired = bool(timezone.now() >= share_pass.expires_at)
-    if share_pass.is_revoked or is_time_expired:
+    # Re-check is_revoked and expiry on each call
+    if share_pass.is_revoked or share_pass.is_expired():
         return HttpResponseForbidden("Share Pass is no longer active.")
 
     # Strict Permission Check

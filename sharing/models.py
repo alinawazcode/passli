@@ -26,10 +26,25 @@ class SharePass(models.Model):
     key_hash = models.CharField(max_length=255, help_text="PBKDF2 cryptographic hash of the raw 8-character Share Key")
     can_view = models.BooleanField(default=True, help_text="Permits in-browser decrypted viewing of shared documents")
     can_download = models.BooleanField(default=False, help_text="Permits downloading raw decrypted files to recipient machine")
-    expires_at = models.DateTimeField(db_index=True, help_text="Strict expiration timestamp after which access is denied")
+    expires_at = models.DateTimeField(null=True, blank=True, db_index=True, help_text="Strict expiration timestamp after which access is denied")
     is_revoked = models.BooleanField(default=False, db_index=True, help_text="Immediate owner revocation flag")
     access_count = models.PositiveIntegerField(default=0, help_text="Number of successful accesses by recipients")
     max_uses = models.PositiveIntegerField(default=0, help_text="Maximum allowed accesses before pass expires (0 = unlimited during TTL)")
+    global_failed_attempts = models.PositiveIntegerField(
+        default=0,
+        help_text="Total failed key attempts across all IP addresses for rate limiting"
+    )
+    global_window_start = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="Start timestamp of current global failure rate window"
+    )
+    global_locked_until = models.DateTimeField(
+        null=True,
+        blank=True,
+        db_index=True,
+        help_text="Timestamp until which pass is globally locked across all IPs"
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -64,14 +79,13 @@ class SharePass(models.Model):
 
     check_key = verify_key
 
-
     def is_limit_reached(self) -> bool:
         """Checks if single-use or limited use pass has met max uses limit."""
         return bool(self.max_uses > 0 and self.access_count >= self.max_uses)
 
     def is_expired(self) -> bool:
         """Checks if the pass has surpassed its expiration timestamp or max usage."""
-        if timezone.now() >= self.expires_at:
+        if self.expires_at and timezone.now() >= self.expires_at:
             return True
         if self.is_limit_reached():
             return True
@@ -80,6 +94,21 @@ class SharePass(models.Model):
     def is_active(self) -> bool:
         """A pass is active only if it is NOT revoked and NOT expired."""
         return not self.is_revoked and not self.is_expired()
+
+    @property
+    def is_globally_locked(self) -> bool:
+        """Checks if pass is currently locked across all IPs due to global failure limit."""
+        if self.global_locked_until and self.global_locked_until > timezone.now():
+            return True
+        return False
+
+    @property
+    def global_retry_after_seconds(self) -> int:
+        """Returns seconds remaining for global lockout, minimum 1 second."""
+        if not self.global_locked_until:
+            return 0
+        diff = (self.global_locked_until - timezone.now()).total_seconds()
+        return max(1, int(diff + 0.999))
 
     def revoke(self):
         """Immediately revokes access to this Share Pass."""
@@ -98,7 +127,7 @@ class SharePass(models.Model):
     @property
     def time_remaining_seconds(self) -> int:
         """Returns seconds remaining before expiration, or 0 if expired."""
-        if self.is_expired():
+        if self.is_expired() or not self.expires_at:
             return 0
         delta = self.expires_at - timezone.now()
         return max(0, int(delta.total_seconds()))

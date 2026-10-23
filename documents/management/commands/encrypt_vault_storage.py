@@ -1,6 +1,7 @@
 import hashlib
 import logging
 import os
+from django.conf import settings
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 from django.core.management.base import BaseCommand
@@ -11,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 class Command(BaseCommand):
-    help = "Encrypt unencrypted documents in the vault storage with AES-256-GCM."
+    help = "Encrypt unencrypted documents or re-encrypt legacy vault documents with AES-256-GCM and document UUID AAD."
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -30,11 +31,17 @@ class Command(BaseCommand):
             action='store_true',
             help="Proceed even if stored file_hash does not match plaintext hash."
         )
+        parser.add_argument(
+            '--reencrypt-legacy',
+            action='store_true',
+            help="Re-encrypt existing encrypted documents to bind document UUID as associated data (AAD) and update key version."
+        )
 
     def handle(self, *args, **options):
         dry_run = options['dry_run']
         force = options['force']
         batch_size = options['batch_size']
+        reencrypt_legacy = options['reencrypt_legacy']
 
         self.stdout.write(self.style.MIGRATE_HEADING("=== Passli Vault Storage Encryption Migration ==="))
         if dry_run:
@@ -42,20 +49,27 @@ class Command(BaseCommand):
         else:
             self.stdout.write(self.style.SUCCESS("Mode: LIVE EXECUTION (encrypting storage files at rest)\n"))
 
-        unencrypted_qs = Document.objects.filter(is_encrypted=False).order_by('created_at')
-        total_count = unencrypted_qs.count()
+        if reencrypt_legacy:
+            qs = Document.objects.filter(is_encrypted=True).order_by('created_at')
+            mode_desc = "legacy encrypted document(s) to re-encrypt with AAD"
+        else:
+            qs = Document.objects.filter(is_encrypted=False).order_by('created_at')
+            mode_desc = "unencrypted document(s) to encrypt"
 
+        total_count = qs.count()
         if total_count == 0:
-            self.stdout.write(self.style.SUCCESS("All vault documents are already marked as encrypted at rest. Nothing to do."))
+            self.stdout.write(self.style.SUCCESS(f"No {mode_desc}. Nothing to do."))
             return
 
-        self.stdout.write(f"Found {total_count} unencrypted document(s) to process.\n")
+        self.stdout.write(f"Found {total_count} {mode_desc}.\n")
 
         processed = 0
         success_count = 0
         failed_count = 0
 
-        for doc in unencrypted_qs.iterator(chunk_size=batch_size):
+        current_key_version = getattr(settings, 'VAULT_KEY_VERSION', 1)
+
+        for doc in qs.iterator(chunk_size=batch_size):
             processed += 1
             prefix = f"[{processed}/{total_count}] Doc ID {doc.id} ('{doc.title}')"
 
@@ -64,16 +78,24 @@ class Command(BaseCommand):
                 failed_count += 1
                 continue
 
-            # Read file raw bytes
             try:
-                if hasattr(doc.file, 'path') and os.path.exists(doc.file.path):
-                    with open(doc.file.path, 'rb') as f:
-                        raw_bytes = f.read()
+                if reencrypt_legacy:
+                    # Decrypt via legacy/current path
+                    raw_bytes = doc.get_decrypted_content()
                 else:
-                    with default_storage.open(doc.file.name, 'rb') as f:
-                        raw_bytes = f.read()
+                    # Read unencrypted file directly
+                    if hasattr(doc.file, 'path') and os.path.exists(doc.file.path):
+                        with open(doc.file.path, 'rb') as f:
+                            raw_bytes = f.read()
+                    else:
+                        with default_storage.open(doc.file.name, 'rb') as f:
+                            raw_bytes = f.read()
             except (FileNotFoundError, OSError, ValueError) as e:
                 self.stdout.write(self.style.ERROR(f"  {prefix}: Could not open file on storage ({e})."))
+                failed_count += 1
+                continue
+            except Exception as e:
+                self.stdout.write(self.style.ERROR(f"  {prefix}: Decryption failed ({e})."))
                 failed_count += 1
                 continue
 
@@ -96,16 +118,18 @@ class Command(BaseCommand):
                     )
 
             if dry_run:
+                action = "re-encrypt with UUID AAD" if reencrypt_legacy else "encrypt"
                 self.stdout.write(
                     self.style.SUCCESS(
-                        f"  {prefix}: [DRY RUN] Would encrypt {len(raw_bytes)} bytes."
+                        f"  {prefix}: [DRY RUN] Would {action} {len(raw_bytes)} bytes."
                     )
                 )
                 success_count += 1
                 continue
 
             try:
-                encrypted_payload = encrypt_bytes(raw_bytes)
+                aad = str(doc.uuid).encode('utf-8')
+                encrypted_payload = encrypt_bytes(raw_bytes, associated_data=aad)
 
                 if hasattr(doc.file, 'path') and os.path.exists(doc.file.path):
                     temp_path = doc.file.path + '.enc_tmp'
@@ -122,11 +146,13 @@ class Command(BaseCommand):
                 if not doc.file_size:
                     doc.file_size = len(raw_bytes)
                 doc.is_encrypted = True
-                doc.save(update_fields=['is_encrypted', 'file_hash', 'file_size'])
+                doc.key_version = current_key_version
+                doc.save(update_fields=['is_encrypted', 'file_hash', 'file_size', 'key_version'])
 
+                action = "re-encrypted with UUID AAD" if reencrypt_legacy else "encrypted"
                 self.stdout.write(
                     self.style.SUCCESS(
-                        f"  {prefix}: Successfully encrypted ({len(raw_bytes)} -> {len(encrypted_payload)} bytes)."
+                        f"  {prefix}: Successfully {action} ({len(raw_bytes)} -> {len(encrypted_payload)} bytes, key v{current_key_version})."
                     )
                 )
                 success_count += 1

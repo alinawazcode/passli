@@ -85,15 +85,27 @@ class ShareAccessLog(models.Model):
 
 
 def get_client_ip(request) -> str | None:
-    """Extracts client IP address from request, checking forwarded headers."""
+    """
+    Extracts client IP address from request, checking forwarded headers using
+    TRUSTED_PROXY_COUNT to guard against spoofed X-Forwarded-For headers.
+    Takes the entry TRUSTED_PROXY_COUNT hops from the right.
+    If the header has fewer entries than expected, falls back to REMOTE_ADDR.
+    Never trusts the leftmost entry.
+    """
     if not request:
         return None
+
+    remote_addr = request.META.get('REMOTE_ADDR')
     x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+
     if x_forwarded_for:
-        ip = x_forwarded_for.split(',')[0].strip()
-    else:
-        ip = request.META.get('REMOTE_ADDR')
-    return ip
+        trusted_proxies = getattr(settings, 'TRUSTED_PROXY_COUNT', 1)
+        ips = [ip.strip() for ip in x_forwarded_for.split(',') if ip.strip()]
+        if trusted_proxies > 0 and len(ips) >= trusted_proxies:
+            return ips[-trusted_proxies]
+        return remote_addr
+
+    return remote_addr
 
 
 def log_share_event(

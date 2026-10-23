@@ -12,13 +12,16 @@ Validates:
 import io
 import os
 import hashlib
+from datetime import timedelta
 from django.test import TestCase, Client
 from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.management import call_command
 from django.urls import reverse
 from django.utils import timezone
-from datetime import timedelta
+from django.conf import settings
+from django.core.exceptions import ImproperlyConfigured
+from tests.unit import get_test_password
 
 from documents.models import Document
 from documents.services.crypto_service import (
@@ -26,6 +29,7 @@ from documents.services.crypto_service import (
     decrypt_bytes,
     get_vault_master_key,
     generate_vault_master_key,
+    validate_vault_master_key,
     VaultDecryptionError,
 )
 from sharing.models import SharePass
@@ -92,20 +96,69 @@ class CryptoServiceUnitTests(TestCase):
         self.assertEqual(len(raw_key), 32)
 
     def test_deterministic_hkdf_fallback_without_env(self):
-        """When VAULT_MASTER_KEY is unset, HKDF derivation from SECRET_KEY produces a 32-byte key."""
-        key = get_vault_master_key()
-        self.assertEqual(len(key), 32)
-        self.assertIsInstance(key, bytes)
+        """When VAULT_MASTER_KEY is unset in DEBUG mode, HKDF derivation from SECRET_KEY produces a 32-byte key."""
+        with self.settings(DEBUG=True, VAULT_MASTER_KEY=None):
+            key = get_vault_master_key()
+            self.assertEqual(len(key), 32)
+            self.assertIsInstance(key, bytes)
+
+    def test_missing_key_fails_startup_when_debug_false(self):
+        """When DEBUG is False, missing VAULT_MASTER_KEY raises ImproperlyConfigured at startup."""
+        with self.assertRaises(ImproperlyConfigured):
+            validate_vault_master_key(debug=False, key=None)
+
+    def test_invalid_length_key_fails_startup_when_debug_false(self):
+        """When DEBUG is False, a key not exactly 32 bytes (hex or base64) raises ImproperlyConfigured."""
+        # Too short (16 hex chars = 8 bytes)
+        with self.assertRaises(ImproperlyConfigured):
+            validate_vault_master_key(debug=False, key="0123456789abcdef")
+
+        # Invalid random string
+        with self.assertRaises(ImproperlyConfigured):
+            validate_vault_master_key(debug=False, key="not-a-32-byte-hex-or-base64-key")
+
+    def test_roundtrip_with_aad(self):
+        """Plaintext encrypted with associated data (AAD) requires identical AAD to decrypt."""
+        plaintext = b"Sensitive AAD test record."
+        aad = b"doc-uuid-12345-67890"
+
+        ciphertext = encrypt_bytes(plaintext, associated_data=aad)
+        decrypted = decrypt_bytes(ciphertext, associated_data=aad)
+        self.assertEqual(decrypted, plaintext)
+
+    def test_tampered_byte_fails_decryption(self):
+        """Tampering with a single byte in ciphertext must fail authentication and raise VaultDecryptionError."""
+        plaintext = b"Integrity verification payload."
+        aad = b"doc-uuid-aad-999"
+        ciphertext = bytearray(encrypt_bytes(plaintext, associated_data=aad))
+
+        # Mutate payload
+        ciphertext[20] ^= 0x55
+        with self.assertRaises(VaultDecryptionError):
+            decrypt_bytes(bytes(ciphertext), associated_data=aad)
+
+    def test_wrong_aad_fails_decryption(self):
+        """Attempting to decrypt ciphertext with a mismatched AAD raises VaultDecryptionError."""
+        plaintext = b"Document content bound to UUID A."
+        aad_a = b"uuid-document-alpha"
+        aad_b = b"uuid-document-bravo"
+
+        ciphertext = encrypt_bytes(plaintext, associated_data=aad_a)
+
+        # Decrypting with wrong AAD (and allow_legacy=False) must fail
+        with self.assertRaises(VaultDecryptionError):
+            decrypt_bytes(ciphertext, associated_data=aad_b, allow_legacy=False)
 
 
 class DocumentModelVaultEncryptionTests(TestCase):
     """Tests covering Document model encryption lifecycle, metadata updates, and fallback."""
 
     def setUp(self):
+        self.password = get_test_password()
         self.user = User.objects.create_user(
             username="crypto_owner",
             email="crypto@passli.dev",
-            password="SecurePassphrase2026!"
+            password=self.password
         )
         self.raw_content = b"%PDF-1.4 Vault Encrypted Test Document Content"
         self.file = SimpleUploadedFile(
@@ -196,21 +249,82 @@ class DocumentModelVaultEncryptionTests(TestCase):
         with self.assertRaises(VaultDecryptionError):
             self.doc.get_decrypted_content()
 
+    def test_moved_ciphertext_to_another_document_fails_to_decrypt(self):
+        """
+        A ciphertext moved to another document fails to decrypt because AES-GCM
+        binds the document's unique UUID as Associated Data (AAD).
+        """
+        # Create a second document
+        other_content = b"%PDF-1.4 Second Document Original Content"
+        other_file = SimpleUploadedFile("Doc2.pdf", other_content, content_type="application/pdf")
+        doc2 = Document.objects.create(
+            user=self.user,
+            title="Second Document",
+            category="personal",
+            file=other_file
+        )
+
+        # Overwrite doc2's file on disk with doc1's ciphertext
+        with open(self.doc.file.path, 'rb') as f:
+            doc1_ciphertext = f.read()
+
+        with open(doc2.file.path, 'wb') as f:
+            f.write(doc1_ciphertext)
+
+        # Attempting to decrypt doc2 should fail because doc2.uuid does not match doc1.uuid
+        with self.assertRaises(VaultDecryptionError):
+            doc2.get_decrypted_content()
+
+    def test_key_rotation_with_previous_key_works(self):
+        """
+        A document encrypted with an older key version decrypts successfully when
+        VAULT_MASTER_KEY_PREVIOUS is configured.
+        """
+        old_key = generate_vault_master_key()
+        new_key = generate_vault_master_key()
+
+        # Doc was saved under key version 1 with old_key
+        with self.settings(
+            VAULT_KEY_VERSION=1,
+            VAULT_MASTER_KEY=old_key,
+            VAULT_MASTER_KEY_PREVIOUS=None,
+            DEBUG=False
+        ):
+            doc = Document.objects.create(
+                user=self.user,
+                title="Rotation Test Doc",
+                category="other",
+                file=SimpleUploadedFile("rotate.txt", b"Secret payload before rotation.", content_type="text/plain")
+            )
+            self.assertEqual(doc.key_version, 1)
+            self.assertEqual(doc.get_decrypted_content(), b"Secret payload before rotation.")
+
+        # Key rotation: bump version to 2, new key as active, old key as previous
+        with self.settings(
+            VAULT_KEY_VERSION=2,
+            VAULT_MASTER_KEY=new_key,
+            VAULT_MASTER_KEY_PREVIOUS=old_key,
+            DEBUG=False
+        ):
+            # Reading old document uses VAULT_MASTER_KEY_PREVIOUS and succeeds!
+            self.assertEqual(doc.get_decrypted_content(), b"Secret payload before rotation.")
+
 
 class VaultStreamingViewsTests(TestCase):
     """Tests covering decrypted streaming in document views and recipient views."""
 
     def setUp(self):
         self.client = Client()
+        self.password = get_test_password()
         self.owner = User.objects.create_user(
             username="doc_stream_owner",
             email="owner@passli.dev",
-            password="SecurePassphrase2026!"
+            password=self.password
         )
         self.other_user = User.objects.create_user(
             username="doc_other_user",
             email="other@passli.dev",
-            password="SecurePassphrase2026!"
+            password=self.password
         )
 
         self.plaintext = b"%PDF-1.4 High Security Document Payload"
@@ -304,10 +418,11 @@ class EncryptVaultStorageCommandTests(TestCase):
     """Tests covering the encrypt_vault_storage migration management command."""
 
     def setUp(self):
+        self.password = get_test_password()
         self.user = User.objects.create_user(
             username="mig_owner",
             email="mig@passli.dev",
-            password="SecurePassphrase2026!"
+            password=self.password
         )
         self.raw_content = b"Unencrypted legacy record for migration testing."
         raw_file = SimpleUploadedFile("legacy_mig.txt", self.raw_content, content_type="text/plain")
@@ -367,4 +482,24 @@ class EncryptVaultStorageCommandTests(TestCase):
         self.assertNotEqual(disk_bytes, self.raw_content)
 
         # Decryption must recover original content
+        self.assertEqual(self.legacy_doc.get_decrypted_content(), self.raw_content)
+
+    def test_command_reencrypt_legacy_with_aad(self):
+        """--reencrypt-legacy option decrypts legacy ciphertext and re-encrypts with document UUID as AAD."""
+        # Prepare legacy encrypted file (encrypted without AAD)
+        legacy_ciphertext = encrypt_bytes(self.raw_content, associated_data=None)
+        with open(self.legacy_doc.file.path, 'wb') as f:
+            f.write(legacy_ciphertext)
+        self.legacy_doc.is_encrypted = True
+        self.legacy_doc.save(update_fields=['is_encrypted'])
+
+        out = io.StringIO()
+        call_command('encrypt_vault_storage', '--reencrypt-legacy', stdout=out)
+        output = out.getvalue()
+
+        self.assertIn('legacy encrypted document(s) to re-encrypt', output)
+        self.assertIn('Successfully re-encrypted with UUID AAD', output)
+
+        self.legacy_doc.refresh_from_db()
+        self.assertTrue(self.legacy_doc.is_encrypted)
         self.assertEqual(self.legacy_doc.get_decrypted_content(), self.raw_content)

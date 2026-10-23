@@ -13,6 +13,8 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
 from documents.models import Document
 
+from tests.unit import get_test_password
+
 User = get_user_model()
 
 
@@ -21,15 +23,16 @@ class DocumentVaultTests(TestCase):
 
     def setUp(self):
         self.client = Client()
+        self.password = get_test_password()
         self.user1 = User.objects.create_user(
             username="vaultowner1",
             email="owner1@passli.dev",
-            password="SecurePassphrase2026!"
+            password=self.password
         )
         self.user2 = User.objects.create_user(
             username="vaultowner2",
             email="owner2@passli.dev",
-            password="SecurePassphrase2026!"
+            password=self.password
         )
 
         # Create sample document for user1

@@ -17,6 +17,8 @@ from documents.models import Document
 from sharing.models import SharePass
 from sharing.utils import generate_share_key
 
+from tests.unit import get_test_password
+
 User = get_user_model()
 
 
@@ -25,15 +27,16 @@ class RecipientPortalTests(TestCase):
 
     def setUp(self):
         self.client = Client()
+        self.password = get_test_password()
         self.owner = User.objects.create_user(
             username="vaultowner",
             email="owner@passli.dev",
-            password="SecurePassphrase2026!"
+            password=self.password
         )
         self.other_user = User.objects.create_user(
             username="otherowner",
             email="other@passli.dev",
-            password="SecurePassphrase2026!"
+            password=self.password
         )
 
         # Create sample PDF document for owner
@@ -354,5 +357,53 @@ class RecipientPortalTests(TestCase):
         # 4. Verify access_count remains 1 and is not incremented
         single_pass.refresh_from_db()
         self.assertEqual(single_pass.access_count, 1)
+
+    def test_expires_at_none_preview_and_download(self):
+        """
+        Verify that a SharePass with expires_at=None does not raise TypeError
+        in preview or download views, and respects revocation.
+        """
+        no_expiry_pass = SharePass.objects.create(
+            owner=self.owner,
+            title="Indefinite Expiry Pass",
+            expires_at=None,
+            can_view=True,
+            can_download=True
+        )
+        raw_key = "NOEX-PIRY"
+        no_expiry_pass.set_key(raw_key)
+        no_expiry_pass.save()
+        no_expiry_pass.documents.add(self.doc1)
+
+        # Authenticate recipient session
+        client = Client()
+        verify_url = reverse('recipient_verify', kwargs={'pass_id': no_expiry_pass.id})
+        res = client.post(verify_url, {'access_key': raw_key})
+        self.assertEqual(res.status_code, 302)
+
+        # 1. Test preview view does not crash and returns 200
+        preview_url = reverse('recipient_doc_preview', kwargs={'pass_id': no_expiry_pass.id, 'doc_id': self.doc1.id})
+        preview_res = client.get(preview_url)
+        self.assertEqual(preview_res.status_code, 200)
+
+        # 2. Test download view does not crash and returns 200
+        download_url = reverse('recipient_doc_download', kwargs={'pass_id': no_expiry_pass.id, 'doc_id': self.doc1.id})
+        download_res = client.get(download_url)
+        self.assertEqual(download_res.status_code, 200)
+
+        # 3. Test portal view does not crash
+        portal_url = reverse('recipient_portal', kwargs={'pass_id': no_expiry_pass.id})
+        portal_res = client.get(portal_url)
+        self.assertEqual(portal_res.status_code, 200)
+
+        # 4. Revocation re-check immediately denies access on next call
+        no_expiry_pass.is_revoked = True
+        no_expiry_pass.save()
+
+        preview_revoked = client.get(preview_url)
+        self.assertEqual(preview_revoked.status_code, 403)
+
+        download_revoked = client.get(download_url)
+        self.assertEqual(download_revoked.status_code, 403)
 
 

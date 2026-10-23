@@ -17,6 +17,8 @@ from sharing.utils import (
     KEY_CHARSET,
 )
 
+from tests.unit import get_test_password
+
 User = get_user_model()
 
 
@@ -24,7 +26,8 @@ class SharePassModelTests(TestCase):
     """Unit tests for the SharePass domain model and cryptographic hashing."""
 
     def setUp(self):
-        self.user = User.objects.create_user(username='alice', password='Password123!')
+        self.password = get_test_password()
+        self.user = User.objects.create_user(username='alice', password=self.password)
         self.doc1 = Document.objects.create(
             user=self.user,
             title='Blood Panel Lab.pdf',
@@ -166,8 +169,10 @@ class ShareFormsAndViewsTests(TestCase):
 
     def setUp(self):
         self.client = Client()
-        self.alice = User.objects.create_user(username='alice', password='Password123!')
-        self.bob = User.objects.create_user(username='bob', password='Password123!')
+        self.alice_password = get_test_password()
+        self.bob_password = get_test_password()
+        self.alice = User.objects.create_user(username='alice', password=self.alice_password)
+        self.bob = User.objects.create_user(username='bob', password=self.bob_password)
 
         self.alice_doc1 = Document.objects.create(
             user=self.alice,
@@ -196,7 +201,7 @@ class ShareFormsAndViewsTests(TestCase):
 
     def test_share_create_get_renders_user_documents_only(self):
         """GET /share/create/ must only render documents belonging to the logged-in user."""
-        self.client.login(username='alice', password='Password123!')
+        self.client.login(username='alice', password=self.alice_password)
         response = self.client.get(reverse('share_create'))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Alice Passport.pdf')
@@ -205,7 +210,7 @@ class ShareFormsAndViewsTests(TestCase):
 
     def test_share_create_post_success(self):
         """POST /share/create/ with valid documents creates pass and redirects to detail."""
-        self.client.login(username='alice', password='Password123!')
+        self.client.login(username='alice', password=self.alice_password)
         post_data = {
             'title': 'Doctor Appointment Pass',
             'documents': [self.alice_doc1.id, self.alice_doc2.id],
@@ -231,7 +236,7 @@ class ShareFormsAndViewsTests(TestCase):
 
     def test_share_create_post_no_documents_rejected(self):
         """POST /share/create/ without documents fails validation."""
-        self.client.login(username='alice', password='Password123!')
+        self.client.login(username='alice', password=self.alice_password)
         post_data = {
             'title': 'Empty Pass',
             'documents': [],
@@ -243,7 +248,7 @@ class ShareFormsAndViewsTests(TestCase):
 
     def test_share_create_idor_foreign_document_rejected(self):
         """Attempting to bundle another user's document into a Share Pass must be rejected."""
-        self.client.login(username='alice', password='Password123!')
+        self.client.login(username='alice', password=self.alice_password)
         post_data = {
             'title': 'Exploit Pass',
             'documents': [self.bob_doc.id],
@@ -265,7 +270,7 @@ class ShareFormsAndViewsTests(TestCase):
         share_pass.set_key('1234-5678')
         share_pass.save()
 
-        self.client.login(username='alice', password='Password123!')
+        self.client.login(username='alice', password=self.alice_password)
         response = self.client.get(reverse('share_detail', kwargs={'pass_id': share_pass.id}))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Cardiology Review')
@@ -279,7 +284,7 @@ class ShareFormsAndViewsTests(TestCase):
             title='Secret Alice Pass',
             expires_at=timezone.now() + timedelta(hours=1)
         )
-        self.client.login(username='bob', password='Password123!')
+        self.client.login(username='bob', password=self.bob_password)
         response = self.client.get(reverse('share_detail', kwargs={'pass_id': share_pass.id}))
         self.assertEqual(response.status_code, 404)
 
@@ -296,7 +301,7 @@ class ShareFormsAndViewsTests(TestCase):
             expires_at=timezone.now() - timedelta(minutes=10)
         )
 
-        self.client.login(username='alice', password='Password123!')
+        self.client.login(username='alice', password=self.alice_password)
         response = self.client.get(reverse('share_list'))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Pass 1')
@@ -312,7 +317,7 @@ class ShareFormsAndViewsTests(TestCase):
             title='Revoke Test',
             expires_at=timezone.now() + timedelta(hours=1)
         )
-        self.client.login(username='alice', password='Password123!')
+        self.client.login(username='alice', password=self.alice_password)
         response = self.client.post(reverse('share_revoke', kwargs={'pass_id': share_pass.id}))
         self.assertEqual(response.status_code, 302)
 
@@ -327,7 +332,7 @@ class ShareFormsAndViewsTests(TestCase):
             title='Protected Alice Pass',
             expires_at=timezone.now() + timedelta(hours=1)
         )
-        self.client.login(username='bob', password='Password123!')
+        self.client.login(username='bob', password=self.bob_password)
         response = self.client.post(reverse('share_revoke', kwargs={'pass_id': share_pass.id}))
         self.assertEqual(response.status_code, 404)
         share_pass.refresh_from_db()
@@ -340,7 +345,7 @@ class ShareFormsAndViewsTests(TestCase):
             title='QR Download Test',
             expires_at=timezone.now() + timedelta(hours=1)
         )
-        self.client.login(username='alice', password='Password123!')
+        self.client.login(username='alice', password=self.alice_password)
         response = self.client.get(reverse('share_qr_download', kwargs={'pass_id': share_pass.id}))
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response['Content-Type'], 'image/png')

@@ -3,6 +3,7 @@ Django settings for Passli project.
 Configured for local development, testing, and production deployment on Railway / Render.
 """
 
+import sys
 import os
 from pathlib import Path
 from dotenv import load_dotenv
@@ -11,7 +12,6 @@ import dj_database_url
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Load environment variables from .env file
 from django.core.exceptions import ImproperlyConfigured
 
 # Load environment variables from .env file
@@ -22,14 +22,20 @@ DEFAULT_INSECURE_SECRET = 'django-insecure-_h5!zlxj*wxis-s=)i3a1^jqlwol@8@^%-m(b
 SECRET_KEY = os.environ.get('SECRET_KEY', DEFAULT_INSECURE_SECRET)
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get('DEBUG', 'True').lower() in ('true', '1', 't')
+DEBUG = os.environ.get('DEBUG', 'False').lower() in ('true', '1', 't')
 
 if not DEBUG and (SECRET_KEY == DEFAULT_INSECURE_SECRET or SECRET_KEY.startswith('django-insecure-')):
-    raise ImproperlyConfigured("SECRET_KEY must be configured with a secure value in production when DEBUG=False.")
+    if not any(cmd in sys.argv for cmd in ('test', 'pytest', 'makemigrations', 'migrate')):
+        raise ImproperlyConfigured("SECRET_KEY must be configured with a secure value in production when DEBUG=False.")
 
 # Vault Master Encryption Key (AES-256-GCM 32-byte key, hex or base64)
 VAULT_MASTER_KEY = os.environ.get('VAULT_MASTER_KEY')
+VAULT_MASTER_KEY_PREVIOUS = os.environ.get('VAULT_MASTER_KEY_PREVIOUS')
+VAULT_KEY_VERSION = int(os.environ.get('VAULT_KEY_VERSION', '1'))
 
+# In automated test runs without explicit key, provide a deterministic 32-byte test key
+if any(cmd in sys.argv for cmd in ('test', 'pytest')) and not VAULT_MASTER_KEY:
+    VAULT_MASTER_KEY = '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef'
 
 # Allowed Hosts configuration
 allowed_hosts_env = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1')
@@ -53,6 +59,7 @@ if railway_domain:
 
 # Reverse proxy SSL header (Railway / Render / Nginx termination)
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+TRUSTED_PROXY_COUNT = int(os.environ.get('TRUSTED_PROXY_COUNT', '1'))
 
 # Defense-in-Depth HTTP Security Headers & Cookie Policies
 SECURE_BROWSER_XSS_FILTER = True
@@ -64,7 +71,10 @@ SESSION_COOKIE_SAMESITE = 'Lax'
 CSRF_COOKIE_SAMESITE = 'Lax'
 SESSION_COOKIE_SECURE = not DEBUG
 CSRF_COOKIE_SECURE = not DEBUG
-SECURE_SSL_REDIRECT = os.environ.get('SECURE_SSL_REDIRECT', 'True' if not DEBUG else 'False').lower() in ('true', '1', 't')
+if any(cmd in sys.argv for cmd in ('test', 'pytest')):
+    SECURE_SSL_REDIRECT = False
+else:
+    SECURE_SSL_REDIRECT = os.environ.get('SECURE_SSL_REDIRECT', 'True' if not DEBUG else 'False').lower() in ('true', '1', 't')
 
 if not DEBUG:
     SECURE_HSTS_SECONDS = int(os.environ.get('SECURE_HSTS_SECONDS', 31536000))

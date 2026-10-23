@@ -8,6 +8,8 @@ from django.test import TestCase, Client
 from django.contrib.auth import get_user_model
 from django.urls import reverse
 
+from tests.unit import get_test_password
+
 User = get_user_model()
 
 
@@ -18,7 +20,7 @@ class AccountsAndDashboardTests(TestCase):
         self.client = Client()
         self.username = "vaultmaster"
         self.email = "vaultmaster@passli.dev"
-        self.password = "ComplexPassphrase2026!"
+        self.password = get_test_password()
         self.user = User.objects.create_user(
             username=self.username,
             email=self.email,
@@ -39,11 +41,12 @@ class AccountsAndDashboardTests(TestCase):
 
     def test_register_user_success(self):
         """Verify new user registration creates user and redirects to dashboard."""
+        reg_pw = get_test_password()
         new_data = {
             'username': 'newuser2026',
             'email': 'newuser2026@passli.dev',
-            'password1': 'AlphaBravoSecure2026!',
-            'password2': 'AlphaBravoSecure2026!',
+            'password1': reg_pw,
+            'password2': reg_pw,
         }
         response = self.client.post(reverse('register'), data=new_data, follow=True)
         self.assertEqual(response.status_code, 200)
@@ -54,11 +57,12 @@ class AccountsAndDashboardTests(TestCase):
 
     def test_register_user_duplicate_username(self):
         """Verify registration rejects existing username."""
+        dup_pw = get_test_password()
         dup_data = {
             'username': self.username,
             'email': 'different@passli.dev',
-            'password1': 'AnotherPassword2026!',
-            'password2': 'AnotherPassword2026!',
+            'password1': dup_pw,
+            'password2': dup_pw,
         }
         response = self.client.post(reverse('register'), data=dup_data)
         self.assertEqual(response.status_code, 200)
@@ -66,11 +70,12 @@ class AccountsAndDashboardTests(TestCase):
 
     def test_register_user_duplicate_email(self):
         """Verify registration rejects existing email."""
+        dup_pw = get_test_password()
         dup_data = {
             'username': 'uniqueuser',
             'email': self.email,
-            'password1': 'AnotherPassword2026!',
-            'password2': 'AnotherPassword2026!',
+            'password1': dup_pw,
+            'password2': dup_pw,
         }
         response = self.client.post(reverse('register'), data=dup_data)
         self.assertEqual(response.status_code, 200)
@@ -81,8 +86,8 @@ class AccountsAndDashboardTests(TestCase):
         mismatch_data = {
             'username': 'mismatchuser',
             'email': 'mismatch@passli.dev',
-            'password1': 'PasswordOne2026!',
-            'password2': 'PasswordTwo2026!',
+            'password1': get_test_password(),
+            'password2': get_test_password(),
         }
         response = self.client.post(reverse('register'), data=mismatch_data)
         self.assertEqual(response.status_code, 200)
@@ -113,7 +118,7 @@ class AccountsAndDashboardTests(TestCase):
         """Verify invalid credentials render error alert."""
         login_data = {
             'username': self.username,
-            'password': 'WrongPassword!',
+            'password': get_test_password(),
         }
         response = self.client.post(reverse('login'), data=login_data)
         self.assertEqual(response.status_code, 200)
@@ -184,8 +189,8 @@ class AccountsAndDashboardTests(TestCase):
         from django.contrib.auth import authenticate
 
         test_user = "test_ops_admin"
-        initial_pw = "InitialEnvSecretPassword2026!"
-        changed_pw = "UserModifiedAdminPassword2026!"
+        initial_pw = get_test_password()
+        changed_pw = get_test_password()
 
         os.environ['DJANGO_SUPERUSER_USERNAME'] = test_user
         os.environ['DJANGO_SUPERUSER_PASSWORD'] = initial_pw
