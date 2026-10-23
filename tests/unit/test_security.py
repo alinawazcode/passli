@@ -133,7 +133,7 @@ class SecurityAndVulnerabilityTests(TestCase):
         """Verify files exceeding 25 MB are rejected by DocumentUploadForm."""
         mock_file = SimpleUploadedFile("oversized_scan.pdf", b"%PDF-1.4 header", content_type="application/pdf")
         mock_file.size = 26 * 1024 * 1024  # 26 MB simulated size
-        
+
         form_data = {
             'title': 'Oversized Scan Report',
             'category': 'medical',

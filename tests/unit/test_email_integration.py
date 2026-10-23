@@ -30,11 +30,9 @@ from accounts.services.user_agent import parse_user_agent
 from documents.models import Document
 from sharing.models import SharePass
 from sharing.utils import generate_share_key
+from tests.unit import get_test_password
 
 User = get_user_model()
-
-
-from tests.unit import get_test_password
 
 
 @override_settings(

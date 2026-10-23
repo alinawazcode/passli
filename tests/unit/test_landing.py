@@ -36,7 +36,7 @@ class LandingPageTests(TestCase):
         """Verify navigation bar for unauthenticated anonymous visitors."""
         response = self.client.get(reverse('landing'))
         content = response.content.decode('utf-8')
-        
+
         self.assertIn('Passli', content)
         self.assertIn('Sign In', content)
         self.assertIn('Launch Vault', content)

@@ -132,14 +132,14 @@ class RecipientPortalTests(TestCase):
     def test_recipient_verify_success_with_various_key_formats(self):
         """Verify successful key entry (with hyphens, lowercase, and spaces) unlocks session."""
         url = reverse('recipient_verify', kwargs={'pass_id': self.active_pass.id})
-        
+
         # Test key formatted with dash: "XXXX-XXXX"
         formatted_key = f"{self.raw_key[:4]}-{self.raw_key[4:]}".lower()
         response = self.client.post(url, {'access_key': formatted_key})
-        
+
         # Should redirect to portal
         self.assertRedirects(response, reverse('recipient_portal', kwargs={'pass_id': self.active_pass.id}))
-        
+
         # Verify access count incremented
         self.active_pass.refresh_from_db()
         self.assertEqual(self.active_pass.access_count, 1)
@@ -162,7 +162,7 @@ class RecipientPortalTests(TestCase):
     def test_recipient_brute_force_lockout_after_5_attempts(self):
         """Verify 5 consecutive failed key submissions locks out the browser."""
         url = reverse('recipient_verify', kwargs={'pass_id': self.active_pass.id})
-        
+
         for i in range(4):
             res = self.client.post(url, {'access_key': f'FAIL{i:04d}'})
             self.assertEqual(res.status_code, 200)
