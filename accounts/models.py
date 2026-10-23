@@ -250,6 +250,16 @@ class SecurityAlertLog(models.Model):
         If within cooldown period, suppresses email dispatch and accumulates attempts_count.
         If cooldown period has elapsed, updates last_alert_at and returns should_send_email=True.
         """
+        # Validate ip_address for GenericIPAddressField (PostgreSQL inet compatibility)
+        clean_ip = None
+        if ip_address:
+            import ipaddress
+            try:
+                ipaddress.ip_address(ip_address)
+                clean_ip = ip_address
+            except (ValueError, TypeError):
+                clean_ip = None
+
         now = timezone.now()
         record, created = cls.objects.get_or_create(
             alert_type=alert_type,
@@ -258,7 +268,7 @@ class SecurityAlertLog(models.Model):
                 'recipient_email': recipient_email,
                 'attempts_count': 1,
                 'last_alert_at': now,
-                'last_ip': ip_address,
+                'last_ip': clean_ip,
             }
         )
 
@@ -266,7 +276,7 @@ class SecurityAlertLog(models.Model):
             return True, 1
 
         delta = (now - record.last_alert_at).total_seconds()
-        record.last_ip = ip_address
+        record.last_ip = clean_ip
         record.recipient_email = recipient_email
 
         if delta >= cooldown_seconds:

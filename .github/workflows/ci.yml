@@ -71,6 +71,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements-dev.txt
+          mkdir -p staticfiles media vault_storage
 
       - name: Generate CI Ephemeral Cryptographic Keys
         run: |
