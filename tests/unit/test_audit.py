@@ -256,7 +256,7 @@ class AuditTrailTests(TestCase):
     def test_audit_list_view_authenticated_renders(self):
         """Verify logged-in owner can load the audit dashboard with metric counters."""
         self.client.login(username="auditowner", password=self.password)
-        
+
         # Create a few audit logs
         log_share_event(self.active_pass, ShareAccessLog.EventType.KEY_SUCCESS, status=ShareAccessLog.Status.SUCCESS)
         log_share_event(self.active_pass, ShareAccessLog.EventType.DOWNLOAD_DOC, document=self.doc1, status=ShareAccessLog.Status.SUCCESS)

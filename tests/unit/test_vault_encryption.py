@@ -45,7 +45,7 @@ class CryptoServiceUnitTests(TestCase):
         """Plaintext encrypted with encrypt_bytes must decrypt identically with decrypt_bytes."""
         plaintext = b"Highly confidential healthcare diagnosis payload 2026."
         ciphertext = encrypt_bytes(plaintext)
-        
+
         # Ciphertext format: 12-byte nonce + (len(plaintext)) ciphertext + 16-byte tag
         self.assertEqual(len(ciphertext), len(plaintext) + 28)
         self.assertNotEqual(ciphertext, plaintext)
@@ -76,7 +76,7 @@ class CryptoServiceUnitTests(TestCase):
         """Tampering with any byte of the ciphertext or tag must raise VaultDecryptionError."""
         plaintext = b"Critical financial statement."
         ciphertext = bytearray(encrypt_bytes(plaintext))
-        
+
         # Flip a bit in the ciphertext payload
         ciphertext[15] ^= 0x01
 
@@ -220,7 +220,7 @@ class DocumentModelVaultEncryptionTests(TestCase):
         """A document marked is_encrypted=False must be read as raw bytes without errors."""
         legacy_content = b"Unencrypted legacy file content from 2025."
         legacy_file = SimpleUploadedFile("legacy.txt", legacy_content, content_type="text/plain")
-        
+
         # Bypass save encryption by creating with raw save
         legacy_doc = Document(
             user=self.user,
@@ -426,7 +426,7 @@ class EncryptVaultStorageCommandTests(TestCase):
         )
         self.raw_content = b"Unencrypted legacy record for migration testing."
         raw_file = SimpleUploadedFile("legacy_mig.txt", self.raw_content, content_type="text/plain")
-        
+
         self.legacy_doc = Document(
             user=self.user,
             title="Legacy Unencrypted Record",

@@ -97,7 +97,7 @@ class DocumentVaultTests(TestCase):
         )
 
         self.client.force_login(self.user1)
-        
+
         # Medical filter: should show doc1 only
         res_med = self.client.get(reverse('documents_list') + '?category=medical')
         self.assertContains(res_med, 'Blood Panel Report 2026')
@@ -123,7 +123,7 @@ class DocumentVaultTests(TestCase):
         self.client.force_login(self.user2)
         upload_content = b"%PDF-1.4 test degree diploma verification"
         uploaded_file = SimpleUploadedFile("Degree_Diploma.pdf", upload_content, content_type="application/pdf")
-        
+
         post_data = {
             'title': 'Bachelor of Science Diploma',
             'category': 'education',
@@ -250,7 +250,7 @@ class DocumentVaultTests(TestCase):
         response = self.client.get(reverse('dashboard'))
         self.assertEqual(response.status_code, 200)
         content = response.content.decode('utf-8')
-        
+
         # User 1 has 1 document
         self.assertIn('Blood Panel Report 2026', content)
         self.assertIn('VAULT RECORDS', content)

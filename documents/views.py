@@ -2,6 +2,7 @@ import logging
 import os
 import io
 from django.shortcuts import render, redirect, get_object_or_404
+from django.urls import reverse
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import FileResponse, Http404
@@ -20,7 +21,7 @@ def documents_list_view(request):
     Supports domain category filtering, text search, and real-time vault stats.
     """
     documents = Document.objects.filter(user=request.user)
-    
+
     # Category filter
     selected_category = request.GET.get('category', '').strip().lower()
     if selected_category and selected_category != 'all':
@@ -115,7 +116,7 @@ def document_preview_view(request, pk):
     Decrypts AES-256-GCM vault payload in-memory and renders inline (PDF/PNG/JPG).
     """
     document = get_object_or_404(Document, pk=pk, user=request.user)
-    
+
     if not document.file:
         raise Http404("Document file could not be found.")
 
@@ -147,7 +148,7 @@ def document_download_view(request, pk):
     Decrypts AES-256-GCM vault payload in-memory and streams attachment.
     """
     document = get_object_or_404(Document, pk=pk, user=request.user)
-    
+
     if not document.file:
         raise Http404("Document file could not be found.")
 

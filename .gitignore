@@ -38,8 +38,9 @@ htmlcov/
 screenshots/
 test-reports/
 recordings/
-selenium_testing/reports/
-selenium_testing/screenshots/
+# Selenium Test Suites & Artifacts
+selenium_presentation_suite/
+selenium_testing/
 
 # AI Agent configuration & local customizations
 .agents/

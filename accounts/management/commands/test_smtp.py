@@ -34,7 +34,7 @@ class Command(BaseCommand):
             recipient = "test@example.com"
 
         # 1. Environment Variable Inspection
-        self.stdout.write(f"\n1. Configuration Settings:")
+        self.stdout.write("\n1. Configuration Settings:")
         self.stdout.write(f"   • EMAIL_HOST:       {host}")
         self.stdout.write(f"   • EMAIL_PORT:       {port}")
         self.stdout.write(f"   • EMAIL_USE_SSL:    {use_ssl}")
@@ -77,7 +77,7 @@ class Command(BaseCommand):
             return
 
         # 3. SMTP Handshake & Authentication
-        self.stdout.write(f"\n3. Authenticating with SMTP Server...")
+        self.stdout.write("\n3. Authenticating with SMTP Server...")
         try:
             if use_ssl:
                 server = smtplib.SMTP_SSL(host, port, timeout=12)

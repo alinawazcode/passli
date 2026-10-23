@@ -144,7 +144,7 @@ class EndToEndSystemUserJourneyTests(TestCase):
         # STEP 4: Adversary Brute-Force & Rate-Limiting
         # ==========================================
         recipient_verify_url = reverse('recipient_verify', kwargs={'pass_id': share_pass.id})
-        
+
         # Adversary attempts 5 wrong keys
         for attempt in range(5):
             bad_res = self.adversary_client.post(recipient_verify_url, {'access_key': f'WRONG{attempt:03d}'})

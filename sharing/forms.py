@@ -59,7 +59,7 @@ class SharePassCreateForm(forms.ModelForm):
         docs = self.cleaned_data.get('documents')
         if not docs:
             raise forms.ValidationError("You must select at least one document.")
-        
+
         # Verify strict ownership for every document (anti-tampering IDOR defense)
         if self.user and self.user.is_authenticated:
             for doc in docs:
