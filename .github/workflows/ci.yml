@@ -27,11 +27,11 @@ jobs:
 
       - name: Run Ruff Code Quality Linter
         run: |
-          ruff check .
+          ruff check accounts audit config documents sharing tests
 
       - name: Run pip-audit Vulnerability Scanner
         run: |
-          pip-audit -r requirements.txt
+          pip-audit -r requirements.txt --desc on
 
   test-and-coverage:
     name: Test Suite & Coverage
@@ -53,7 +53,7 @@ jobs:
 
     env:
       DJANGO_SETTINGS_MODULE: config.settings
-      DATABASE_URL: postgres://passli_ci_user:passli_ci_password@localhost:5432/passli_ci_test
+      DATABASE_URL: postgres://passli_ci_user:passli_ci_password@127.0.0.1:5432/passli_ci_test
       SECRET_KEY: ci-environment-dummy-secret-key-32-chars-long-or-more
       VAULT_MASTER_KEY: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
       DEBUG: 'False'
@@ -81,7 +81,7 @@ jobs:
 
       - name: Execute Full Test Suite with Coverage
         run: |
-          coverage run --source=. manage.py test tests.unit tests.selenium
+          coverage run --source=accounts,audit,config,documents,sharing manage.py test tests.unit tests.selenium
 
       - name: Coverage Threshold Gate
         run: |

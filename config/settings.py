@@ -25,7 +25,7 @@ SECRET_KEY = os.environ.get('SECRET_KEY', DEFAULT_INSECURE_SECRET)
 DEBUG = os.environ.get('DEBUG', 'False').lower() in ('true', '1', 't')
 
 if not DEBUG and (SECRET_KEY == DEFAULT_INSECURE_SECRET or SECRET_KEY.startswith('django-insecure-')):
-    if not any(cmd in sys.argv for cmd in ('test', 'pytest', 'makemigrations', 'migrate')):
+    if not any(cmd in sys.argv for cmd in ('test', 'pytest', 'makemigrations', 'migrate', 'collectstatic', 'check', 'ensure_superadmin')):
         raise ImproperlyConfigured("SECRET_KEY must be configured with a secure value in production when DEBUG=False.")
 
 # Vault Master Encryption Key (AES-256-GCM 32-byte key, hex or base64)

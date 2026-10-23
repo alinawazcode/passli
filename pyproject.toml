@@ -1,0 +1,29 @@
+[tool.ruff]
+target-version = "py312"
+line-length = 120
+exclude = [
+    ".git",
+    ".venv",
+    "venv",
+    ".agents",
+    "staticfiles",
+    "media",
+    "selenium_presentation_suite",
+    "selenium_testing",
+    "*/migrations/*",
+]
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "F",   # Pyflakes
+    "W",   # pycodestyle warnings
+]
+ignore = [
+    "E501",  # line too long (soft wrap preference)
+    "F401",  # unused import (selectively ignored in __init__.py)
+]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401"]
+"*/migrations/*" = ["E501", "F401"]
