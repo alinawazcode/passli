@@ -91,6 +91,7 @@ def get_client_ip(request) -> str | None:
     Takes the entry TRUSTED_PROXY_COUNT hops from the right.
     If the header has fewer entries than expected, falls back to REMOTE_ADDR.
     Never trusts the leftmost entry.
+    Validates that the returned value is a syntactically valid IPv4 or IPv6 address.
     """
     if not request:
         return None
@@ -98,14 +99,32 @@ def get_client_ip(request) -> str | None:
     remote_addr = request.META.get('REMOTE_ADDR')
     x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
 
+    selected_ip = None
     if x_forwarded_for:
         trusted_proxies = getattr(settings, 'TRUSTED_PROXY_COUNT', 1)
         ips = [ip.strip() for ip in x_forwarded_for.split(',') if ip.strip()]
         if trusted_proxies > 0 and len(ips) >= trusted_proxies:
-            return ips[-trusted_proxies]
-        return remote_addr
+            selected_ip = ips[-trusted_proxies]
+        else:
+            selected_ip = remote_addr
+    else:
+        selected_ip = remote_addr
 
-    return remote_addr
+    if selected_ip:
+        import ipaddress
+        try:
+            ipaddress.ip_address(selected_ip)
+            return selected_ip
+        except (ValueError, TypeError):
+            if remote_addr and remote_addr != selected_ip:
+                try:
+                    ipaddress.ip_address(remote_addr)
+                    return remote_addr
+                except (ValueError, TypeError):
+                    pass
+            return None
+
+    return None
 
 
 def log_share_event(

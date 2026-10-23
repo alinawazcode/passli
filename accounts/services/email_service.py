@@ -336,14 +336,9 @@ def check_and_send_failed_passcode_alert(share_pass, request, failures_count: in
     if not owner or not owner.email:
         return False
 
-    # Inferred IP
-    x_forwarded = request.META.get('HTTP_X_FORWARDED_FOR') if request else None
-    if x_forwarded:
-        client_ip = x_forwarded.split(',')[0].strip()
-    elif request:
-        client_ip = request.META.get('REMOTE_ADDR', None)
-    else:
-        client_ip = None
+    # Inferred IP using TRUSTED_PROXY_COUNT and validation
+    from audit.models import get_client_ip
+    client_ip = get_client_ip(request)
 
     from accounts.models import SecurityAlertLog
     identifier = f"pass:{share_pass.id}"
