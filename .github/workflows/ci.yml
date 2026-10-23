@@ -41,8 +41,7 @@ jobs:
         image: postgres:16
         env:
           POSTGRES_DB: passli_ci_test
-          POSTGRES_USER: passli_ci_user
-          POSTGRES_PASSWORD: passli_ci_password
+          POSTGRES_HOST_AUTH_METHOD: trust
         ports:
           - 5432:5432
         options: >-
@@ -53,9 +52,7 @@ jobs:
 
     env:
       DJANGO_SETTINGS_MODULE: config.settings
-      DATABASE_URL: postgres://passli_ci_user:passli_ci_password@127.0.0.1:5432/passli_ci_test
-      SECRET_KEY: ci-environment-dummy-secret-key-32-chars-long-or-more
-      VAULT_MASTER_KEY: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+      DATABASE_URL: postgres://postgres@127.0.0.1:5432/passli_ci_test
       DEBUG: 'False'
       TRUSTED_PROXY_COUNT: '1'
       SECURE_SSL_REDIRECT: 'False'
@@ -74,6 +71,11 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements-dev.txt
+
+      - name: Generate CI Ephemeral Cryptographic Keys
+        run: |
+          echo "SECRET_KEY=$(python -c 'import secrets; print(secrets.token_urlsafe(50))')" >> $GITHUB_ENV
+          echo "VAULT_MASTER_KEY=$(python -c 'import secrets; print(secrets.token_hex(32))')" >> $GITHUB_ENV
 
       - name: Django Deploy Check
         run: |

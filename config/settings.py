@@ -34,7 +34,7 @@ VAULT_KEY_VERSION = int(os.environ.get('VAULT_KEY_VERSION', '1'))
 
 # In automated test runs without explicit key, provide a deterministic 32-byte test key
 if any(cmd in sys.argv for cmd in ('test', 'pytest')) and not VAULT_MASTER_KEY:
-    VAULT_MASTER_KEY = '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef'
+    VAULT_MASTER_KEY = '0' * 64
 
 # Allowed Hosts configuration
 allowed_hosts_env = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1')
