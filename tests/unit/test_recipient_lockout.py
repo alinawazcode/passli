@@ -378,3 +378,55 @@ class ConcurrentLockoutTests(TransactionTestCase):
         self.assertEqual(lockout.failed_attempts, num_threads)
         self.assertTrue(lockout.is_locked)
         self.assertIsNotNone(lockout.locked_until)
+
+    def test_twenty_concurrent_attempts_two_threads(self):
+        """
+        Two worker threads execute 20 concurrent wrong-key attempts.
+        Asserts failed_attempts is never below 20 and all attempts after threshold end in 429.
+        """
+        responses = []
+        errors = []
+        attempts_per_thread = 10
+
+        def worker():
+            from django.db import connection
+            try:
+                for _ in range(attempts_per_thread):
+                    client = Client()
+                    res = client.post(
+                        self.verify_url,
+                        {"access_key": "WRONG-KEY"},
+                        REMOTE_ADDR=self.client_ip,
+                    )
+                    responses.append(res.status_code)
+            except Exception as e:
+                errors.append(e)
+            finally:
+                connection.close()
+
+        from django.db import connection
+        connection.close()
+
+        threads = [threading.Thread(target=worker) for _ in range(2)]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
+
+        self.assertEqual(len(errors), 0, f"Concurrent execution produced errors: {errors}")
+        self.assertEqual(len(responses), 20)
+
+        lockout = SharePassLockout.objects.get(share_pass=self.share_pass, ip_address=self.client_ip)
+        self.assertGreaterEqual(lockout.failed_attempts, 20)
+        self.assertTrue(lockout.is_locked)
+        self.assertIsNotNone(lockout.locked_until)
+
+        # There must be 429 responses after reaching threshold
+        status_429_count = responses.count(429)
+        self.assertGreater(status_429_count, 0)
+
+        # Subsequent request must receive 429 with Retry-After header
+        final_res = Client().post(self.verify_url, {"access_key": "WRONG-KEY"}, REMOTE_ADDR=self.client_ip)
+        self.assertEqual(final_res.status_code, 429)
+        self.assertIn("Retry-After", final_res.headers)
+

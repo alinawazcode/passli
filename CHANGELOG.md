@@ -8,7 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ## [1.3.0] - 2026-10-23
 
 ### Added
-- **Cryptographic Envelope Hardening & AAD Binding**:
+- **Vault encryption hardening & AAD Binding**:
   - Bound document UUID as Associated Data (AAD) in AES-256-GCM AEAD encryption, preventing ciphertext swap and cross-tenant tampering.
   - Zero-downtime key rotation architecture supporting `VAULT_KEY_VERSION` and `VAULT_MASTER_KEY_PREVIOUS`.
   - Added `--reencrypt-legacy` and `--force` flags to `encrypt_vault_storage` management command.

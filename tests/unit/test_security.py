@@ -362,3 +362,33 @@ class SecurityAndVulnerabilityTests(TestCase):
         self.assertTrue(share_pass.verify_key(raw_key))
         self.assertFalse(share_pass.verify_key("WRONG-KEY"))
 
+    # -------------------------------------------------------------
+    # 15. Public /media/ Route Disabled in Non-DEBUG
+    # -------------------------------------------------------------
+    def test_public_media_route_returns_404_in_production(self):
+        """
+        Verify that uploaded vault files cannot be accessed via direct /media/ URLs in production.
+        In non-DEBUG mode, GET /media/vault_files/anything returns 404,
+        and real stored file paths return 404 for both anonymous and authenticated users.
+        """
+        anon_client = Client()
+        auth_client = self.client_alice
+
+        with self.settings(DEBUG=False):
+            # Direct nonexistent media path
+            res_anon = anon_client.get('/media/vault_files/anything.pdf')
+            self.assertEqual(res_anon.status_code, 404)
+
+            res_auth = auth_client.get('/media/vault_files/anything.pdf')
+            self.assertEqual(res_auth.status_code, 404)
+
+            # Real stored file path
+            if self.alice_doc.file:
+                real_media_url = f"/media/{self.alice_doc.file.name}"
+                res_anon_real = anon_client.get(real_media_url)
+                self.assertEqual(res_anon_real.status_code, 404)
+
+                res_auth_real = auth_client.get(real_media_url)
+                self.assertEqual(res_auth_real.status_code, 404)
+
+

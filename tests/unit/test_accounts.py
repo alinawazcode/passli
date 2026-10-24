@@ -224,3 +224,117 @@ class AccountsAndDashboardTests(TestCase):
             os.environ.pop('DJANGO_SUPERUSER_EMAIL', None)
             User.objects.filter(username=test_user).delete()
 
+
+class LoginLockoutTests(TestCase):
+    """
+    Test suite for database-backed per-username and per-IP exponential brute-force lockout.
+    """
+
+    def setUp(self):
+        self.username = "bruteforcetarget"
+        self.email = "target@passli.dev"
+        self.password = get_test_password()
+        self.user = User.objects.create_user(
+            username=self.username,
+            email=self.email,
+            password=self.password
+        )
+        self.login_url = reverse('login')
+        self.client_ip = "198.51.100.77"
+
+    def test_five_failed_logins_trigger_lockout_429(self):
+        """Five consecutive failed logins trigger lockout and return HTTP 429 with Retry-After."""
+        from accounts.models import LoginLockout
+
+        client = Client()
+        for i in range(4):
+            res = client.post(
+                self.login_url,
+                {'username': self.username, 'password': 'WrongPassword123!'},
+                REMOTE_ADDR=self.client_ip
+            )
+            self.assertEqual(res.status_code, 200)
+
+        # 5th attempt reaches threshold and triggers lockout
+        res5 = client.post(
+            self.login_url,
+            {'username': self.username, 'password': 'WrongPassword123!'},
+            REMOTE_ADDR=self.client_ip
+        )
+        self.assertEqual(res5.status_code, 429)
+        self.assertIn("Retry-After", res5.headers)
+        self.assertEqual(res5.headers["Retry-After"], "60")
+
+        lockout = LoginLockout.objects.get(username=self.username, ip_address=self.client_ip)
+        self.assertEqual(lockout.failed_attempts, 5)
+        self.assertTrue(lockout.is_locked)
+
+        # 6th attempt while locked out is rejected immediately with 429
+        res6 = client.post(
+            self.login_url,
+            {'username': self.username, 'password': self.password},
+            REMOTE_ADDR=self.client_ip
+        )
+        self.assertEqual(res6.status_code, 429)
+
+    def test_successful_login_resets_lockout_counters(self):
+        """A valid login resets failed_attempts to 0 and clears locked_until."""
+        from accounts.models import LoginLockout
+
+        client = Client()
+        # 2 failed attempts
+        for _ in range(2):
+            client.post(
+                self.login_url,
+                {'username': self.username, 'password': 'WrongPassword!'},
+                REMOTE_ADDR=self.client_ip
+            )
+
+        lockout = LoginLockout.objects.get(username=self.username, ip_address=self.client_ip)
+        self.assertEqual(lockout.failed_attempts, 2)
+
+        # Successful login
+        res_ok = client.post(
+            self.login_url,
+            {'username': self.username, 'password': self.password},
+            REMOTE_ADDR=self.client_ip
+        )
+        self.assertEqual(res_ok.status_code, 302)
+
+        lockout.refresh_from_db()
+        self.assertEqual(lockout.failed_attempts, 0)
+        self.assertFalse(lockout.is_locked)
+
+    def test_lockout_isolated_by_username_and_ip(self):
+        """Lockout on one username/IP does not block a different user or IP."""
+        client = Client()
+        # Trigger lockout for user1 on client_ip
+        for _ in range(5):
+            client.post(
+                self.login_url,
+                {'username': self.username, 'password': 'WrongPassword!'},
+                REMOTE_ADDR=self.client_ip
+            )
+
+        # Different IP for same user is not locked out
+        res_diff_ip = client.post(
+            self.login_url,
+            {'username': self.username, 'password': 'WrongPassword!'},
+            REMOTE_ADDR="203.0.113.88"
+        )
+        self.assertEqual(res_diff_ip.status_code, 200)
+
+        # Different user on same IP is not locked out
+        User.objects.create_user(
+            username="otheruser_sec",
+            email="other@passli.dev",
+            password=self.password
+        )
+        res_diff_user = client.post(
+            self.login_url,
+            {'username': "otheruser_sec", 'password': self.password},
+            REMOTE_ADDR=self.client_ip
+        )
+        self.assertEqual(res_diff_user.status_code, 302)
+
+
