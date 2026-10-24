@@ -16,7 +16,7 @@ Describe the problem this feature solves (e.g. "When sharing multiple identity c
 Detailed description of how you envision this feature working from a user and developer perspective.
 
 ### 🔒 Security Considerations
-Explain how this feature maintains Passli's zero-knowledge posture and respects cryptographic boundaries.
+Explain how this feature maintains Passli's cryptographic boundaries and security model.
 
 ### 📌 Additional Context
 Add any mockups, screenshots, or architectural notes.
