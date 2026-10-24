@@ -412,9 +412,11 @@ If your deployment experiences an infinite redirect loop (HTTP 301/302 repeatedl
 ## ⚠️ Limitations
 
 Passli is designed with full architectural transparency:
-- **Not Zero-Knowledge**: Passli uses server-side AES-256-GCM encryption with a server-held master key. The server can decrypt and read documents. There is no client-side encryption.
-- **Server-Enforced Access**: Pass expiry and revocation are enforced by server-side business logic and authentication controls rather than hardware-based cryptographic destruction.
+- **Server Holds the Master Key**: Document encryption and decryption occur server-side. Anyone with access to the host environment variables (`VAULT_MASTER_KEY`) can decrypt stored vault records.
+- **Not Zero-Knowledge**: Passli uses server-side AES-256-GCM authenticated encryption. There is no client-side encryption.
+- **Server-Enforced Access**: Pass expiry and revocation are enforced by application business logic and authentication controls rather than hardware-based cryptographic self-destruction.
 - **No Independent Security Audit**: Passli is an independent open-source project and has not undergone third-party cryptographic audits or SOC 2 certification.
+- **Free-Hosting Constraints**: When deployed on free tiers like PythonAnywhere Beginner, storage is limited (512 MB total for code, db, and files), outbound traffic is restricted to whitelisted destinations (Gmail SMTP), and web applications require periodic manual confirmation in the dashboard.
 
 ---
 
