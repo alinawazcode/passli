@@ -110,12 +110,17 @@ class CryptoServiceUnitTests(TestCase):
     def test_missing_key_raises_with_debug_false_and_port_set(self):
         """Even if PORT=8000 is set in environment, missing key raises ImproperlyConfigured when DEBUG is False."""
         from unittest import mock
-        with mock.patch.dict(os.environ, {"PORT": "8000"}, clear=False):
-            with self.settings(DEBUG=False, VAULT_MASTER_KEY=None):
-                with self.assertRaises(ImproperlyConfigured):
-                    validate_vault_master_key(debug=False, key=None)
-                with self.assertRaises(ImproperlyConfigured):
-                    get_vault_master_key()
+        old_key = os.environ.pop('VAULT_MASTER_KEY', None)
+        try:
+            with mock.patch.dict(os.environ, {"PORT": "8000"}, clear=False):
+                with self.settings(DEBUG=False, VAULT_MASTER_KEY=None):
+                    with self.assertRaises(ImproperlyConfigured):
+                        validate_vault_master_key(debug=False, key=None)
+                    with self.assertRaises(ImproperlyConfigured):
+                        get_vault_master_key()
+        finally:
+            if old_key is not None:
+                os.environ['VAULT_MASTER_KEY'] = old_key
 
     def test_invalid_length_key_fails_startup_when_debug_false(self):
         """When DEBUG is False, a key not exactly 32 bytes (hex or base64) raises ImproperlyConfigured."""
