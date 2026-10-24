@@ -8,16 +8,14 @@ admin.site.site_title = "Passli Admin Portal"
 admin.site.index_title = "System Management & Storage Console"
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
-    path('', include('accounts.urls')),
-    path('admin-dashboard/', include('accounts.admin_urls')),
-    path('documents/', include('documents.urls')),
-    path('share/', include('sharing.urls')),
-    path('p/', include('sharing.recipient_urls')),
-    path('audit/', include('audit.urls')),
+    path("admin/", admin.site.urls),
+    path("", include("accounts.urls")),
+    path("admin-dashboard/", include("accounts.admin_urls")),
+    path("documents/", include("documents.urls")),
+    path("share/", include("sharing.urls")),
+    path("p/", include("sharing.recipient_urls")),
+    path("audit/", include("audit.urls")),
 ]
 
 if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
-

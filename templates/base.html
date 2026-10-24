@@ -100,10 +100,14 @@
                 <!-- Trailing Actions -->
                 <div class="nav-actions">
                     {% if user.is_authenticated %}
-                        <div class="nav-user-pill" title="Signed in as {{ user.username }}">
-                            <span class="user-nav-avatar font-mono-data">{{ user.username|make_list|first|upper }}</span>
+                        <a href="{% url 'account_settings' %}" class="nav-user-pill" title="Account Settings ({{ user.username }})" data-testid="nav-user-settings">
+                            {% if user.profile.avatar_path %}
+                                <img src="{% url 'avatar_serve_self' %}" alt="{{ user.username }}" class="user-nav-avatar-img">
+                            {% else %}
+                                <span class="user-nav-avatar font-mono-data">{{ user.username|make_list|first|upper }}</span>
+                            {% endif %}
                             <span class="user-nav-name">{{ user.username }}</span>
-                        </div>
+                        </a>
 
                         <div class="nav-divider"></div>
 
@@ -134,13 +138,17 @@
             <!-- Mobile Drawer Navigation -->
             <div class="mobile-nav-drawer" id="mobileNavDrawer" aria-hidden="true">
                 {% if user.is_authenticated %}
-                    <div class="mobile-user-profile">
-                        <span class="user-nav-avatar font-mono-data">{{ user.username|make_list|first|upper }}</span>
+                    <a href="{% url 'account_settings' %}" class="mobile-user-profile" style="text-decoration: none;">
+                        {% if user.profile.avatar_path %}
+                            <img src="{% url 'avatar_serve_self' %}" alt="{{ user.username }}" class="user-nav-avatar-img" style="width: 32px; height: 32px;">
+                        {% else %}
+                            <span class="user-nav-avatar font-mono-data" style="width: 32px; height: 32px; font-size: 0.85rem;">{{ user.username|make_list|first|upper }}</span>
+                        {% endif %}
                         <div>
                             <div style="font-weight: 700; color: var(--text-primary); font-size: 0.9rem;">{{ user.username }}</div>
-                            <div style="font-size: 0.75rem; color: var(--text-muted);">{{ user.email }}</div>
+                            <div style="font-size: 0.75rem; color: var(--text-muted);">{% if user.email %}{{ user.email }}{% else %}No email on file{% endif %}</div>
                         </div>
-                    </div>
+                    </a>
 
                     <ul class="mobile-nav-links">
                         <li>
@@ -165,6 +173,12 @@
                             <a href="{% url 'audit:audit_list' %}" class="mobile-nav-link">
                                 <span class="material-symbols-outlined">receipt_long</span>
                                 <span>Security Audit Trail</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{% url 'account_settings' %}" class="mobile-nav-link">
+                                <span class="material-symbols-outlined">manage_accounts</span>
+                                <span>Account Settings</span>
                             </a>
                         </li>
                         {% if user.is_staff %}

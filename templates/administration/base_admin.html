@@ -27,6 +27,9 @@
             </div>
 
             <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+                <a href="{% url 'account_settings' %}" class="btn btn-secondary btn-sm" data-testid="to-account-settings">
+                    <span class="material-symbols-outlined" style="font-size: 16px;">manage_accounts</span> Account Settings
+                </a>
                 <a href="{% url 'admin:index' %}" class="btn btn-secondary btn-sm" target="_blank" data-testid="to-django-admin">
                     <span class="material-symbols-outlined" style="font-size: 16px;">settings</span> Django Backend Admin
                 </a>

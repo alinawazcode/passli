@@ -52,7 +52,7 @@ if any(cmd in sys.argv for cmd in ("test", "pytest")) and not VAULT_MASTER_KEY:
     VAULT_MASTER_KEY = "0" * 64
 
 # Allowed Hosts configuration (comma-separated env var)
-allowed_hosts_env = os.environ.get("ALLOWED_HOSTS", "localhost,127.0.0.1")
+allowed_hosts_env = os.environ.get("ALLOWED_HOSTS", "localhost,127.0.0.1,testserver")
 ALLOWED_HOSTS = [h.strip() for h in allowed_hosts_env.split(",") if h.strip()]
 
 # CSRF Trusted Origins (required for POST forms on HTTPS domains, comma-separated env var)
