@@ -24,11 +24,14 @@ from .forms import (
     ProfileForm,
     AvatarUploadForm,
     UsernameChangeForm,
+    EmailChangeRequestForm,
+    EmailChangeConfirmForm,
 )
 from .models import (
     UserProfile,
     EmailVerificationCode,
     PasswordResetToken,
+    PendingEmailChange,
     LoginLockout,
     AccountEvent,
 )
@@ -42,6 +45,13 @@ from .emails import (
 )
 from .services.avatar_service import process_and_save_avatar, remove_avatar
 from .services.username_service import change_username, get_username_cooldown_status
+from .services.email_change_service import (
+    request_email_change,
+    confirm_email_change,
+    cancel_email_change,
+)
+from .services.otp_service import issue_otp
+from .services.email_service import send_templated_email
 from documents.models import Document
 from sharing.models import SharePass
 from audit.models import get_client_ip
@@ -523,17 +533,122 @@ def account_settings_view(request):
                     messages.error(request, "Could not update username. Please review the form.")
                 return redirect(reverse("account_settings") + "#username")
 
+        elif action == "request_email_change":
+            email_request_form = EmailChangeRequestForm(user, request.POST)
+            if email_request_form.is_valid():
+                try:
+                    success, msg = request_email_change(
+                        user=user,
+                        new_email=email_request_form.cleaned_data["new_email"],
+                        current_password=email_request_form.cleaned_data["current_password"],
+                        request=request,
+                    )
+                    if success:
+                        messages.success(request, msg)
+                    else:
+                        messages.error(request, msg)
+                    return redirect(reverse("account_settings") + "#email")
+                except ValidationError as exc:
+                    messages.error(request, exc.message if hasattr(exc, "message") else str(exc))
+                    return redirect(reverse("account_settings") + "#email")
+            else:
+                err_msg = email_request_form.errors.get("new_email") or email_request_form.errors.get(
+                    "current_password"
+                )
+                if err_msg:
+                    messages.error(request, err_msg[0])
+                else:
+                    messages.error(request, "Could not process email change. Please review the form.")
+                return redirect(reverse("account_settings") + "#email")
+
+        elif action == "confirm_email_change":
+            email_confirm_form = EmailChangeConfirmForm(request.POST)
+            if email_confirm_form.is_valid():
+                success, msg = confirm_email_change(
+                    user=user,
+                    submitted_code=email_confirm_form.cleaned_data["code"],
+                    request=request,
+                )
+                if success:
+                    messages.success(request, msg)
+                else:
+                    messages.error(request, msg)
+                return redirect(reverse("account_settings") + "#email")
+            else:
+                err_msg = email_confirm_form.errors.get("code")
+                if err_msg:
+                    messages.error(request, err_msg[0])
+                else:
+                    messages.error(request, "Please enter a valid 6-digit verification code.")
+                return redirect(reverse("account_settings") + "#email")
+
+        elif action == "resend_email_change_otp":
+            pending = PendingEmailChange.objects.filter(user=user).first()
+            if not pending:
+                messages.error(request, "No pending email change request found.")
+                return redirect(reverse("account_settings") + "#email")
+
+            try:
+                _, raw_otp = issue_otp(
+                    user=user,
+                    email=pending.new_email,
+                    purpose=EmailVerificationCode.PURPOSE_CHANGE_EMAIL,
+                )
+                send_templated_email(
+                    subject="Passli Vault: Verify Your New Email Address",
+                    template_base="email_change_otp",
+                    context={
+                        "username": user.username,
+                        "new_email": pending.new_email,
+                        "otp_code": raw_otp,
+                        "ttl_minutes": 15,
+                    },
+                    recipient_list=[pending.new_email],
+                    fail_silently=True,
+                )
+                messages.success(request, f"A fresh verification code has been dispatched to {pending.new_email}.")
+            except ValidationError as exc:
+                messages.warning(request, exc.message if hasattr(exc, "message") else str(exc))
+            return redirect(reverse("account_settings") + "#email")
+
+        elif action == "cancel_email_change":
+            cancel_email_change(user, request=request)
+            messages.info(request, "Pending email change request cancelled.")
+            return redirect(reverse("account_settings") + "#email")
+
     # GET request form instances and context
     profile_form = ProfileForm(initial={"display_name": profile.display_name})
     avatar_form = AvatarUploadForm()
     username_form = UsernameChangeForm(user=user)
+    email_request_form = EmailChangeRequestForm(user=user)
+    email_confirm_form = EmailChangeConfirmForm()
+    pending_email_change = PendingEmailChange.objects.filter(user=user).first()
     recent_activity = AccountEvent.objects.filter(user=user).order_by("-created_at")[:10]
+
+    resend_cooldown_seconds = 0
+    if pending_email_change:
+        latest_code = (
+            EmailVerificationCode.objects.filter(
+                user=user,
+                purpose=EmailVerificationCode.PURPOSE_CHANGE_EMAIL,
+            )
+            .order_by("-created_at")
+            .first()
+        )
+        if latest_code:
+            elapsed = (timezone.now() - latest_code.created_at).total_seconds()
+            if elapsed < 60:
+                resend_cooldown_seconds = max(0, int(60 - elapsed))
 
     context = {
         "profile": profile,
         "profile_form": profile_form,
         "avatar_form": avatar_form,
         "username_form": username_form,
+        "email_request_form": email_request_form,
+        "email_confirm_form": email_confirm_form,
+        "pending_email_change": pending_email_change,
+        "resend_cooldown_seconds": resend_cooldown_seconds,
         "cooldown_status": cooldown_status,
         "recent_activity": recent_activity,
         "has_avatar": bool(profile.avatar_path),

@@ -3,9 +3,13 @@
  * Progressive enhancement for avatar preview, tab routing, and responsive interactions.
  */
 
+document.documentElement.classList.add('js-ready');
+
 document.addEventListener('DOMContentLoaded', () => {
     initNavigationTabs();
     initAvatarUploader();
+    initOtpInputs();
+    initResendTimer();
 });
 
 function initNavigationTabs() {
@@ -110,3 +114,100 @@ function initAvatarUploader() {
         reader.readAsDataURL(file);
     });
 }
+
+function initOtpInputs() {
+    const container = document.getElementById('email-otp-boxes-container');
+    const fallbackInput = document.getElementById('email-otp-combined-input');
+    if (!container || !fallbackInput) return;
+
+    const boxes = Array.from(container.querySelectorAll('.settings-otp-box'));
+    if (boxes.length !== 6) return;
+
+    function syncToFallback() {
+        const fullVal = boxes.map(b => b.value.trim()).join('');
+        fallbackInput.value = fullVal;
+        boxes.forEach(b => {
+            b.classList.toggle('filled', b.value.length > 0);
+        });
+    }
+
+    boxes.forEach((box, index) => {
+        box.addEventListener('input', () => {
+            const val = box.value.replace(/[^0-9]/g, '');
+            box.value = val ? val[0] : '';
+            syncToFallback();
+            if (box.value && index < 5) {
+                boxes[index + 1].focus();
+                boxes[index + 1].select();
+            }
+        });
+
+        box.addEventListener('keydown', (e) => {
+            if (e.key === 'Backspace') {
+                if (!box.value && index > 0) {
+                    boxes[index - 1].focus();
+                    boxes[index - 1].value = '';
+                    syncToFallback();
+                    e.preventDefault();
+                } else if (box.value) {
+                    box.value = '';
+                    syncToFallback();
+                    e.preventDefault();
+                }
+            } else if (e.key === 'ArrowLeft' && index > 0) {
+                boxes[index - 1].focus();
+                boxes[index - 1].select();
+                e.preventDefault();
+            } else if (e.key === 'ArrowRight' && index < 5) {
+                boxes[index + 1].focus();
+                boxes[index + 1].select();
+                e.preventDefault();
+            }
+        });
+
+        box.addEventListener('paste', (e) => {
+            e.preventDefault();
+            const pasteData = (e.clipboardData || window.clipboardData).getData('text');
+            const cleanDigits = pasteData.replace(/[^0-9]/g, '').slice(0, 6);
+            if (!cleanDigits) return;
+
+            cleanDigits.split('').forEach((digit, i) => {
+                if (boxes[i]) {
+                    boxes[i].value = digit;
+                }
+            });
+            syncToFallback();
+            const focusIndex = Math.min(cleanDigits.length, 5);
+            boxes[focusIndex].focus();
+        });
+
+        box.addEventListener('focus', () => {
+            box.select();
+        });
+    });
+}
+
+function initResendTimer() {
+    const resendBtn = document.getElementById('btn-resend-email-otp');
+    const timerText = document.getElementById('resend-email-timer-text');
+    if (!resendBtn || !timerText) return;
+
+    let cooldownSeconds = parseInt(resendBtn.getAttribute('data-cooldown') || '0', 10);
+    if (isNaN(cooldownSeconds) || cooldownSeconds <= 0) return;
+
+    resendBtn.disabled = true;
+    timerText.textContent = `Resend in ${cooldownSeconds}s`;
+
+    const timer = setInterval(() => {
+        cooldownSeconds -= 1;
+        if (cooldownSeconds <= 0) {
+            clearInterval(timer);
+            resendBtn.disabled = false;
+            timerText.textContent = 'Resend Code';
+            resendBtn.removeAttribute('data-cooldown');
+        } else {
+            timerText.textContent = `Resend in ${cooldownSeconds}s`;
+        }
+    }, 1000);
+}
+

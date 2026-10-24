@@ -212,3 +212,15 @@ def confirm_email_change(
     )
 
     return True, "Your email address has been successfully updated and verified."
+
+
+def cancel_email_change(user, request=None) -> None:
+    """
+    Cancels any active pending email change request and invalidates unused change_email codes.
+    """
+    PendingEmailChange.objects.filter(user=user).delete()
+    EmailVerificationCode.objects.filter(
+        user=user,
+        purpose=EmailVerificationCode.PURPOSE_CHANGE_EMAIL,
+        is_used=False,
+    ).update(is_used=True)
