@@ -158,10 +158,11 @@ class AccountsAndDashboardTests(TestCase):
         self.assertIn('Your Vault is Empty', content)
 
     def test_ensure_superadmin_fails_safe_when_no_env_vars(self):
-        """Verify ensure_superadmin does not create users or hardcode default credentials when env vars are missing."""
+        """Verify ensure_superadmin raises CommandError and creates no users when env vars are missing."""
         import os
         from io import StringIO
         from django.core.management import call_command
+        from django.core.management.base import CommandError
 
         # Ensure env vars are unset
         old_u = os.environ.pop('DJANGO_SUPERUSER_USERNAME', None)
@@ -170,9 +171,10 @@ class AccountsAndDashboardTests(TestCase):
         try:
             out = StringIO()
             initial_count = User.objects.filter(is_superuser=True).count()
-            call_command('ensure_superadmin', stdout=out)
+            with self.assertRaises(CommandError) as ctx:
+                call_command('ensure_superadmin', stdout=out)
+            self.assertIn('DJANGO_SUPERUSER_USERNAME and DJANGO_SUPERUSER_PASSWORD environment variables are required', str(ctx.exception))
             self.assertEqual(User.objects.filter(is_superuser=True).count(), initial_count)
-            self.assertIn('Skipping primary superadmin creation', out.getvalue())
         finally:
             if old_u:
                 os.environ['DJANGO_SUPERUSER_USERNAME'] = old_u

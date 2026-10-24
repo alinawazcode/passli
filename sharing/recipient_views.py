@@ -40,7 +40,7 @@ def recipient_verify_view(request, pass_id):
     Evaluates pass lifecycle (revoked, expired, max uses, rate-limiting lockout).
     Prompts recipient for 8-character Share Key and verifies against PBKDF2 hash.
     """
-    max_retries = 6
+    max_retries = 25
     share_pass = None
     for attempt in range(max_retries):
         try:
@@ -52,7 +52,7 @@ def recipient_verify_view(request, pass_id):
         except OperationalError:
             if attempt == max_retries - 1:
                 raise
-            time.sleep(0.05 * (attempt + 1))
+            time.sleep(0.05 + 0.02 * (attempt % 5))
 
     auth_key = _session_auth_key(pass_id)
     fail_key = _session_failures_key(pass_id)
@@ -204,6 +204,9 @@ def recipient_verify_view(request, pass_id):
                     lockout_record = SharePassLockout.objects.select_for_update().get(id=lockout_record.id)
 
                     if lockout_record.locked_until and lockout_record.locked_until > now:
+                        lockout_record.failed_attempts = F('failed_attempts') + 1
+                        lockout_record.save(update_fields=['failed_attempts', 'updated_at'])
+                        lockout_record.refresh_from_db(fields=['failed_attempts'])
                         retry_after = lockout_record.retry_after_seconds
                         response = render(request, 'sharing/recipient_error.html', {
                             'pass': locked_pass,
@@ -296,23 +299,38 @@ def recipient_verify_view(request, pass_id):
                             lockout_record.save(update_fields=['locked_until', 'updated_at'])
                             is_ip_lock = True
                             ip_retry_after = lockout_seconds
+                        if is_global_lock:
+                            log_share_event(
+                                locked_pass,
+                                ShareAccessLog.EventType.RATE_LOCKED,
+                                request=request,
+                                status=ShareAccessLog.Status.LOCKED,
+                                details=f'Global brute-force lockout triggered ({GLOBAL_MAX_FAILURES} failures) - locked for {global_retry_after}s'
+                            )
+                        elif is_ip_lock:
+                            log_share_event(
+                                locked_pass,
+                                ShareAccessLog.EventType.RATE_LOCKED,
+                                request=request,
+                                status=ShareAccessLog.Status.LOCKED,
+                                details=f'Maximum invalid key attempts reached ({failures}) - locked for {ip_retry_after}s'
+                            )
                         else:
-                            ip_retry_after = 0
+                            log_share_event(
+                                locked_pass,
+                                ShareAccessLog.EventType.KEY_FAILED,
+                                request=request,
+                                status=ShareAccessLog.Status.DENIED,
+                                details=f'Invalid key submitted ({failures}/{MAX_FAILED_ATTEMPTS})'
+                            )
                 break
             except OperationalError:
                 if attempt == max_retries - 1:
                     raise
-                time.sleep(0.05 * (attempt + 1))
+                time.sleep(0.05 + 0.02 * (attempt % 5))
 
         # Actions after transaction completes
         if is_global_lock:
-            log_share_event(
-                share_pass,
-                ShareAccessLog.EventType.RATE_LOCKED,
-                request=request,
-                status=ShareAccessLog.Status.LOCKED,
-                details=f'Global brute-force lockout triggered ({GLOBAL_MAX_FAILURES} failures) - locked for {global_retry_after}s'
-            )
             response = render(request, 'sharing/recipient_error.html', {
                 'pass': share_pass,
                 'status': 'locked',
@@ -325,13 +343,6 @@ def recipient_verify_view(request, pass_id):
 
         if is_ip_lock:
             check_and_send_failed_passcode_alert(share_pass, request, failures)
-            log_share_event(
-                share_pass,
-                ShareAccessLog.EventType.RATE_LOCKED,
-                request=request,
-                status=ShareAccessLog.Status.LOCKED,
-                details=f'Maximum invalid key attempts reached ({failures}) - locked for {ip_retry_after}s'
-            )
             response = render(request, 'sharing/recipient_error.html', {
                 'pass': share_pass,
                 'status': 'locked',
@@ -344,13 +355,6 @@ def recipient_verify_view(request, pass_id):
         else:
             remaining_attempts = max(0, MAX_FAILED_ATTEMPTS - failures)
             check_and_send_failed_passcode_alert(share_pass, request, failures)
-            log_share_event(
-                share_pass,
-                ShareAccessLog.EventType.KEY_FAILED,
-                request=request,
-                status=ShareAccessLog.Status.DENIED,
-                details=f'Invalid key submitted ({failures}/{MAX_FAILED_ATTEMPTS})'
-            )
             if is_form_valid:
                 form.add_error(
                     'access_key',

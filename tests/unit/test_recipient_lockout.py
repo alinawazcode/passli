@@ -379,9 +379,41 @@ class ConcurrentLockoutTests(TransactionTestCase):
         self.assertTrue(lockout.is_locked)
         self.assertIsNotNone(lockout.locked_until)
 
+
+class RecipientLockoutConcurrentTests(TransactionTestCase):
+    """Multi-threaded concurrent lockout testing using TransactionTestCase to avoid SQLite savepoint deadlock."""
+
+    def setUp(self):
+        self.password = get_test_password()
+        self.owner = User.objects.create_user(
+            username="lockoutconcurrentowner",
+            email="concurrentowner@passli.dev",
+            password=self.password,
+            is_active=True,
+        )
+        self.doc = Document.objects.create(
+            user=self.owner,
+            title="Concurrent Doc.pdf",
+            file="documents/concurrent_dummy.pdf",
+            file_size=1024,
+            file_type="application/pdf",
+        )
+        self.share_pass = SharePass.objects.create(
+            owner=self.owner,
+            title="Concurrent Pass",
+            expires_at=timezone.now() + timedelta(hours=2),
+            can_view=True,
+        )
+        self.share_pass.documents.add(self.doc)
+        self.share_pass.set_key("8K7P-42XM")
+        self.share_pass.save()
+
+        self.verify_url = reverse("recipient_verify", kwargs={"pass_id": self.share_pass.id})
+        self.client_ip = "198.51.100.99"
+
     def test_twenty_concurrent_attempts_two_threads(self):
         """
-        Two worker threads execute 20 concurrent wrong-key attempts.
+        Two worker threads execute 20 concurrent wrong-key attempts using TransactionTestCase.
         Asserts failed_attempts is never below 20 and all attempts after threshold end in 429.
         """
         responses = []
@@ -403,9 +435,6 @@ class ConcurrentLockoutTests(TransactionTestCase):
                 errors.append(e)
             finally:
                 connection.close()
-
-        from django.db import connection
-        connection.close()
 
         threads = [threading.Thread(target=worker) for _ in range(2)]
         for t in threads:
@@ -429,4 +458,5 @@ class ConcurrentLockoutTests(TransactionTestCase):
         final_res = Client().post(self.verify_url, {"access_key": "WRONG-KEY"}, REMOTE_ADDR=self.client_ip)
         self.assertEqual(final_res.status_code, 429)
         self.assertIn("Retry-After", final_res.headers)
+
 

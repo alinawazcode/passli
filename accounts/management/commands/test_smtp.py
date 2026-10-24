@@ -46,13 +46,13 @@ class Command(BaseCommand):
 
         if not user:
             self.stdout.write(self.style.ERROR(
-                "\n❌ ERROR: SMTP_USER / EMAIL_HOST_USER is not configured in Railway variables!"
+                "\n❌ ERROR: SMTP_USER / EMAIL_HOST_USER is not configured in environment variables (.env)!"
             ))
             return
 
         if not password:
             self.stdout.write(self.style.ERROR(
-                "\n❌ ERROR: SMTP_PASS / EMAIL_HOST_PASSWORD is not configured in Railway variables!"
+                "\n❌ ERROR: SMTP_PASS / EMAIL_HOST_PASSWORD is not configured in environment variables (.env)!"
             ))
             return
 
@@ -72,7 +72,7 @@ class Command(BaseCommand):
         except Exception as sock_err:
             self.stdout.write(self.style.ERROR(
                 f"   ❌ Network connection to {host}:{port} failed: {sock_err}\n"
-                f"   TIP: If port {port} is blocked by Railway, switch SMTP_PORT to 587 and SMTP_SECURE to false in Railway Variables."
+                f"   TIP: If port {port} is blocked by your hosting firewall, switch SMTP_PORT to 587 with STARTTLS in environment variables."
             ))
             return
 
@@ -97,7 +97,7 @@ class Command(BaseCommand):
                 "   1. Ensure 2-Step Verification is enabled on your Google Account.\n"
                 "   2. Go to https://myaccount.google.com/apppasswords\n"
                 "   3. Create an App Password for 'Passli'.\n"
-                "   4. Copy the 16 characters (remove spaces) and paste into SMTP_PASS in Railway."
+                "   4. Copy the 16 characters (remove spaces) and paste into SMTP_PASS in your environment."
             ))
             return
         except Exception as smtp_err:
@@ -108,10 +108,10 @@ class Command(BaseCommand):
         self.stdout.write(f"\n4. Sending Test Email to {recipient}...")
         try:
             send_mail(
-                subject="Passli Railway SMTP Test Email",
+                subject="Passli SMTP Test Email",
                 message=(
                     f"Hello,\n\n"
-                    f"This is a test email sent from your Passli instance on Railway.\n\n"
+                    f"This is a test email sent from your Passli instance.\n\n"
                     f"Configuration Details:\n"
                     f"- Host: {host}:{port}\n"
                     f"- Mode: {'SSL' if use_ssl else ('STARTTLS' if use_tls else 'Plain')}\n"

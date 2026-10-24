@@ -4,7 +4,6 @@
 [![Django](https://img.shields.io/badge/django-5.1%2B-green.svg)](https://www.djangoproject.com/)
 [![Encryption: AES-256-GCM](https://img.shields.io/badge/encryption-AES--256--GCM%20AEAD-blueviolet.svg)](SECURITY.md)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Deployment: Railway](https://img.shields.io/badge/deploy-Railway-purple.svg)](https://railway.com/)
 
 **Passli** is an enterprise-grade, privacy-first personal records vault and ephemeral cryptographic sharing platform. It enables individuals and organizations to securely store sensitive documents with **AES-256-GCM authenticated encryption at rest** and share them with verified recipients via time-gated **Share Passes**—without exposing master cloud credentials, unencrypted email attachments, or cascading folder permissions.
 
@@ -156,9 +155,6 @@ passli/
 │   └── reports/                        # Standalone dark-mode HTML reports & screenshots
 ├── .github/workflows/ci.yml   # Multi-stage CI pipeline (Ruff, pip-audit, Docker, Postgres, Coverage)
 ├── Dockerfile                 # Multi-stage production container image with unprivileged appuser
-├── Procfile                   # Production Gunicorn deployment process
-├── railway.json               # Railway PaaS deployment configuration
-├── nixpacks.toml              # Nixpacks build pipeline configuration
 └── manage.py                  # Django CLI management entry point
 ```
 
@@ -231,9 +227,9 @@ DJANGO_SECONDARY_SUPERUSER_PASSWORD=
 DJANGO_SECONDARY_SUPERUSER_EMAIL=
 
 # Host & Origin Whitelisting
-ALLOWED_HOSTS=localhost,127.0.0.1,your-app.up.railway.app
-CSRF_TRUSTED_ORIGINS=https://your-app.up.railway.app
-APP_URL=https://your-app.up.railway.app
+ALLOWED_HOSTS=localhost,127.0.0.1,yourusername.pythonanywhere.com
+CSRF_TRUSTED_ORIGINS=https://yourusername.pythonanywhere.com
+APP_URL=https://yourusername.pythonanywhere.com
 
 # Gmail SMTP Email Integration
 SMTP_HOST=smtp.gmail.com
@@ -375,41 +371,52 @@ docker run -p 8000:8000 -e SECRET_KEY="local-docker-secret-key-12345" -e DEBUG=T
 
 ---
 
-## 💾 Media Storage & Persistence (PaaS / Railway)
+## 💾 Media Storage & Persistence
 
-By default, uploaded encrypted vault files are stored in `media/` via Django's file storage.
-Because PaaS container instances (Railway, Render, Fly.io) have ephemeral local filesystems that reset on container redeployment or restart, **uploaded documents will not survive a redeployment without persistent storage**:
-
-1. **Railway Persistent Volume (Recommended)**:
-   - In Railway Project Settings, add a **Volume**.
-   - Set the mount path to `/app/media` (or your application's `media/` directory).
-   - This ensures uploaded records persist across container restarts and new deployments.
-2. **Cloud Object Storage (S3 / Cloudflare R2)**:
-   - In production enterprise setups, install `django-storages[boto3]` and configure `DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'` pointing to your private S3 or Cloudflare R2 bucket.
+By default, uploaded encrypted vault files are stored in `media/` via Django's file storage (configurable via `MEDIA_ROOT`).
+On containerized hosts with ephemeral local filesystems (Render, Fly.io):
+1. **Persistent Volume**: Attach a persistent volume mounted at the configured `MEDIA_ROOT` directory (`/app/media`) to ensure documents persist across container restarts.
+2. **Standard / VPS Hosts**: On PythonAnywhere and traditional VPS instances, disk storage is persistent by default.
+3. **Cloud Object Storage (S3 / Cloudflare R2)**: In distributed multi-server environments, configure `django-storages` with an S3-compatible backend.
 
 ---
 
-## 🚢 Deployment (Railway & PaaS)
+## 🚢 Deployment
 
-Passli is production-ready for deployment on **Railway**, **Render**, **Fly.io**, or **Heroku**.
+Passli can be deployed across multiple environments including **PythonAnywhere**, **Docker**, **Render**, **Fly.io**, or standard Linux VPS servers:
 
-1. Connect your GitHub repository to Railway.
-2. Railway detects `railway.json` and `nixpacks.toml` automatically.
-3. Assets are compiled during the build phase (`python manage.py collectstatic --no-input`), and the runtime start command executes:
+- **PythonAnywhere Deployment**: See the comprehensive step-by-step guide in [docs/DEPLOY_PYTHONANYWHERE.md](docs/DEPLOY_PYTHONANYWHERE.md).
+- **General & Docker Deployment**: See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
+
+Before running the server, always apply migrations and collect static assets:
+```bash
+python manage.py migrate
+python manage.py collectstatic --no-input
+```
+To provision an initial superadministrator account from environment variables, run:
+```bash
+python manage.py ensure_superadmin
+```
+
+### SSL Redirect Troubleshooting
+If your deployment experiences an infinite redirect loop (HTTP 301/302 repeatedly redirecting to HTTPS):
+1. Set `SECURE_SSL_REDIRECT=False` in your environment variables.
+2. Verify whether your host or upstream proxy forwards `X-Forwarded-Proto` with this one-line curl command:
    ```bash
-   python manage.py migrate && python manage.py ensure_superadmin && gunicorn config.wsgi:application --bind 0.0.0.0:$PORT
+   curl -s -D - https://<your-domain> -o /dev/null | grep -iE "location|http"
    ```
-   > **Multi-Replica Notice**: If scaling to multiple concurrent web container replicas, execute database migrations in a dedicated release phase or one-off task rather than concurrently across starting web containers to avoid migration lock contention.
-4. Configure production environment variables (`SECRET_KEY`, `ALLOWED_HOSTS`, `CSRF_TRUSTED_ORIGINS`, `DEBUG=False`).
+   If the upstream proxy does not send `X-Forwarded-Proto: https`, Django will believe the incoming request is insecure and continuously redirect. Keep `SECURE_SSL_REDIRECT=False` until the proxy is properly configured.
 
 ---
 
 ## ⚠️ Limitations
 
 Passli is designed with full architectural transparency:
-- **Not Zero-Knowledge**: Passli uses server-side AES-256-GCM encryption with a server-held master key. The server can decrypt and read documents. There is no client-side encryption.
-- **Server-Enforced Access**: Pass expiry and revocation are enforced by server-side business logic and authentication controls rather than hardware-based cryptographic destruction.
+- **Server Holds the Master Key**: Document encryption and decryption occur server-side. Anyone with access to the host environment variables (`VAULT_MASTER_KEY`) can decrypt stored vault records.
+- **Not Zero-Knowledge**: Passli uses server-side AES-256-GCM authenticated encryption. There is no client-side encryption.
+- **Server-Enforced Access**: Pass expiry and revocation are enforced by application business logic and authentication controls rather than hardware-based cryptographic self-destruction.
 - **No Independent Security Audit**: Passli is an independent open-source project and has not undergone third-party cryptographic audits or SOC 2 certification.
+- **Free-Hosting Constraints**: When deployed on free tiers like PythonAnywhere Beginner, storage is limited (512 MB total for code, db, and files), outbound traffic is restricted to whitelisted destinations (Gmail SMTP), and web applications require periodic manual confirmation in the dashboard.
 
 ---
 
@@ -432,7 +439,6 @@ For project inquiries, partnerships, enterprise deployments, or general question
 - **Ali Nawaz** — Lead Architecture & Backend Engineering &bull; [@alinawazcode](https://github.com/alinawazcode)
 - **Muqadas Fareed** — Co-Author & Project Maintainer &bull; [@Muqadas-Fareed-devt](https://github.com/Muqadas-Fareed-devt)
 - **Email Contact**: [alinawaz.code@gmail.com](mailto:alinawaz.code@gmail.com)
-- **Live Demo**: [https://web-production-c1bd05e.up.railway.app](https://web-production-c1bd05e.up.railway.app)
 
 ---
 

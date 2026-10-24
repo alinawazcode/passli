@@ -37,7 +37,7 @@ User = get_user_model()
 
 @override_settings(
     EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend',
-    APP_URL='https://test-passli.up.railway.app'
+    APP_URL='https://passli.example.com'
 )
 class EmailIntegrationServiceTests(TestCase):
     """Tests covering SMTP email service dispatch, multi-part rendering, and safe failure handling."""
@@ -52,9 +52,9 @@ class EmailIntegrationServiceTests(TestCase):
 
     def test_app_url_and_link_builder(self):
         """Verify build_absolute_app_url constructs trusted HTTPS URLs using APP_URL."""
-        self.assertEqual(get_base_url(), 'https://test-passli.up.railway.app')
+        self.assertEqual(get_base_url(), 'https://passli.example.com')
         url = build_absolute_app_url('/password-reset/confirm/abc123xyz/')
-        self.assertEqual(url, 'https://test-passli.up.railway.app/password-reset/confirm/abc123xyz/')
+        self.assertEqual(url, 'https://passli.example.com/password-reset/confirm/abc123xyz/')
 
     def test_send_templated_email_renders_html_and_text(self):
         """Verify templated emails produce both HTML and plain-text alternatives."""
@@ -113,7 +113,7 @@ class EmailIntegrationServiceTests(TestCase):
 
 @override_settings(
     EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend',
-    APP_URL='https://test-passli.up.railway.app'
+    APP_URL='https://passli.example.com'
 )
 class UserRegistrationAndEmailOTPTests(TestCase):
     """Tests covering registration, auto-creation of OTP codes, verification flow, and attempt limits."""
@@ -239,7 +239,7 @@ class UserRegistrationAndEmailOTPTests(TestCase):
 
 @override_settings(
     EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend',
-    APP_URL='https://test-passli.up.railway.app'
+    APP_URL='https://passli.example.com'
 )
 class ForgotPasswordAndResetTests(TestCase):
     """Tests covering password reset initiation, token generation, anti-enumeration, and updates."""
@@ -269,7 +269,7 @@ class ForgotPasswordAndResetTests(TestCase):
         msg = mail.outbox[0]
         self.assertEqual(msg.subject, "Passli Vault: Password Reset Request")
         self.assertIn("password-reset/confirm/", msg.body)
-        self.assertIn("https://test-passli.up.railway.app", msg.body)
+        self.assertIn("https://passli.example.com", msg.body)
 
     def test_forgot_password_for_nonexistent_email_prevents_enumeration(self):
         """Verify nonexistent email returns identical success template without dispatching email."""
@@ -333,7 +333,7 @@ class ForgotPasswordAndResetTests(TestCase):
 
 @override_settings(
     EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend',
-    APP_URL='https://test-passli.up.railway.app'
+    APP_URL='https://passli.example.com'
 )
 class FailedPasscodeSecurityAlertTests(TestCase):
     """Tests covering security alerts on failed QR/passcode verification, rate limiting, and device parsing."""
@@ -406,3 +406,90 @@ class FailedPasscodeSecurityAlertTests(TestCase):
         # But SecurityAlertLog records the accumulated count
         log = SecurityAlertLog.objects.get(identifier=f"pass:{self.share_pass.id}")
         self.assertGreater(log.attempts_count, 1)
+
+
+class Phase2SettingsAndEmailTests(TestCase):
+    """Tests covering PythonAnywhere settings: APP_URL validation, console email fallback, and credentials leak protection."""
+
+    def test_app_url_validation_in_production(self):
+        """In production (DEBUG=False), empty or localhost APP_URL raises ImproperlyConfigured."""
+        from django.core.exceptions import ImproperlyConfigured
+        from config.settings import validate_app_url
+
+        # Empty URL raises
+        with self.assertRaises(ImproperlyConfigured):
+            validate_app_url(debug=False, url="")
+
+        # Localhost URL raises
+        with self.assertRaises(ImproperlyConfigured):
+            validate_app_url(debug=False, url="http://localhost:8000")
+
+        with self.assertRaises(ImproperlyConfigured):
+            validate_app_url(debug=False, url="http://127.0.0.1:8000")
+
+        # Valid HTTPS origin passes without exception
+        try:
+            validate_app_url(debug=False, url="https://demouser.pythonanywhere.com")
+        except ImproperlyConfigured:
+            self.fail("validate_app_url unexpectedly raised ImproperlyConfigured for valid HTTPS origin")
+
+        # In DEBUG=True, localhost or empty does not raise
+        try:
+            validate_app_url(debug=True, url="")
+            validate_app_url(debug=True, url="http://localhost:8000")
+        except ImproperlyConfigured:
+            self.fail("validate_app_url should not raise when DEBUG=True")
+
+    def test_email_disabled_banner_rendered_when_email_service_disabled(self):
+        """When EMAIL_SERVICE_CONFIGURED is False, register and password-reset pages render a warning banner."""
+        client = Client()
+
+        with self.settings(EMAIL_SERVICE_CONFIGURED=False):
+            res_reg = client.get(reverse('register'))
+            self.assertEqual(res_reg.status_code, 200)
+            self.assertContains(res_reg, 'data-testid="email-disabled-banner"')
+            self.assertContains(res_reg, "Outbound email service is disabled")
+
+            res_reset = client.get(reverse('password_reset'))
+            self.assertEqual(res_reset.status_code, 200)
+            self.assertContains(res_reset, 'data-testid="email-disabled-banner"')
+            self.assertContains(res_reset, "Outbound email service is disabled")
+
+        with self.settings(EMAIL_SERVICE_CONFIGURED=True):
+            res_reg_on = client.get(reverse('register'))
+            self.assertNotContains(res_reg_on, 'data-testid="email-disabled-banner"')
+
+            res_reset_on = client.get(reverse('password_reset'))
+            self.assertNotContains(res_reset_on, 'data-testid="email-disabled-banner"')
+
+    def test_no_smtp_password_in_logs_or_error_pages(self):
+        """Assert that no SMTP password value ever appears in log output or error pages."""
+        import logging
+        from io import StringIO
+        from unittest.mock import patch
+        import smtplib
+        from accounts.emails import send_templated_email
+
+        secret_smtp_pass = "super-secret-smtp-app-password-xyz99"
+        log_stream = StringIO()
+        handler = logging.StreamHandler(log_stream)
+        handler.setLevel(logging.DEBUG)
+
+        target_logger = logging.getLogger('accounts')
+        target_logger.addHandler(handler)
+
+        try:
+            with self.settings(EMAIL_HOST_PASSWORD=secret_smtp_pass):
+                with patch('django.core.mail.EmailMultiAlternatives.send', side_effect=smtplib.SMTPAuthenticationError(535, b'Authentication failed')):
+                    send_templated_email(
+                        subject="Test Subject",
+                        recipient_list=["test@passli.dev"],
+                        template_base="email_verification_otp",
+                        context={'code': '123456', 'valid_minutes': 10},
+                        fail_silently=True
+                    )
+
+            output = log_stream.getvalue()
+            self.assertNotIn(secret_smtp_pass, output)
+        finally:
+            target_logger.removeHandler(handler)

@@ -4,11 +4,18 @@ from django.core.exceptions import ValidationError
 from .models import Document
 
 ALLOWED_EXTENSIONS = ['.pdf', '.png', '.jpg', '.jpeg']
-MAX_FILE_SIZE = 25 * 1024 * 1024  # 25 MB in bytes
+MAX_FILE_SIZE = 5 * 1024 * 1024  # 5 MB in bytes
+
+MAGIC_HEADERS = {
+    '.pdf': [b'%PDF-'],
+    '.png': [b'\x89PNG\r\n\x1a\n'],
+    '.jpg': [b'\xff\xd8\xff'],
+    '.jpeg': [b'\xff\xd8\xff'],
+}
 
 
 class DocumentUploadForm(forms.ModelForm):
-    """Secure document upload form with file type and size constraints."""
+    """Secure document upload form with file type, content magic-byte, and size constraints."""
 
     class Meta:
         model = Document
@@ -48,9 +55,23 @@ class DocumentUploadForm(forms.ModelForm):
             allowed_str = ", ".join(ALLOWED_EXTENSIONS)
             raise ValidationError(f"Unsupported file format '{ext}'. Allowed formats: {allowed_str}")
 
-        # Check file size
+        # Check file size (5 MB limit)
         if file.size > MAX_FILE_SIZE:
-            raise ValidationError("File size exceeds maximum allowed limit of 25 MB.")
+            raise ValidationError("File size exceeds maximum allowed limit of 5 MB.")
+
+        # Inspect initial bytes to verify content matches extension
+        try:
+            file.seek(0)
+            header = file.read(16)
+            file.seek(0)
+        except Exception as read_err:
+            raise ValidationError("Unable to read uploaded file stream.") from read_err
+
+        expected_signatures = MAGIC_HEADERS.get(ext, [])
+        if not any(header.startswith(sig) for sig in expected_signatures):
+            raise ValidationError(
+                f"File content does not match the '{ext}' format. Uploaded file may be corrupted or disguised."
+            )
 
         return file
 
