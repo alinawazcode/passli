@@ -1,5 +1,6 @@
 # Passli — Cryptographic Document Vault & Ephemeral Sharing Platform
 
+[![CI](https://github.com/alinawazcode/passli/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/alinawazcode/passli/actions/workflows/ci.yml)
 [![Python Version](https://img.shields.io/badge/python-3.11%20%7C%203.12-blue.svg)](https://www.python.org/)
 [![Django](https://img.shields.io/badge/django-5.1%2B-green.svg)](https://www.djangoproject.com/)
 [![Encryption: AES-256-GCM](https://img.shields.io/badge/encryption-AES--256--GCM%20AEAD-blueviolet.svg)](SECURITY.md)
