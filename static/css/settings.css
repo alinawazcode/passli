@@ -416,6 +416,88 @@
     border-color: #94a3b8;
 }
 
+/* Password Input & Strength Meter */
+.settings-password-field-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: 100%;
+}
+
+.settings-password-field-wrapper .form-input {
+    padding-right: 2.75rem;
+}
+
+.settings-password-toggle {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    transition: color 150ms ease, background-color 150ms ease;
+}
+
+.settings-password-toggle:hover {
+    color: var(--text-main);
+    background-color: var(--bg-subtle);
+}
+
+.settings-password-toggle:focus-visible {
+    outline: 2px solid var(--brand-blue);
+    outline-offset: 1px;
+}
+
+.settings-strength-meter {
+    height: 4px;
+    border-radius: 2px;
+    background-color: var(--border-light);
+    margin-top: 6px;
+    overflow: hidden;
+    width: 100%;
+}
+
+.settings-strength-bar {
+    height: 100%;
+    width: 0%;
+    border-radius: 2px;
+    transition: width 200ms ease, background-color 200ms ease;
+}
+
+.settings-strength-bar.weak {
+    width: 25%;
+    background-color: #ef4444;
+}
+
+.settings-strength-bar.fair {
+    width: 50%;
+    background-color: #f59e0b;
+}
+
+.settings-strength-bar.good {
+    width: 75%;
+    background-color: #3b82f6;
+}
+
+.settings-strength-bar.strong {
+    width: 100%;
+    background-color: #10b981;
+}
+
+.settings-strength-hint {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-top: 4px;
+    display: block;
+}
+
 /* Mobile Responsiveness */
 @media (max-width: 768px) {
     .settings-layout {

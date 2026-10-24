@@ -1,5 +1,5 @@
 import secrets
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 from pathlib import Path
 from django.conf import settings
@@ -26,6 +26,9 @@ from .forms import (
     UsernameChangeForm,
     EmailChangeRequestForm,
     EmailChangeConfirmForm,
+    PasswordChangeNormalForm,
+    PasswordResetOTPConfirmForm,
+    SetNewPasswordAfterOTPForm,
 )
 from .models import (
     UserProfile,
@@ -49,6 +52,15 @@ from .services.email_change_service import (
     request_email_change,
     confirm_email_change,
     cancel_email_change,
+)
+from .services.password_service import (
+    change_password_normal,
+    request_password_reset_otp,
+    verify_password_reset_otp,
+    change_password_via_otp_session,
+    get_password_change_throttle,
+    PASSWORD_RESET_SESSION_KEY,
+    PASSWORD_RESET_WINDOW_MINUTES,
 )
 from .services.otp_service import issue_otp
 from .services.email_service import send_templated_email
@@ -616,6 +628,96 @@ def account_settings_view(request):
             messages.info(request, "Pending email change request cancelled.")
             return redirect(reverse("account_settings") + "#email")
 
+        elif action == "change_password_normal":
+            pwd_normal_form = PasswordChangeNormalForm(request.POST)
+            if pwd_normal_form.is_valid():
+                try:
+                    change_password_normal(
+                        user=user,
+                        current_password=pwd_normal_form.cleaned_data["current_password"],
+                        new_password=pwd_normal_form.cleaned_data["new_password"],
+                        confirm_password=pwd_normal_form.cleaned_data["confirm_password"],
+                        request=request,
+                    )
+                    messages.success(request, "Your master password has been successfully updated.")
+                    return redirect(reverse("account_settings") + "#password")
+                except ValidationError as exc:
+                    messages.error(request, exc.message if hasattr(exc, "message") else str(exc))
+                    return redirect(reverse("account_settings") + "#password")
+            else:
+                err_msg = (
+                    pwd_normal_form.errors.get("current_password")
+                    or pwd_normal_form.errors.get("new_password")
+                    or pwd_normal_form.errors.get("confirm_password")
+                )
+                if err_msg:
+                    messages.error(request, err_msg[0])
+                else:
+                    messages.error(request, "Please check the password form for errors.")
+                return redirect(reverse("account_settings") + "#password")
+
+        elif action == "request_password_otp":
+            try:
+                success, msg = request_password_reset_otp(user, request=request)
+                if success:
+                    request.session["pwd_reset_otp_requested"] = True
+                    messages.success(request, msg)
+                else:
+                    messages.error(request, msg)
+            except ValidationError as exc:
+                messages.error(request, exc.message if hasattr(exc, "message") else str(exc))
+            return redirect(reverse("account_settings") + "#password")
+
+        elif action == "verify_password_otp":
+            pwd_otp_form = PasswordResetOTPConfirmForm(request.POST)
+            if pwd_otp_form.is_valid():
+                success, msg = verify_password_reset_otp(
+                    user=user,
+                    submitted_code=pwd_otp_form.cleaned_data["code"],
+                    request=request,
+                )
+                if success:
+                    request.session.pop("pwd_reset_otp_requested", None)
+                    messages.success(request, msg)
+                else:
+                    messages.error(request, msg)
+            else:
+                err = pwd_otp_form.errors.get("code")
+                messages.error(request, err[0] if err else "Please enter a valid 6-digit code.")
+            return redirect(reverse("account_settings") + "#password")
+
+        elif action == "set_password_after_otp":
+            pwd_set_form = SetNewPasswordAfterOTPForm(request.POST)
+            if pwd_set_form.is_valid():
+                try:
+                    change_password_via_otp_session(
+                        user=user,
+                        new_password=pwd_set_form.cleaned_data["new_password"],
+                        confirm_password=pwd_set_form.cleaned_data["confirm_password"],
+                        request=request,
+                    )
+                    messages.success(request, "Your master password has been successfully updated.")
+                except ValidationError as exc:
+                    messages.error(request, exc.message if hasattr(exc, "message") else str(exc))
+            else:
+                err_msg = pwd_set_form.errors.get("new_password") or pwd_set_form.errors.get("confirm_password")
+                if err_msg:
+                    messages.error(request, err_msg[0])
+                else:
+                    messages.error(request, "Please check the password form for errors.")
+            return redirect(reverse("account_settings") + "#password")
+
+        elif action == "cancel_password_reset":
+            request.session.pop(PASSWORD_RESET_SESSION_KEY, None)
+            request.session.pop("pwd_reset_otp_requested", None)
+            EmailVerificationCode.objects.filter(
+                user=user,
+                purpose=EmailVerificationCode.PURPOSE_CHANGE_PASSWORD,
+                is_used=False,
+            ).update(is_used=True)
+            messages.info(request, "Password reset cancelled.")
+            return redirect(reverse("account_settings") + "#password")
+
     # GET request form instances and context
     profile_form = ProfileForm(initial={"display_name": profile.display_name})
     avatar_form = AvatarUploadForm()
@@ -640,6 +742,56 @@ def account_settings_view(request):
             if elapsed < 60:
                 resend_cooldown_seconds = max(0, int(60 - elapsed))
 
+    # Password throttle status
+    is_pwd_locked, pwd_lockout_minutes, pwd_failures = get_password_change_throttle(user)
+
+    # Check 10-minute session authorization earned via OTP verification
+    is_pwd_reset_authorized = False
+    auth_str = request.session.get(PASSWORD_RESET_SESSION_KEY)
+    if auth_str:
+        try:
+            auth_time = datetime.fromisoformat(auth_str)
+            if timezone.is_naive(auth_time):
+                auth_time = timezone.make_aware(auth_time)
+            if timezone.now() <= auth_time + timedelta(minutes=PASSWORD_RESET_WINDOW_MINUTES):
+                is_pwd_reset_authorized = True
+            else:
+                request.session.pop(PASSWORD_RESET_SESSION_KEY, None)
+        except (ValueError, TypeError):
+            request.session.pop(PASSWORD_RESET_SESSION_KEY, None)
+
+    # Check if an OTP code is awaiting confirmation for change_password
+    pwd_otp_pending = False
+    if not is_pwd_reset_authorized:
+        active_pwd_code = EmailVerificationCode.objects.filter(
+            user=user,
+            purpose=EmailVerificationCode.PURPOSE_CHANGE_PASSWORD,
+            is_used=False,
+            expires_at__gt=timezone.now(),
+        ).first()
+        if (active_pwd_code and not active_pwd_code.is_locked) or request.session.get("pwd_reset_otp_requested"):
+            pwd_otp_pending = True
+
+    pwd_resend_cooldown = 0
+    if pwd_otp_pending:
+        latest_pwd_code = (
+            EmailVerificationCode.objects.filter(
+                user=user,
+                purpose=EmailVerificationCode.PURPOSE_CHANGE_PASSWORD,
+            )
+            .order_by("-created_at")
+            .first()
+        )
+        if latest_pwd_code:
+            elapsed = (timezone.now() - latest_pwd_code.created_at).total_seconds()
+            if elapsed < 60:
+                pwd_resend_cooldown = max(0, int(60 - elapsed))
+
+    can_use_forgot_pwd = bool(user.email and profile.is_email_verified)
+    password_normal_form = PasswordChangeNormalForm()
+    password_otp_form = PasswordResetOTPConfirmForm()
+    password_set_new_form = SetNewPasswordAfterOTPForm()
+
     context = {
         "profile": profile,
         "profile_form": profile_form,
@@ -654,6 +806,16 @@ def account_settings_view(request):
         "has_avatar": bool(profile.avatar_path),
         "avatar_url": reverse("avatar_serve_self") if profile.avatar_path else None,
     }
+    context["is_auth_locked"] = is_pwd_locked
+    context["lockout_minutes"] = pwd_lockout_minutes
+    context["throttle_failures"] = pwd_failures
+    context["is_reset_authorized"] = is_pwd_reset_authorized
+    context["reset_otp_pending"] = pwd_otp_pending
+    context["reset_resend_wait"] = pwd_resend_cooldown
+    context["can_use_recovery"] = can_use_forgot_pwd
+    context["password_normal_form"] = password_normal_form
+    context["password_otp_form"] = password_otp_form
+    context["password_set_new_form"] = password_set_new_form
 
     response = render(request, "accounts/settings.html", context)
     response["Cache-Control"] = "no-store, no-cache, must-revalidate, private"

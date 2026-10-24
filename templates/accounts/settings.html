@@ -347,14 +347,217 @@
 
                 <div id="password-change-section">
                     <p class="settings-form-hint" style="margin-bottom: 1.25rem;">
-                        For maximum protection, choose a passphrase of at least 10 characters combining uppercase, lowercase, numbers, and symbols.
+                        For maximum protection, choose a passphrase combining uppercase, lowercase, numbers, and symbols. Changing your password invalidates all other active sessions.
                     </p>
 
-                    <!-- Will be fully wired in Phase 4 -->
-                    <div style="background-color: var(--bg-subtle); border: 1px solid var(--border-light); border-radius: 8px; padding: 1rem; font-size: 0.85rem; color: var(--text-muted);">
-                        <span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle; margin-right: 0.35rem; color: var(--brand-navy);">shield</span>
-                        Active session security is monitored with database-backed throttle guards.
-                    </div>
+                    {% if is_auth_locked %}
+                        <div style="background-color: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 0.85rem 1rem; margin-bottom: 1.25rem; font-size: 0.875rem; color: #991b1b;" role="alert">
+                            <span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle; margin-right: 0.35rem;">lock_clock</span>
+                            Password change is temporarily locked due to repeated incorrect password attempts. Please try again in <strong>{{ lockout_minutes }} minute(s)</strong>.
+                        </div>
+                    {% endif %}
+
+                    {% if is_reset_authorized %}
+                        <!-- Path B: Authorized via Email OTP (10-Minute Window) -->
+                        <div class="settings-pending-alert" style="border-color: #a7f3d0; background-color: #f0fdf4;">
+                            <div class="settings-pending-alert-icon" style="color: #059669;">
+                                <span class="material-symbols-outlined" style="font-size: 20px;">lock_reset</span>
+                            </div>
+                            <div>
+                                <div style="font-weight: 600; font-size: 0.95rem; color: #065f46;">Email Verification Confirmed</div>
+                                <p style="margin: 0.25rem 0 0 0; font-size: 0.875rem; color: #047857; line-height: 1.45;">
+                                    You are authorized to define a new master password without entering your current password. This authorization expires in 10 minutes.
+                                </p>
+                            </div>
+                        </div>
+
+                        <form action="{% url 'account_settings' %}" method="post" id="form-set-password-after-otp" novalidate>
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="set_password_after_otp">
+
+                            <div class="settings-form-group">
+                                <label for="settings-otp-new-password" class="settings-form-label">New Password</label>
+                                <div class="settings-password-field-wrapper">
+                                    {{ password_set_new_form.new_password }}
+                                    <button type="button" class="settings-password-toggle" aria-label="Toggle password visibility">
+                                        <span class="material-symbols-outlined" style="font-size: 18px;">visibility</span>
+                                    </button>
+                                </div>
+                                <div class="settings-strength-meter"><div class="settings-strength-bar" id="strength-bar-otp"></div></div>
+                                <span class="settings-strength-hint" id="strength-hint-otp">Strength hint: Enter password (hint only; server validators enforce policy)</span>
+                                {% if password_set_new_form.new_password.errors %}
+                                    <div class="settings-form-error" role="alert">{{ password_set_new_form.new_password.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="settings-form-group">
+                                <label for="settings-otp-confirm-password" class="settings-form-label">Confirm New Password</label>
+                                <div class="settings-password-field-wrapper">
+                                    {{ password_set_new_form.confirm_password }}
+                                    <button type="button" class="settings-password-toggle" aria-label="Toggle password visibility">
+                                        <span class="material-symbols-outlined" style="font-size: 18px;">visibility</span>
+                                    </button>
+                                </div>
+                                {% if password_set_new_form.confirm_password.errors %}
+                                    <div class="settings-form-error" role="alert">{{ password_set_new_form.confirm_password.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="settings-card-actions" style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
+                                <button type="submit" class="btn btn-primary btn-sm" id="btn-submit-otp-new-password">
+                                    <span class="material-symbols-outlined" style="font-size: 16px;">lock</span> Set New Master Password
+                                </button>
+                        </form>
+                        <form action="{% url 'account_settings' %}" method="post" style="display: inline;">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="cancel_password_reset">
+                            <button type="submit" class="btn btn-secondary btn-sm">Cancel</button>
+                        </form>
+                        </div>
+
+                    {% elif reset_otp_pending %}
+                        <!-- Path B: Awaiting Password Reset OTP -->
+                        <div class="settings-pending-alert">
+                            <div class="settings-pending-alert-icon">
+                                <span class="material-symbols-outlined" style="font-size: 20px;">mark_email_unread</span>
+                            </div>
+                            <div>
+                                <div style="font-weight: 600; font-size: 0.95rem; color: var(--text-main);">Password Reset Code Dispatched</div>
+                                <p style="margin: 0.25rem 0 0 0; font-size: 0.875rem; color: var(--text-secondary); line-height: 1.45;">
+                                    A 6-digit verification code was sent to <strong class="font-mono-data" style="color: var(--text-main);">{{ user.email }}</strong>. Enter it below to unlock password reset without your old password.
+                                </p>
+                            </div>
+                        </div>
+
+                        <form action="{% url 'account_settings' %}" method="post" id="form-confirm-password-otp" novalidate>
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="verify_password_otp">
+
+                            <div class="settings-form-group">
+                                <label for="password-otp-combined-input" class="settings-form-label">6-Digit Verification Code</label>
+                                
+                                <div class="settings-otp-wrapper" id="password-otp-boxes-container">
+                                    <input type="text" maxlength="1" inputmode="numeric" pattern="[0-9]" class="settings-otp-box" data-index="0" aria-label="Digit 1" autocomplete="off">
+                                    <input type="text" maxlength="1" inputmode="numeric" pattern="[0-9]" class="settings-otp-box" data-index="1" aria-label="Digit 2" autocomplete="off">
+                                    <input type="text" maxlength="1" inputmode="numeric" pattern="[0-9]" class="settings-otp-box" data-index="2" aria-label="Digit 3" autocomplete="off">
+                                    <input type="text" maxlength="1" inputmode="numeric" pattern="[0-9]" class="settings-otp-box" data-index="3" aria-label="Digit 4" autocomplete="off">
+                                    <input type="text" maxlength="1" inputmode="numeric" pattern="[0-9]" class="settings-otp-box" data-index="4" aria-label="Digit 5" autocomplete="off">
+                                    <input type="text" maxlength="1" inputmode="numeric" pattern="[0-9]" class="settings-otp-box" data-index="5" aria-label="Digit 6" autocomplete="off">
+                                </div>
+
+                                <div class="settings-otp-fallback">
+                                    {{ password_otp_form.code }}
+                                </div>
+
+                                <span class="settings-form-hint">Code expires in 15 minutes. 5 attempts maximum.</span>
+                                {% if password_otp_form.code.errors %}
+                                    <div class="settings-form-error" role="alert">{{ password_otp_form.code.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="settings-card-actions" style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
+                                <button type="submit" class="btn btn-primary btn-sm" id="btn-submit-pwd-otp">
+                                    <span class="material-symbols-outlined" style="font-size: 16px;">verified</span> Verify Code & Continue
+                                </button>
+                        </form>
+
+                        <form action="{% url 'account_settings' %}" method="post" id="form-resend-password-otp" style="display: inline;">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="request_password_otp">
+                            <button type="submit" class="btn btn-secondary btn-sm" id="btn-resend-password-otp" data-cooldown="{{ reset_resend_wait }}">
+                                <span class="material-symbols-outlined" style="font-size: 16px;">refresh</span>
+                                <span id="resend-pwd-timer-text">Resend Code</span>
+                            </button>
+                        </form>
+
+                        <form action="{% url 'account_settings' %}" method="post" style="display: inline;">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="cancel_password_reset">
+                            <button type="submit" class="btn btn-secondary btn-sm" style="color: #b91c1c; border-color: #fca5a5;">
+                                Cancel Request
+                            </button>
+                        </form>
+                        </div>
+
+                    {% else %}
+                        <!-- Path A: Normal Password Change Form -->
+                        <form action="{% url 'account_settings' %}" method="post" id="form-change-password-normal" novalidate>
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="change_password_normal">
+
+                            <div class="settings-form-group">
+                                <label for="settings-current-password" class="settings-form-label">Current Password</label>
+                                <div class="settings-password-field-wrapper">
+                                    {{ password_normal_form.current_password }}
+                                    <button type="button" class="settings-password-toggle" aria-label="Toggle password visibility">
+                                        <span class="material-symbols-outlined" style="font-size: 18px;">visibility</span>
+                                    </button>
+                                </div>
+                                <span class="settings-form-hint">Enter your current master password to authorize change.</span>
+                                {% if password_normal_form.current_password.errors %}
+                                    <div class="settings-form-error" role="alert">{{ password_normal_form.current_password.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="settings-form-group">
+                                <label for="settings-new-password" class="settings-form-label">New Password</label>
+                                <div class="settings-password-field-wrapper">
+                                    {{ password_normal_form.new_password }}
+                                    <button type="button" class="settings-password-toggle" aria-label="Toggle password visibility">
+                                        <span class="material-symbols-outlined" style="font-size: 18px;">visibility</span>
+                                    </button>
+                                </div>
+                                <div class="settings-strength-meter"><div class="settings-strength-bar" id="strength-bar-normal"></div></div>
+                                <span class="settings-strength-hint" id="strength-hint-normal">Strength hint: Enter password (hint only; server validators enforce policy)</span>
+                                {% if password_normal_form.new_password.errors %}
+                                    <div class="settings-form-error" role="alert">{{ password_normal_form.new_password.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="settings-form-group">
+                                <label for="settings-confirm-password" class="settings-form-label">Confirm New Password</label>
+                                <div class="settings-password-field-wrapper">
+                                    {{ password_normal_form.confirm_password }}
+                                    <button type="button" class="settings-password-toggle" aria-label="Toggle password visibility">
+                                        <span class="material-symbols-outlined" style="font-size: 18px;">visibility</span>
+                                    </button>
+                                </div>
+                                {% if password_normal_form.confirm_password.errors %}
+                                    <div class="settings-form-error" role="alert">{{ password_normal_form.confirm_password.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="settings-card-actions">
+                                <button type="submit" class="btn btn-primary btn-sm" id="btn-submit-password-change" {% if is_auth_locked %}disabled title="Password change is currently locked"{% endif %}>
+                                    <span class="material-symbols-outlined" style="font-size: 16px;">lock</span> Update Password
+                                </button>
+                            </div>
+                        </form>
+
+                        <!-- Path B Entry Point: "I don't remember my current password" -->
+                        <div style="margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid var(--border-light);">
+                            <div style="font-weight: 600; font-size: 0.95rem; color: var(--text-main); margin-bottom: 0.25rem;">
+                                Don't remember your current password?
+                            </div>
+                            {% if can_use_recovery %}
+                                <p class="settings-form-hint" style="margin-bottom: 1rem;">
+                                    We can send a 6-digit verification code to your verified email (<strong>{{ user.email }}</strong>) to verify your identity.
+                                </p>
+                                <form action="{% url 'account_settings' %}" method="post" id="form-request-password-otp">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action" value="request_password_otp">
+                                    <button type="submit" class="btn btn-secondary btn-sm" id="btn-forgot-password-otp">
+                                        <span class="material-symbols-outlined" style="font-size: 16px;">mail</span> Send Reset Code to Email
+                                    </button>
+                                </form>
+                            {% else %}
+                                <div style="background-color: var(--bg-subtle); border: 1px solid var(--border-light); border-radius: 8px; padding: 0.85rem 1rem; margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-secondary);">
+                                    <span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle; margin-right: 0.35rem; color: var(--text-muted);">info</span>
+                                    Self-service password reset requires an added and verified email address. Please configure and verify your email in the section above first.
+                                </div>
+                            {% endif %}
+                        </div>
+                    {% endif %}
                 </div>
             </section>
 
