@@ -2,8 +2,7 @@ FROM python:3.12-slim
 
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1 \
-    PORT=8000
+    PYTHONUNBUFFERED=1
 
 # Install runtime dependencies (curl for container healthcheck)
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -36,4 +35,4 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
     CMD curl -f http://127.0.0.1:${PORT:-8000}/ || exit 1
 
-CMD ["sh", "-c", "python manage.py migrate --noinput && python manage.py ensure_superadmin && exec gunicorn config.wsgi:application --bind 0.0.0.0:${PORT:-8000} --workers 3 --threads 2"]
+CMD ["sh", "-c", "python manage.py migrate --noinput && exec gunicorn config.wsgi:application --bind 0.0.0.0:${PORT:-8000} --workers 3 --threads 2"]

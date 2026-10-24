@@ -14,7 +14,7 @@ User = get_user_model()
 def document_upload_path(instance, filename):
     """
     Generates a secure, sanitized, user-isolated file path.
-    Always uses POSIX forward slashes for cross-platform compatibility (Windows & Linux/Railway).
+    Always uses POSIX forward slashes for cross-platform compatibility (Windows & Linux/Unix).
     Format: vault_files/user_<id>/<uuid>.<ext>
     """
     ext = os.path.splitext(filename)[1].lower()

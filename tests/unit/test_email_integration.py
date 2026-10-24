@@ -113,7 +113,7 @@ class EmailIntegrationServiceTests(TestCase):
 
 @override_settings(
     EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend',
-    APP_URL='https://test-passli.up.railway.app'
+    APP_URL='https://passli.example.com'
 )
 class UserRegistrationAndEmailOTPTests(TestCase):
     """Tests covering registration, auto-creation of OTP codes, verification flow, and attempt limits."""
@@ -239,7 +239,7 @@ class UserRegistrationAndEmailOTPTests(TestCase):
 
 @override_settings(
     EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend',
-    APP_URL='https://test-passli.up.railway.app'
+    APP_URL='https://passli.example.com'
 )
 class ForgotPasswordAndResetTests(TestCase):
     """Tests covering password reset initiation, token generation, anti-enumeration, and updates."""
@@ -269,7 +269,7 @@ class ForgotPasswordAndResetTests(TestCase):
         msg = mail.outbox[0]
         self.assertEqual(msg.subject, "Passli Vault: Password Reset Request")
         self.assertIn("password-reset/confirm/", msg.body)
-        self.assertIn("https://test-passli.up.railway.app", msg.body)
+        self.assertIn("https://passli.example.com", msg.body)
 
     def test_forgot_password_for_nonexistent_email_prevents_enumeration(self):
         """Verify nonexistent email returns identical success template without dispatching email."""
@@ -333,7 +333,7 @@ class ForgotPasswordAndResetTests(TestCase):
 
 @override_settings(
     EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend',
-    APP_URL='https://test-passli.up.railway.app'
+    APP_URL='https://passli.example.com'
 )
 class FailedPasscodeSecurityAlertTests(TestCase):
     """Tests covering security alerts on failed QR/passcode verification, rate limiting, and device parsing."""

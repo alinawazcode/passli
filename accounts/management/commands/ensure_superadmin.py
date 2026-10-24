@@ -1,5 +1,5 @@
 import os
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandError
 from django.contrib.auth import get_user_model
 
 User = get_user_model()
@@ -14,19 +14,16 @@ class Command(BaseCommand):
         primary_email = os.getenv('DJANGO_SUPERUSER_EMAIL', '')
         primary_password = os.getenv('DJANGO_SUPERUSER_PASSWORD')
 
-        admin_configs = []
-        if primary_username and primary_password:
-            admin_configs.append({
-                'username': primary_username,
-                'email': primary_email,
-                'password': primary_password,
-            })
-        else:
-            self.stdout.write(
-                self.style.WARNING(
-                    "DJANGO_SUPERUSER_USERNAME or DJANGO_SUPERUSER_PASSWORD not set in environment. Skipping primary superadmin creation."
-                )
+        if not primary_username or not primary_password:
+            raise CommandError(
+                "DJANGO_SUPERUSER_USERNAME and DJANGO_SUPERUSER_PASSWORD environment variables are required to run ensure_superadmin."
             )
+
+        admin_configs = [{
+            'username': primary_username,
+            'email': primary_email,
+            'password': primary_password,
+        }]
 
         # Optional secondary superadmin from environment
         secondary_username = os.getenv('DJANGO_SECONDARY_SUPERUSER_USERNAME')

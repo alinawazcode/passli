@@ -1,6 +1,6 @@
 """
 Django settings for Passli project.
-Configured for local development, testing, and production deployment on Railway / Render.
+Configured for local development, testing, and production deployment across PythonAnywhere, Docker, and standard hosts.
 """
 
 import sys
@@ -230,7 +230,7 @@ LOGOUT_REDIRECT_URL = 'landing'
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# Production Logging Configuration (Captures all 500 errors and app logs in Railway console)
+# Production Logging Configuration (Captures all 500 errors and app logs in stdout/console)
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
