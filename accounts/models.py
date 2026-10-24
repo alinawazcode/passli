@@ -291,3 +291,44 @@ class SecurityAlertLog(models.Model):
             record.attempts_count += 1
             record.save(update_fields=['attempts_count', 'last_ip', 'recipient_email'])
             return False, record.attempts_count
+
+
+class LoginLockout(models.Model):
+    """
+    Persistent database-backed rate-limiting lockout tracker for user login attempts.
+    Tracks failed authentication attempts per username and client IP with exponential backoff.
+    """
+    username = models.CharField(max_length=150, db_index=True)
+    ip_address = models.CharField(max_length=45, db_index=True, default='127.0.0.1')
+    failed_attempts = models.PositiveIntegerField(default=0)
+    locked_until = models.DateTimeField(null=True, blank=True, db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['username', 'ip_address'], name='unique_username_ip_login_lockout')
+        ]
+        indexes = [
+            models.Index(fields=['username', 'ip_address']),
+            models.Index(fields=['locked_until']),
+        ]
+        verbose_name = 'Login Lockout'
+        verbose_name_plural = 'Login Lockouts'
+
+    def __str__(self):
+        return f"Login lockout for {self.username} from {self.ip_address} ({self.failed_attempts} fails)"
+
+    @property
+    def is_locked(self) -> bool:
+        if self.locked_until and self.locked_until > timezone.now():
+            return True
+        return False
+
+    @property
+    def retry_after_seconds(self) -> int:
+        if not self.is_locked:
+            return 0
+        diff = (self.locked_until - timezone.now()).total_seconds()
+        return max(1, int(diff + 0.999))
+

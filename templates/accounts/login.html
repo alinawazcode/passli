@@ -14,7 +14,12 @@
             <p class="auth-subtitle">Enter your credentials to access your encrypted records</p>
         </div>
 
-        {% if form.errors %}
+        {% if error_message %}
+            <div class="alert alert-danger" data-testid="auth-error-box">
+                <span class="material-symbols-outlined" style="font-size: 18px;">lock_clock</span>
+                <span>{{ error_message }}</span>
+            </div>
+        {% elif form.errors %}
             <div class="alert alert-danger" data-testid="auth-error-box">
                 <span class="material-symbols-outlined" style="font-size: 18px;">error</span>
                 <span>Invalid username or password. Please try again.</span>

@@ -3,7 +3,8 @@ import logging
 import os
 import time
 from datetime import timedelta
-from django.db import transaction, OperationalError
+from django.db import transaction, OperationalError, IntegrityError
+from django.db.models import F
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import FileResponse, Http404, HttpResponseForbidden
 from django.urls import reverse
@@ -13,6 +14,7 @@ from .forms import RecipientKeyVerificationForm
 from audit.models import ShareAccessLog, log_share_event, get_client_ip
 from accounts.emails import check_and_send_failed_passcode_alert
 from documents.services.crypto_service import VaultDecryptionError
+from config.db_utils import atomic_immediate
 
 logger = logging.getLogger(__name__)
 
@@ -43,7 +45,7 @@ def recipient_verify_view(request, pass_id):
     for attempt in range(max_retries):
         try:
             share_pass = get_object_or_404(
-                SharePass.objects.prefetch_related('documents'),
+                SharePass.objects.select_related('owner'),
                 id=pass_id
             )
             break
@@ -171,7 +173,7 @@ def recipient_verify_view(request, pass_id):
 
         for attempt in range(max_retries):
             try:
-                with transaction.atomic():
+                with atomic_immediate():
                     locked_pass = SharePass.objects.select_for_update().get(id=share_pass.id)
                     now = timezone.now()
 
@@ -188,11 +190,17 @@ def recipient_verify_view(request, pass_id):
                         response['Retry-After'] = str(retry_after)
                         return response
 
-                    lockout_record, _ = SharePassLockout.objects.get_or_create(
-                        share_pass=locked_pass,
-                        ip_address=client_ip,
-                        defaults={'failed_attempts': 0}
-                    )
+                    try:
+                        lockout_record, _ = SharePassLockout.objects.get_or_create(
+                            share_pass=locked_pass,
+                            ip_address=client_ip,
+                            defaults={'failed_attempts': 0}
+                        )
+                    except IntegrityError:
+                        lockout_record = SharePassLockout.objects.get(
+                            share_pass=locked_pass,
+                            ip_address=client_ip
+                        )
                     lockout_record = SharePassLockout.objects.select_for_update().get(id=lockout_record.id)
 
                     if lockout_record.locked_until and lockout_record.locked_until > now:
@@ -239,8 +247,9 @@ def recipient_verify_view(request, pass_id):
                                 'error_message': f'This single-use Share Pass has already reached its maximum limit of {locked_pass.max_uses} access session(s).',
                             }, status=410)
 
-                        locked_pass.access_count += 1
+                        locked_pass.access_count = F('access_count') + 1
                         locked_pass.save(update_fields=['access_count', 'global_failed_attempts', 'global_window_start', 'global_locked_until', 'updated_at'])
+                        locked_pass.refresh_from_db(fields=['access_count'])
 
                         request.session.pop(fail_key, None)
                         request.session[auth_key] = True
@@ -255,7 +264,7 @@ def recipient_verify_view(request, pass_id):
                         return redirect('recipient_portal', pass_id=share_pass.id)
 
                     else:
-                        # 1. Update global per-pass counter
+                        # 1. Update global per-pass counter using F()
                         window_duration = timedelta(minutes=GLOBAL_WINDOW_MINUTES)
                         lockout_duration = timedelta(minutes=GLOBAL_LOCKOUT_MINUTES)
 
@@ -263,27 +272,31 @@ def recipient_verify_view(request, pass_id):
                             locked_pass.global_window_start = now
                             locked_pass.global_failed_attempts = 1
                         else:
-                            locked_pass.global_failed_attempts += 1
+                            locked_pass.global_failed_attempts = F('global_failed_attempts') + 1
+
+                        locked_pass.save(update_fields=['global_failed_attempts', 'global_window_start', 'updated_at'])
+                        locked_pass.refresh_from_db(fields=['global_failed_attempts'])
 
                         if locked_pass.global_failed_attempts >= GLOBAL_MAX_FAILURES:
                             locked_pass.global_locked_until = now + lockout_duration
+                            locked_pass.save(update_fields=['global_locked_until', 'updated_at'])
                             is_global_lock = True
                             global_retry_after = int(lockout_duration.total_seconds())
 
-                        locked_pass.save(update_fields=['global_failed_attempts', 'global_window_start', 'global_locked_until', 'updated_at'])
+                        # 2. Update per-IP counter using F()
+                        lockout_record.failed_attempts = F('failed_attempts') + 1
+                        lockout_record.save(update_fields=['failed_attempts', 'updated_at'])
+                        lockout_record.refresh_from_db(fields=['failed_attempts'])
 
-                        # 2. Update per-IP counter
-                        lockout_record.failed_attempts += 1
                         failures = lockout_record.failed_attempts
                         if failures >= MAX_FAILED_ATTEMPTS:
                             power = failures - MAX_FAILED_ATTEMPTS
                             lockout_seconds = min(60 * (2 ** power), 86400)
                             lockout_record.locked_until = now + timedelta(seconds=lockout_seconds)
-                            lockout_record.save(update_fields=['failed_attempts', 'locked_until', 'updated_at'])
+                            lockout_record.save(update_fields=['locked_until', 'updated_at'])
                             is_ip_lock = True
                             ip_retry_after = lockout_seconds
                         else:
-                            lockout_record.save(update_fields=['failed_attempts', 'updated_at'])
                             ip_retry_after = 0
                 break
             except OperationalError:

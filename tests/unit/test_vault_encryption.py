@@ -107,6 +107,16 @@ class CryptoServiceUnitTests(TestCase):
         with self.assertRaises(ImproperlyConfigured):
             validate_vault_master_key(debug=False, key=None)
 
+    def test_missing_key_raises_with_debug_false_and_port_set(self):
+        """Even if PORT=8000 is set in environment, missing key raises ImproperlyConfigured when DEBUG is False."""
+        from unittest import mock
+        with mock.patch.dict(os.environ, {"PORT": "8000"}, clear=False):
+            with self.settings(DEBUG=False, VAULT_MASTER_KEY=None):
+                with self.assertRaises(ImproperlyConfigured):
+                    validate_vault_master_key(debug=False, key=None)
+                with self.assertRaises(ImproperlyConfigured):
+                    get_vault_master_key()
+
     def test_invalid_length_key_fails_startup_when_debug_false(self):
         """When DEBUG is False, a key not exactly 32 bytes (hex or base64) raises ImproperlyConfigured."""
         # Too short (16 hex chars = 8 bytes)
@@ -116,6 +126,33 @@ class CryptoServiceUnitTests(TestCase):
         # Invalid random string
         with self.assertRaises(ImproperlyConfigured):
             validate_vault_master_key(debug=False, key="not-a-32-byte-hex-or-base64-key")
+
+    def test_valid_hex_and_valid_base64_master_keys(self):
+        """Valid 32-byte master key formats (64-char hex and base64) pass validation and return 32 bytes."""
+        import base64
+        raw_32 = b"A" * 32
+        hex_key = raw_32.hex()
+        b64_key = base64.b64encode(raw_32).decode("ascii")
+
+        # Hex key
+        validate_vault_master_key(debug=False, key=hex_key)
+        with self.settings(DEBUG=False, VAULT_MASTER_KEY=hex_key):
+            parsed = get_vault_master_key()
+            self.assertEqual(parsed, raw_32)
+
+        # Base64 key
+        validate_vault_master_key(debug=False, key=b64_key)
+        with self.settings(DEBUG=False, VAULT_MASTER_KEY=b64_key):
+            parsed = get_vault_master_key()
+            self.assertEqual(parsed, raw_32)
+
+    def test_debug_true_allows_development_key_derivation(self):
+        """When DEBUG is True and VAULT_MASTER_KEY is not set, a deterministic key is derived from SECRET_KEY."""
+        with self.settings(DEBUG=True, VAULT_MASTER_KEY=None, SECRET_KEY="dev-secret-key-test"):
+            validate_vault_master_key(debug=True, key=None)
+            derived = get_vault_master_key()
+            self.assertEqual(len(derived), 32)
+            self.assertIsInstance(derived, bytes)
 
     def test_roundtrip_with_aad(self):
         """Plaintext encrypted with associated data (AAD) requires identical AAD to decrypt."""

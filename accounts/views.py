@@ -7,7 +7,8 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import LoginView, LogoutView
 from django.contrib import messages
 from django.urls import reverse_lazy, reverse
-from django.db.models import Sum
+from django.db import IntegrityError
+from django.db.models import Sum, F
 from django.utils import timezone
 
 from .forms import (
@@ -17,7 +18,8 @@ from .forms import (
     SetNewPasswordForm,
     EmailVerificationOTPForm,
 )
-from .models import UserProfile, EmailVerificationCode, PasswordResetToken
+from .models import UserProfile, EmailVerificationCode, PasswordResetToken, LoginLockout
+from config.db_utils import atomic_immediate
 from .emails import (
     send_verification_otp_email,
     send_verification_success_email,
@@ -77,13 +79,83 @@ def register_view(request):
     return render(request, 'accounts/register.html', {'form': form})
 
 
+LOGIN_MAX_FAILED_ATTEMPTS = 5
+
+
 class CustomLoginView(LoginView):
-    """Custom LoginView with custom template and authentication form."""
+    """
+    Custom LoginView with database-backed per-username and per-IP exponential lockout.
+    Enforces a 1-minute initial lockout after 5 consecutive failed attempts,
+    doubling up to 24 hours on subsequent failures, returning HTTP 429 with Retry-After.
+    """
     template_name = 'accounts/login.html'
     authentication_form = LoginForm
     redirect_authenticated_user = True
 
+    def dispatch(self, request, *args, **kwargs):
+        if request.method == 'POST':
+            username = request.POST.get('username', '').strip()[:150]
+            client_ip = get_client_ip(request) or '127.0.0.1'
+            if username:
+                lockout = LoginLockout.objects.filter(username=username, ip_address=client_ip).first()
+                if lockout and lockout.is_locked:
+                    retry_after = lockout.retry_after_seconds
+                    form = self.get_form()
+                    response = self.render_to_response(self.get_context_data(
+                        form=form,
+                        error_message=f"Too many failed login attempts for '{username}'. Access is temporarily locked. Please retry in {retry_after} seconds.",
+                        retry_after=retry_after
+                    ), status=429)
+                    response['Retry-After'] = str(retry_after)
+                    return response
+        return super().dispatch(request, *args, **kwargs)
+
+    def form_invalid(self, form):
+        username = self.request.POST.get('username', '').strip()[:150]
+        client_ip = get_client_ip(self.request) or '127.0.0.1'
+        if username:
+            try:
+                lockout, _ = LoginLockout.objects.get_or_create(
+                    username=username,
+                    ip_address=client_ip,
+                    defaults={'failed_attempts': 0}
+                )
+            except IntegrityError:
+                lockout = LoginLockout.objects.get(
+                    username=username,
+                    ip_address=client_ip
+                )
+            with atomic_immediate():
+                lockout = LoginLockout.objects.select_for_update().get(id=lockout.id)
+                lockout.failed_attempts = F('failed_attempts') + 1
+                lockout.save(update_fields=['failed_attempts', 'updated_at'])
+                lockout.refresh_from_db(fields=['failed_attempts'])
+                failures = lockout.failed_attempts
+
+                if failures >= LOGIN_MAX_FAILED_ATTEMPTS:
+                    power = failures - LOGIN_MAX_FAILED_ATTEMPTS
+                    lockout_seconds = min(60 * (2 ** power), 86400)
+                    lockout.locked_until = timezone.now() + timedelta(seconds=lockout_seconds)
+                    lockout.save(update_fields=['locked_until', 'updated_at'])
+                    retry_after = lockout_seconds
+                    response = self.render_to_response(self.get_context_data(
+                        form=form,
+                        error_message=f"Too many failed login attempts ({failures}/{LOGIN_MAX_FAILED_ATTEMPTS}). Access is temporarily locked for {retry_after} seconds.",
+                        retry_after=retry_after
+                    ), status=429)
+                    response['Retry-After'] = str(retry_after)
+                    return response
+
+        return super().form_invalid(form)
+
     def form_valid(self, form):
+        username = form.cleaned_data.get('username', '').strip()[:150]
+        client_ip = get_client_ip(self.request) or '127.0.0.1'
+        if username:
+            LoginLockout.objects.filter(username=username, ip_address=client_ip).update(
+                failed_attempts=0,
+                locked_until=None
+            )
         messages.success(self.request, f"Welcome back, {form.get_user().username}!")
         return super().form_valid(form)
 
