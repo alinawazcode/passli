@@ -378,3 +378,85 @@ class ConcurrentLockoutTests(TransactionTestCase):
         self.assertEqual(lockout.failed_attempts, num_threads)
         self.assertTrue(lockout.is_locked)
         self.assertIsNotNone(lockout.locked_until)
+
+
+class RecipientLockoutConcurrentTests(TransactionTestCase):
+    """Multi-threaded concurrent lockout testing using TransactionTestCase to avoid SQLite savepoint deadlock."""
+
+    def setUp(self):
+        self.password = get_test_password()
+        self.owner = User.objects.create_user(
+            username="lockoutconcurrentowner",
+            email="concurrentowner@passli.dev",
+            password=self.password,
+            is_active=True,
+        )
+        self.doc = Document.objects.create(
+            user=self.owner,
+            title="Concurrent Doc.pdf",
+            file="documents/concurrent_dummy.pdf",
+            file_size=1024,
+            file_type="application/pdf",
+        )
+        self.share_pass = SharePass.objects.create(
+            owner=self.owner,
+            title="Concurrent Pass",
+            expires_at=timezone.now() + timedelta(hours=2),
+            can_view=True,
+        )
+        self.share_pass.documents.add(self.doc)
+        self.share_pass.set_key("8K7P-42XM")
+        self.share_pass.save()
+
+        self.verify_url = reverse("recipient_verify", kwargs={"pass_id": self.share_pass.id})
+        self.client_ip = "198.51.100.99"
+
+    def test_twenty_concurrent_attempts_two_threads(self):
+        """
+        Two worker threads execute 20 concurrent wrong-key attempts using TransactionTestCase.
+        Asserts failed_attempts is never below 20 and all attempts after threshold end in 429.
+        """
+        responses = []
+        errors = []
+        attempts_per_thread = 10
+
+        def worker():
+            from django.db import connection
+            try:
+                for _ in range(attempts_per_thread):
+                    client = Client()
+                    res = client.post(
+                        self.verify_url,
+                        {"access_key": "WRONG-KEY"},
+                        REMOTE_ADDR=self.client_ip,
+                    )
+                    responses.append(res.status_code)
+            except Exception as e:
+                errors.append(e)
+            finally:
+                connection.close()
+
+        threads = [threading.Thread(target=worker) for _ in range(2)]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
+
+        self.assertEqual(len(errors), 0, f"Concurrent execution produced errors: {errors}")
+        self.assertEqual(len(responses), 20)
+
+        lockout = SharePassLockout.objects.get(share_pass=self.share_pass, ip_address=self.client_ip)
+        self.assertGreaterEqual(lockout.failed_attempts, 20)
+        self.assertTrue(lockout.is_locked)
+        self.assertIsNotNone(lockout.locked_until)
+
+        # There must be 429 responses after reaching threshold
+        status_429_count = responses.count(429)
+        self.assertGreater(status_429_count, 0)
+
+        # Subsequent request must receive 429 with Retry-After header
+        final_res = Client().post(self.verify_url, {"access_key": "WRONG-KEY"}, REMOTE_ADDR=self.client_ip)
+        self.assertEqual(final_res.status_code, 429)
+        self.assertIn("Retry-After", final_res.headers)
+
+

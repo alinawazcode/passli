@@ -76,7 +76,7 @@ To defend against brute-force attacks on the 8-character key:
 ```mermaid
 flowchart LR
     Client[Browser / Smartphone QR Scanner]
-    Proxy[Reverse Proxy / Cloudflare / Railway Nginx]
+    Proxy[Reverse Proxy / Cloudflare / Nginx]
     App[Passli Django ASGI/WSGI Container]
     DB[(PostgreSQL / SQLite)]
 

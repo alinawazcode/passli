@@ -130,9 +130,9 @@ class SecurityAndVulnerabilityTests(TestCase):
             self.assertFalse(Document.objects.filter(title=f'Malicious {ext}').exists())
 
     def test_oversized_file_upload_blocked(self):
-        """Verify files exceeding 25 MB are rejected by DocumentUploadForm."""
+        """Verify files exceeding 5 MB are rejected by DocumentUploadForm."""
         mock_file = SimpleUploadedFile("oversized_scan.pdf", b"%PDF-1.4 header", content_type="application/pdf")
-        mock_file.size = 26 * 1024 * 1024  # 26 MB simulated size
+        mock_file.size = 6 * 1024 * 1024  # 6 MB simulated size
 
         form_data = {
             'title': 'Oversized Scan Report',
@@ -141,7 +141,27 @@ class SecurityAndVulnerabilityTests(TestCase):
         }
         form = DocumentUploadForm(data=form_data, files={'file': mock_file})
         self.assertFalse(form.is_valid())
-        self.assertIn("File size exceeds maximum allowed limit of 25 MB.", form.errors['file'])
+        self.assertIn("File size exceeds maximum allowed limit of 5 MB.", form.errors['file'])
+
+    def test_disguised_file_content_blocked(self):
+        """Verify files with mismatched magic byte content (e.g., text/script renamed to .pdf) are rejected."""
+        # Executable/script payload renamed to .pdf
+        fake_pdf = SimpleUploadedFile("malware.pdf", b"#!/bin/bash\necho evil", content_type="application/pdf")
+        form = DocumentUploadForm(
+            data={'title': 'Fake PDF', 'category': 'other'},
+            files={'file': fake_pdf}
+        )
+        self.assertFalse(form.is_valid())
+        self.assertIn("File content does not match", form.errors['file'][0])
+
+        # PDF payload renamed to .png
+        fake_png = SimpleUploadedFile("disguised.png", b"%PDF-1.4 binary data", content_type="image/png")
+        form = DocumentUploadForm(
+            data={'title': 'Fake PNG', 'category': 'other'},
+            files={'file': fake_png}
+        )
+        self.assertFalse(form.is_valid())
+        self.assertIn("File content does not match", form.errors['file'][0])
 
     # -------------------------------------------------------------
     # 4. Path Traversal & File System Isolation
@@ -361,4 +381,34 @@ class SecurityAndVulnerabilityTests(TestCase):
         self.assertNotIn(raw_key, share_pass.key_hash)
         self.assertTrue(share_pass.verify_key(raw_key))
         self.assertFalse(share_pass.verify_key("WRONG-KEY"))
+
+    # -------------------------------------------------------------
+    # 15. Public /media/ Route Disabled in Non-DEBUG
+    # -------------------------------------------------------------
+    def test_public_media_route_returns_404_in_production(self):
+        """
+        Verify that uploaded vault files cannot be accessed via direct /media/ URLs in production.
+        In non-DEBUG mode, GET /media/vault_files/anything returns 404,
+        and real stored file paths return 404 for both anonymous and authenticated users.
+        """
+        anon_client = Client()
+        auth_client = self.client_alice
+
+        with self.settings(DEBUG=False):
+            # Direct nonexistent media path
+            res_anon = anon_client.get('/media/vault_files/anything.pdf')
+            self.assertEqual(res_anon.status_code, 404)
+
+            res_auth = auth_client.get('/media/vault_files/anything.pdf')
+            self.assertEqual(res_auth.status_code, 404)
+
+            # Real stored file path
+            if self.alice_doc.file:
+                real_media_url = f"/media/{self.alice_doc.file.name}"
+                res_anon_real = anon_client.get(real_media_url)
+                self.assertEqual(res_anon_real.status_code, 404)
+
+                res_auth_real = auth_client.get(real_media_url)
+                self.assertEqual(res_auth_real.status_code, 404)
+
 

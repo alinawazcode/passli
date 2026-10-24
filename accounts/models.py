@@ -260,34 +260,90 @@ class SecurityAlertLog(models.Model):
             except (ValueError, TypeError):
                 clean_ip = None
 
+        from config.db_utils import atomic_immediate
+        from django.db import IntegrityError, OperationalError
+        import time
+
         now = timezone.now()
-        record, created = cls.objects.get_or_create(
-            alert_type=alert_type,
-            identifier=identifier,
-            defaults={
-                'recipient_email': recipient_email,
-                'attempts_count': 1,
-                'last_alert_at': now,
-                'last_ip': clean_ip,
-            }
-        )
+        for attempt in range(20):
+            try:
+                with atomic_immediate():
+                    try:
+                        record, created = cls.objects.get_or_create(
+                            alert_type=alert_type,
+                            identifier=identifier,
+                            defaults={
+                                'recipient_email': recipient_email,
+                                'attempts_count': 1,
+                                'last_alert_at': now,
+                                'last_ip': clean_ip,
+                            }
+                        )
+                    except IntegrityError:
+                        record = cls.objects.get(alert_type=alert_type, identifier=identifier)
+                        created = False
 
-        if created:
-            return True, 1
+                    if created:
+                        return True, 1
 
-        delta = (now - record.last_alert_at).total_seconds()
-        record.last_ip = clean_ip
-        record.recipient_email = recipient_email
+                    delta = (now - record.last_alert_at).total_seconds()
+                    record.last_ip = clean_ip
+                    record.recipient_email = recipient_email
 
-        if delta >= cooldown_seconds:
-            # Cooldown passed; send a new aggregated email
-            total = record.attempts_count + 1
-            record.attempts_count = 1
-            record.last_alert_at = now
-            record.save(update_fields=['attempts_count', 'last_alert_at', 'last_ip', 'recipient_email'])
-            return True, total
-        else:
-            # Within cooldown; suppress duplicate email but record failure count
-            record.attempts_count += 1
-            record.save(update_fields=['attempts_count', 'last_ip', 'recipient_email'])
-            return False, record.attempts_count
+                    if delta >= cooldown_seconds:
+                        # Cooldown passed; send a new aggregated email
+                        total = record.attempts_count + 1
+                        record.attempts_count = 1
+                        record.last_alert_at = now
+                        record.save(update_fields=['attempts_count', 'last_alert_at', 'last_ip', 'recipient_email'])
+                        return True, total
+                    else:
+                        # Within cooldown; suppress duplicate email but record failure count
+                        record.attempts_count += 1
+                        record.save(update_fields=['attempts_count', 'last_ip', 'recipient_email'])
+                        return False, record.attempts_count
+            except OperationalError:
+                if attempt == 19:
+                    raise
+                time.sleep(0.05 + 0.02 * (attempt % 5))
+
+
+class LoginLockout(models.Model):
+    """
+    Persistent database-backed rate-limiting lockout tracker for user login attempts.
+    Tracks failed authentication attempts per username and client IP with exponential backoff.
+    """
+    username = models.CharField(max_length=150, db_index=True)
+    ip_address = models.CharField(max_length=45, db_index=True, default='127.0.0.1')
+    failed_attempts = models.PositiveIntegerField(default=0)
+    locked_until = models.DateTimeField(null=True, blank=True, db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['username', 'ip_address'], name='unique_username_ip_login_lockout')
+        ]
+        indexes = [
+            models.Index(fields=['username', 'ip_address']),
+            models.Index(fields=['locked_until']),
+        ]
+        verbose_name = 'Login Lockout'
+        verbose_name_plural = 'Login Lockouts'
+
+    def __str__(self):
+        return f"Login lockout for {self.username} from {self.ip_address} ({self.failed_attempts} fails)"
+
+    @property
+    def is_locked(self) -> bool:
+        if self.locked_until and self.locked_until > timezone.now():
+            return True
+        return False
+
+    @property
+    def retry_after_seconds(self) -> int:
+        if not self.is_locked:
+            return 0
+        diff = (self.locked_until - timezone.now()).total_seconds()
+        return max(1, int(diff + 0.999))
+

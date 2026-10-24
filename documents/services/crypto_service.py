@@ -66,6 +66,7 @@ def validate_vault_master_key(debug: bool | None = None, key: str | bytes | None
     """
     Validates vault master key configuration.
     Raises ImproperlyConfigured if DEBUG is False and key is missing or not 32 bytes (hex or base64).
+    Management commands exempt from requiring the key: makemigrations, migrate, collectstatic, check, ensure_superadmin.
     """
     import sys
     is_debug = getattr(settings, 'DEBUG', False) if debug is None else debug
@@ -75,15 +76,6 @@ def validate_vault_master_key(debug: bool | None = None, key: str | bytes | None
             return
         raw_key = getattr(settings, 'VAULT_MASTER_KEY', None) if key is _MISSING else key
         if not raw_key:
-            # If running in cloud hosting (e.g. Railway) where user hasn't configured VAULT_MASTER_KEY yet,
-            # warn loudly and allow startup rather than crashlooping the container healthchecks.
-            if debug is None and key is _MISSING and (os.environ.get('RAILWAY_ENVIRONMENT') or os.environ.get('RAILWAY_PROJECT_ID') or os.environ.get('PORT')):
-                logger.critical(
-                    "SECURITY WARNING: VAULT_MASTER_KEY is not configured in Railway environment! "
-                    "Vault document encryption requires VAULT_MASTER_KEY. "
-                    "Please generate a 32-byte hex key and add it to your Railway project variables."
-                )
-                return
             raise ImproperlyConfigured(
                 "VAULT_MASTER_KEY is required in production when DEBUG is False. "
                 "Provide a 32-byte hexadecimal or base64 encoded key."
@@ -129,17 +121,8 @@ def get_vault_master_key(key_version: int | None = None) -> bytes:
             return hkdf.derive(env_key.encode('utf-8'))
         raise ImproperlyConfigured("VAULT_MASTER_KEY must be a valid 32-byte key.")
 
-    # In production (DEBUG=False), never derive from SECRET_KEY unless in cloud deployment without explicit key
+    # In production (DEBUG=False), never derive from SECRET_KEY
     if not getattr(settings, 'DEBUG', False):
-        if (os.environ.get('RAILWAY_ENVIRONMENT') or os.environ.get('RAILWAY_PROJECT_ID') or os.environ.get('PORT')) and getattr(settings, 'SECRET_KEY', None):
-            secret_key_bytes = getattr(settings, 'SECRET_KEY', '').encode('utf-8')
-            hkdf = HKDF(
-                algorithm=hashes.SHA256(),
-                length=32,
-                salt=b"passli-vault-encryption-salt-v1",
-                info=b"aes-256-gcm-master-vault-key"
-            )
-            return hkdf.derive(secret_key_bytes)
         raise ImproperlyConfigured("VAULT_MASTER_KEY is required when DEBUG is False.")
 
     # Safe deterministic fallback derivation from SECRET_KEY ONLY in DEBUG mode
