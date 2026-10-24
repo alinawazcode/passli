@@ -100,3 +100,15 @@ python manage.py test_smtp admin@passli.dev
 # Idempotently ensure superadmin exists from environment variables without resetting existing passwords
 python manage.py ensure_superadmin
 ```
+
+### 4.4 Verifying TRUSTED_PROXY_COUNT & Client IP Extraction
+Passli uses reverse proxy headers (`X-Forwarded-For`) to record true client IP addresses for lockout tracking and security audit logs.
+To verify that upstream proxy depth is configured correctly and immune to client IP spoofing:
+
+1. Send a test request containing a forged `X-Forwarded-For` header:
+   ```bash
+   curl -H "X-Forwarded-For: 203.0.113.199" https://<your-domain>/accounts/login/
+   ```
+2. Inspect the audit log in the administrative dashboard (`/admin/dashboard/audit/`) or application console:
+   - **Correctly configured (`TRUSTED_PROXY_COUNT=1`)**: The audit log records your actual public IP address; the spoofed `203.0.113.199` is ignored.
+   - **Misconfigured (proxy count set too high)**: The audit log records `203.0.113.199`. In this case, lower `TRUSTED_PROXY_COUNT` until only authentic upstream proxies are trusted.

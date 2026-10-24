@@ -10,6 +10,8 @@ from dotenv import load_dotenv
 import dj_database_url
 from django.core.exceptions import ImproperlyConfigured
 
+import warnings
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -36,29 +38,28 @@ VAULT_KEY_VERSION = int(os.environ.get('VAULT_KEY_VERSION', '1'))
 if any(cmd in sys.argv for cmd in ('test', 'pytest')) and not VAULT_MASTER_KEY:
     VAULT_MASTER_KEY = '0' * 64
 
-# Allowed Hosts configuration
+# Allowed Hosts configuration (comma-separated env var)
 allowed_hosts_env = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1')
 ALLOWED_HOSTS = [h.strip() for h in allowed_hosts_env.split(',') if h.strip()]
 
-# Add Railway public domain dynamically if present
-railway_domain = os.environ.get('RAILWAY_PUBLIC_DOMAIN')
-if railway_domain and railway_domain not in ALLOWED_HOSTS:
-    ALLOWED_HOSTS.append(railway_domain)
-
-# CSRF Trusted Origins (required for POST forms on HTTPS domains)
+# CSRF Trusted Origins (required for POST forms on HTTPS domains, comma-separated env var)
 csrf_origins_env = os.environ.get(
     'CSRF_TRUSTED_ORIGINS',
     'http://localhost:8000,http://127.0.0.1:8000'
 )
 CSRF_TRUSTED_ORIGINS = [o.strip() for o in csrf_origins_env.split(',') if o.strip()]
-if railway_domain:
-    railway_origin = f"https://{railway_domain}"
-    if railway_origin not in CSRF_TRUSTED_ORIGINS:
-        CSRF_TRUSTED_ORIGINS.append(railway_origin)
 
-# Reverse proxy SSL header (Railway / Render / Nginx termination)
+# Reverse proxy SSL header & trusted proxy configuration
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-TRUSTED_PROXY_COUNT = int(os.environ.get('TRUSTED_PROXY_COUNT', '1'))
+raw_proxy_count = os.environ.get('TRUSTED_PROXY_COUNT')
+if not DEBUG and raw_proxy_count is None and not any(cmd in sys.argv for cmd in ('test', 'pytest', 'makemigrations', 'migrate', 'collectstatic', 'check', 'ensure_superadmin')):
+    warnings.warn(
+        "TRUSTED_PROXY_COUNT environment variable is not explicitly set. Defaulting to 1. "
+        "Verify reverse proxy depth for client IP extraction in audit logs.",
+        UserWarning,
+        stacklevel=2,
+    )
+TRUSTED_PROXY_COUNT = int(raw_proxy_count) if raw_proxy_count and raw_proxy_count.isdigit() else 1
 
 # Defense-in-Depth HTTP Security Headers & Cookie Policies
 SECURE_BROWSER_XSS_FILTER = True
@@ -72,6 +73,16 @@ SESSION_COOKIE_SECURE = not DEBUG
 CSRF_COOKIE_SECURE = not DEBUG
 if any(cmd in sys.argv for cmd in ('test', 'pytest')):
     SECURE_SSL_REDIRECT = False
+    from django.contrib.auth.hashers import PBKDF2PasswordHasher
+
+    class FastPBKDF2PasswordHasher(PBKDF2PasswordHasher):
+        iterations = 1
+
+    PASSWORD_HASHERS = [
+        'config.settings.FastPBKDF2PasswordHasher',
+        'django.contrib.auth.hashers.PBKDF2PasswordHasher',
+        'django.contrib.auth.hashers.MD5PasswordHasher',
+    ]
 else:
     SECURE_SSL_REDIRECT = os.environ.get('SECURE_SSL_REDIRECT', 'True' if not DEBUG else 'False').lower() in ('true', '1', 't')
 
@@ -122,6 +133,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'config.context_processors.email_status',
             ],
         },
     },
@@ -131,7 +143,7 @@ WSGI_APPLICATION = 'config.wsgi.application'
 
 
 # Database Configuration
-# Uses PostgreSQL if DATABASE_URL is set (Railway Postgres), falls back to SQLite
+# Uses PostgreSQL if DATABASE_URL is set, falls back to SQLite
 DATABASE_URL = os.environ.get('DATABASE_URL')
 if DATABASE_URL:
     DATABASES = {
@@ -142,10 +154,12 @@ if DATABASE_URL:
         )
     }
 else:
+    db_path_env = os.environ.get('DATABASE_PATH')
+    sqlite_path = Path(db_path_env).resolve() if db_path_env else BASE_DIR / 'db.sqlite3'
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
+            'NAME': sqlite_path,
             'OPTIONS': {
                 'timeout': 60,
             },
@@ -194,13 +208,19 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
 
 # Media files (Uploaded User Documents & Vault Files)
 MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
-os.makedirs(MEDIA_ROOT, exist_ok=True)
-os.makedirs(MEDIA_ROOT / 'vault_files', exist_ok=True)
+raw_media_root = os.environ.get('MEDIA_ROOT')
+MEDIA_ROOT = Path(raw_media_root).resolve() if raw_media_root else BASE_DIR / 'media'
 
-# File upload limits (30 MB limit)
-DATA_UPLOAD_MAX_MEMORY_SIZE = 30 * 1024 * 1024
-FILE_UPLOAD_MAX_MEMORY_SIZE = 30 * 1024 * 1024
+try:
+    os.makedirs(MEDIA_ROOT, exist_ok=True)
+    os.makedirs(MEDIA_ROOT / 'vault_files', exist_ok=True)
+except OSError as e:
+    import logging
+    logging.getLogger('config').warning("Failed to create media directory at %s: %s", MEDIA_ROOT, e)
+
+# File upload limits (5 MB limit)
+DATA_UPLOAD_MAX_MEMORY_SIZE = 5 * 1024 * 1024
+FILE_UPLOAD_MAX_MEMORY_SIZE = 5 * 1024 * 1024
 
 # Authentication redirects
 LOGIN_URL = 'login'
@@ -269,33 +289,26 @@ LOGGING = {
 }
 
 # ==============================================================================
-# Email & SMTP Service Configuration (Gmail SMTP & Railway Environment Compatible)
+# Email & SMTP Service Configuration (Gmail SMTP & Standard Providers)
 # ==============================================================================
-EMAIL_BACKEND = os.environ.get('EMAIL_BACKEND', 'django.core.mail.backends.smtp.EmailBackend')
-
 raw_host = os.environ.get('SMTP_HOST', os.environ.get('EMAIL_HOST', 'smtp.gmail.com'))
 EMAIL_HOST = raw_host.strip().strip("'\"") if raw_host else 'smtp.gmail.com'
 
-raw_port = str(os.environ.get('SMTP_PORT', os.environ.get('EMAIL_PORT', '465'))).strip().strip("'\"")
-EMAIL_PORT = int(raw_port) if raw_port.isdigit() else 465
+# Change default SMTP_PORT to 587 with STARTTLS (keep 465 SSL when explicitly set)
+raw_port = str(os.environ.get('SMTP_PORT', os.environ.get('EMAIL_PORT', '587'))).strip().strip("'\"")
+EMAIL_PORT = int(raw_port) if raw_port.isdigit() else 587
 
-# SMTP Security: port 465 uses SSL directly (EMAIL_USE_SSL = True); port 587 uses STARTTLS (EMAIL_USE_TLS = True)
-smtp_secure_env = str(os.environ.get('SMTP_SECURE', 'true')).strip().strip("'\"").lower() in ('true', '1', 't', 'yes')
 if EMAIL_PORT == 465:
     EMAIL_USE_SSL = True
     EMAIL_USE_TLS = False
-elif EMAIL_PORT == 587 or not smtp_secure_env:
+else:
     EMAIL_USE_SSL = False
     EMAIL_USE_TLS = True
-else:
-    EMAIL_USE_SSL = True
-    EMAIL_USE_TLS = False
 
 raw_user = os.environ.get('SMTP_USER', os.environ.get('EMAIL_HOST_USER', ''))
 EMAIL_HOST_USER = raw_user.strip().strip("'\"") if raw_user else ''
 
 # Clean Google App Password: strip quotes, trim whitespace, and REMOVE SPACES
-# (Google generates app passwords formatted like 'abcd efgh ijkl mnop' which fail if spaces aren't stripped)
 raw_pass = os.environ.get('SMTP_PASS', os.environ.get('EMAIL_HOST_PASSWORD', ''))
 EMAIL_HOST_PASSWORD = raw_pass.strip().strip("'\"").replace(' ', '') if raw_pass else ''
 
@@ -304,11 +317,35 @@ DEFAULT_FROM_EMAIL = raw_from.strip().strip("'\"") if raw_from else (EMAIL_HOST_
 SERVER_EMAIL = DEFAULT_FROM_EMAIL
 EMAIL_TIMEOUT = 12  # 12-second timeout
 
+if not EMAIL_HOST_USER or not EMAIL_HOST_PASSWORD:
+    EMAIL_SERVICE_CONFIGURED = False
+    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+    if not any(cmd in sys.argv for cmd in ('test', 'pytest', 'makemigrations', 'migrate', 'collectstatic', 'check', 'ensure_superadmin')):
+        import logging
+        logging.getLogger('config').warning(
+            "SMTP_USER or SMTP_PASS is empty. Outbound email is disabled; using console EmailBackend. "
+            "Registration verification codes and alerts will be printed to console."
+        )
+else:
+    EMAIL_SERVICE_CONFIGURED = True
+    EMAIL_BACKEND = os.environ.get('EMAIL_BACKEND', 'django.core.mail.backends.smtp.EmailBackend')
+
+
+# ==============================================================================
 # Public Application Base URL (for generating trusted reset, verification, and alert links)
+# ==============================================================================
+def validate_app_url(debug: bool, url: str) -> None:
+    """Validate that APP_URL is configured with an HTTPS URL in production."""
+    if not debug and (not url or url.startswith(('http://localhost', 'http://127.0.0.1'))):
+        raise ImproperlyConfigured(
+            "APP_URL must be configured with a valid public HTTPS origin in production (DEBUG=False), "
+            "e.g. 'https://<username>.pythonanywhere.com'."
+        )
+
+
 raw_app_url = os.environ.get('APP_URL', '').strip().strip("'\"").rstrip('/')
-if not raw_app_url and railway_domain:
-    raw_app_url = f"https://{railway_domain}"
-if not raw_app_url:
-    raw_app_url = 'http://localhost:8000'
-APP_URL = raw_app_url
+if not any(cmd in sys.argv for cmd in ('test', 'pytest', 'makemigrations', 'migrate', 'collectstatic', 'check', 'ensure_superadmin')):
+    validate_app_url(DEBUG, raw_app_url)
+
+APP_URL = raw_app_url if raw_app_url else 'http://localhost:8000'
 

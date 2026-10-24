@@ -399,8 +399,16 @@ Passli is production-ready for deployment on **Railway**, **Render**, **Fly.io**
    ```bash
    python manage.py migrate && python manage.py ensure_superadmin && gunicorn config.wsgi:application --bind 0.0.0.0:$PORT
    ```
-   > **Multi-Replica Notice**: If scaling to multiple concurrent web container replicas, execute database migrations in a dedicated release phase or one-off task rather than concurrently across starting web containers to avoid migration lock contention.
 4. Configure production environment variables (`SECRET_KEY`, `ALLOWED_HOSTS`, `CSRF_TRUSTED_ORIGINS`, `DEBUG=False`).
+
+### SSL Redirect Troubleshooting
+If your deployment experiences an infinite redirect loop (HTTP 301/302 repeatedly redirecting to HTTPS):
+1. Set `SECURE_SSL_REDIRECT=False` in your environment variables.
+2. Verify whether your host or upstream proxy forwards `X-Forwarded-Proto` with this one-line curl command:
+   ```bash
+   curl -s -D - https://<your-domain> -o /dev/null | grep -iE "location|http"
+   ```
+   If the upstream proxy does not send `X-Forwarded-Proto: https`, Django will believe the incoming request is insecure and continuously redirect. Keep `SECURE_SSL_REDIRECT=False` until the proxy is properly configured.
 
 ---
 
