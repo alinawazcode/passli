@@ -1,0 +1,13 @@
+Passli — Security Notice: Email Change Requested
+
+Hello {{ username }},
+
+A request was initiated from your account settings to change your Passli vault email address from {{ old_email }} to {{ new_email }}.
+
+Security Notice:
+A verification code was sent to the new email address. Your current email address remains linked to your vault until the code is verified.
+
+If you did NOT request this change, someone may have unauthorized access to your account. Please log in immediately, update your master password, and revoke any suspicious share passes.
+
+Passli Security Team
+{{ app_url }}

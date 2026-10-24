@@ -11,15 +11,21 @@ class UserProfile(models.Model):
     """
     Extends standard auth.User with verification status and security profile details.
     """
-    user = models.OneToOneField(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
-        related_name='profile'
-    )
+
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="profile")
     is_email_verified = models.BooleanField(
         default=False,
         db_index=True,
-        help_text="Designates whether the user has verified ownership of their email address."
+        help_text="Designates whether the user has verified ownership of their email address.",
+    )
+    display_name = models.CharField(
+        max_length=50, blank=True, default="", help_text="Optional display name shown across the app."
+    )
+    avatar_path = models.CharField(
+        max_length=255, blank=True, default="", help_text="Relative path to stored WebP avatar image."
+    )
+    username_changed_at = models.DateTimeField(
+        null=True, blank=True, help_text="Timestamp of most recent username change (enforces 30-day cooldown)."
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -38,40 +44,43 @@ class EmailVerificationCode(models.Model):
     Time-limited, single-use 6-digit numeric OTP code for verifying email addresses.
     Plaintext codes are never stored; only salted PBKDF2 hashes are persisted.
     """
+
+    PURPOSE_VERIFY_EMAIL = "verify_email"
+    PURPOSE_CHANGE_EMAIL = "change_email"
+    PURPOSE_CHANGE_PASSWORD = "change_password"
+
+    PURPOSE_CHOICES = [
+        (PURPOSE_VERIFY_EMAIL, "Verify Email"),
+        (PURPOSE_CHANGE_EMAIL, "Change Email"),
+        (PURPOSE_CHANGE_PASSWORD, "Change Password"),
+    ]
+
     user = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
-        related_name='verification_codes',
-        db_index=True
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="verification_codes", db_index=True
     )
-    email = models.EmailField(
-        help_text="Target email address being verified."
+    email = models.EmailField(help_text="Target email address being verified.")
+    purpose = models.CharField(
+        max_length=32,
+        choices=PURPOSE_CHOICES,
+        default=PURPOSE_VERIFY_EMAIL,
+        db_index=True,
+        help_text="Specific operational flow this verification code is authorized for.",
     )
-    code_hash = models.CharField(
-        max_length=255,
-        help_text="PBKDF2 hash of the 6-digit OTP code."
-    )
-    attempts = models.PositiveIntegerField(
-        default=0,
-        help_text="Number of failed verification attempts."
-    )
+    code_hash = models.CharField(max_length=255, help_text="PBKDF2 hash of the 6-digit OTP code.")
+    attempts = models.PositiveIntegerField(default=0, help_text="Number of failed verification attempts.")
     max_attempts = models.PositiveIntegerField(
-        default=5,
-        help_text="Max permitted incorrect submissions before code invalidation."
+        default=5, help_text="Max permitted incorrect submissions before code invalidation."
     )
     expires_at = models.DateTimeField(
-        db_index=True,
-        help_text="Expiration timestamp (defaults to 15 minutes after generation)."
+        db_index=True, help_text="Expiration timestamp (defaults to 15 minutes after generation)."
     )
     is_used = models.BooleanField(
-        default=False,
-        db_index=True,
-        help_text="Flag indicating whether this OTP was already successfully verified."
+        default=False, db_index=True, help_text="Flag indicating whether this OTP was already successfully verified."
     )
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        ordering = ['-created_at']
+        ordering = ["-created_at"]
         verbose_name = "Email Verification Code"
         verbose_name_plural = "Email Verification Codes"
 
@@ -98,10 +107,10 @@ class EmailVerificationCode(models.Model):
         is_correct = check_password(str(submitted_code).strip(), self.code_hash)
         if is_correct:
             self.is_used = True
-            self.save(update_fields=['attempts', 'is_used'])
+            self.save(update_fields=["attempts", "is_used"])
             return True
         else:
-            self.save(update_fields=['attempts'])
+            self.save(update_fields=["attempts"])
             return False
 
     @property
@@ -118,35 +127,22 @@ class PasswordResetToken(models.Model):
     Cryptographically secure, unpredictable, single-use password reset tokens.
     Only SHA-256 token hashes are stored to protect tokens at rest.
     """
+
     user = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
-        related_name='password_reset_tokens',
-        db_index=True
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="password_reset_tokens", db_index=True
     )
     token_hash = models.CharField(
-        max_length=64,
-        db_index=True,
-        help_text="SHA-256 digest of the raw URL-safe reset token."
+        max_length=64, db_index=True, help_text="SHA-256 digest of the raw URL-safe reset token."
     )
-    expires_at = models.DateTimeField(
-        db_index=True,
-        help_text="Token expiration timestamp (defaults to 30 minutes)."
-    )
+    expires_at = models.DateTimeField(db_index=True, help_text="Token expiration timestamp (defaults to 30 minutes).")
     is_used = models.BooleanField(
-        default=False,
-        db_index=True,
-        help_text="Single-use flag ensuring tokens cannot be replayed."
+        default=False, db_index=True, help_text="Single-use flag ensuring tokens cannot be replayed."
     )
-    ip_address = models.GenericIPAddressField(
-        null=True,
-        blank=True,
-        help_text="Requesting client IP address."
-    )
+    ip_address = models.GenericIPAddressField(null=True, blank=True, help_text="Requesting client IP address.")
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        ordering = ['-created_at']
+        ordering = ["-created_at"]
         verbose_name = "Password Reset Token"
         verbose_name_plural = "Password Reset Tokens"
 
@@ -160,7 +156,7 @@ class PasswordResetToken(models.Model):
         and saves the record. Returns (instance, raw_token).
         """
         raw_token = secrets.token_urlsafe(32)
-        token_hash = hashlib.sha256(raw_token.encode('utf-8')).hexdigest()
+        token_hash = hashlib.sha256(raw_token.encode("utf-8")).hexdigest()
         expires_at = timezone.now() + timedelta(minutes=ttl_minutes)
 
         # Invalidate any existing unused tokens for this user
@@ -181,20 +177,16 @@ class PasswordResetToken(models.Model):
         """
         if not raw_token:
             return None
-        token_hash = hashlib.sha256(raw_token.strip().encode('utf-8')).hexdigest()
+        token_hash = hashlib.sha256(raw_token.strip().encode("utf-8")).hexdigest()
         try:
-            record = cls.objects.get(
-                token_hash=token_hash,
-                is_used=False,
-                expires_at__gt=timezone.now()
-            )
+            record = cls.objects.get(token_hash=token_hash, is_used=False, expires_at__gt=timezone.now())
             return record
         except cls.DoesNotExist:
             return None
 
     def mark_used(self):
         self.is_used = True
-        self.save(update_fields=['is_used'])
+        self.save(update_fields=["is_used"])
 
 
 class SecurityAlertLog(models.Model):
@@ -202,34 +194,24 @@ class SecurityAlertLog(models.Model):
     Maintains rate-limiting, cooldown, and aggregation state for outgoing security emails
     (e.g., failed QR/passcode verification alerts) to prevent inbox flooding.
     """
+
     alert_type = models.CharField(
-        max_length=60,
-        db_index=True,
-        help_text="Type of security alert (e.g., failed_passcode, suspicious_login)."
+        max_length=60, db_index=True, help_text="Type of security alert (e.g., failed_passcode, suspicious_login)."
     )
-    identifier = models.CharField(
-        max_length=255,
-        db_index=True,
-        help_text="Entity key, e.g. pass:<uuid> or user:<id>."
-    )
+    identifier = models.CharField(max_length=255, db_index=True, help_text="Entity key, e.g. pass:<uuid> or user:<id>.")
     recipient_email = models.EmailField()
     attempts_count = models.PositiveIntegerField(
-        default=1,
-        help_text="Number of aggregated failed attempts since last alert."
+        default=1, help_text="Number of aggregated failed attempts since last alert."
     )
     last_alert_at = models.DateTimeField(
-        default=timezone.now,
-        help_text="Timestamp when the last email alert was dispatched."
+        default=timezone.now, help_text="Timestamp when the last email alert was dispatched."
     )
-    last_ip = models.GenericIPAddressField(
-        null=True,
-        blank=True
-    )
+    last_ip = models.GenericIPAddressField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        ordering = ['-last_alert_at']
-        unique_together = ('alert_type', 'identifier')
+        ordering = ["-last_alert_at"]
+        unique_together = ("alert_type", "identifier")
         verbose_name = "Security Alert Cooldown Log"
         verbose_name_plural = "Security Alert Cooldown Logs"
 
@@ -238,12 +220,7 @@ class SecurityAlertLog(models.Model):
 
     @classmethod
     def check_and_record_alert(
-        cls,
-        alert_type: str,
-        identifier: str,
-        recipient_email: str,
-        ip_address: str = None,
-        cooldown_seconds: int = 900
+        cls, alert_type: str, identifier: str, recipient_email: str, ip_address: str = None, cooldown_seconds: int = 900
     ) -> tuple[bool, int]:
         """
         Records an attempt. Returns (should_send_email: bool, total_attempts_in_window: int).
@@ -254,6 +231,7 @@ class SecurityAlertLog(models.Model):
         clean_ip = None
         if ip_address:
             import ipaddress
+
             try:
                 ipaddress.ip_address(ip_address)
                 clean_ip = ip_address
@@ -273,11 +251,11 @@ class SecurityAlertLog(models.Model):
                             alert_type=alert_type,
                             identifier=identifier,
                             defaults={
-                                'recipient_email': recipient_email,
-                                'attempts_count': 1,
-                                'last_alert_at': now,
-                                'last_ip': clean_ip,
-                            }
+                                "recipient_email": recipient_email,
+                                "attempts_count": 1,
+                                "last_alert_at": now,
+                                "last_ip": clean_ip,
+                            },
                         )
                     except IntegrityError:
                         record = cls.objects.get(alert_type=alert_type, identifier=identifier)
@@ -295,12 +273,12 @@ class SecurityAlertLog(models.Model):
                         total = record.attempts_count + 1
                         record.attempts_count = 1
                         record.last_alert_at = now
-                        record.save(update_fields=['attempts_count', 'last_alert_at', 'last_ip', 'recipient_email'])
+                        record.save(update_fields=["attempts_count", "last_alert_at", "last_ip", "recipient_email"])
                         return True, total
                     else:
                         # Within cooldown; suppress duplicate email but record failure count
                         record.attempts_count += 1
-                        record.save(update_fields=['attempts_count', 'last_ip', 'recipient_email'])
+                        record.save(update_fields=["attempts_count", "last_ip", "recipient_email"])
                         return False, record.attempts_count
             except OperationalError:
                 if attempt == 19:
@@ -313,8 +291,9 @@ class LoginLockout(models.Model):
     Persistent database-backed rate-limiting lockout tracker for user login attempts.
     Tracks failed authentication attempts per username and client IP with exponential backoff.
     """
+
     username = models.CharField(max_length=150, db_index=True)
-    ip_address = models.CharField(max_length=45, db_index=True, default='127.0.0.1')
+    ip_address = models.CharField(max_length=45, db_index=True, default="127.0.0.1")
     failed_attempts = models.PositiveIntegerField(default=0)
     locked_until = models.DateTimeField(null=True, blank=True, db_index=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -322,14 +301,14 @@ class LoginLockout(models.Model):
 
     class Meta:
         constraints = [
-            models.UniqueConstraint(fields=['username', 'ip_address'], name='unique_username_ip_login_lockout')
+            models.UniqueConstraint(fields=["username", "ip_address"], name="unique_username_ip_login_lockout")
         ]
         indexes = [
-            models.Index(fields=['username', 'ip_address']),
-            models.Index(fields=['locked_until']),
+            models.Index(fields=["username", "ip_address"]),
+            models.Index(fields=["locked_until"]),
         ]
-        verbose_name = 'Login Lockout'
-        verbose_name_plural = 'Login Lockouts'
+        verbose_name = "Login Lockout"
+        verbose_name_plural = "Login Lockouts"
 
     def __str__(self):
         return f"Login lockout for {self.username} from {self.ip_address} ({self.failed_attempts} fails)"
@@ -347,3 +326,102 @@ class LoginLockout(models.Model):
         diff = (self.locked_until - timezone.now()).total_seconds()
         return max(1, int(diff + 0.999))
 
+
+class PendingEmailChange(models.Model):
+    """
+    Stores an unverified pending email address change for a user.
+    The user's actual auth.User.email address is NEVER updated until
+    the 6-digit OTP sent to the new email address is successfully verified.
+    """
+
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="pending_email_change")
+    new_email = models.EmailField(help_text="Requested new email address awaiting OTP verification.")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Pending Email Change"
+        verbose_name_plural = "Pending Email Changes"
+
+    def __str__(self):
+        return f"Pending email change for {self.user.username} -> {self.new_email}"
+
+
+class AccountEvent(models.Model):
+    """
+    Structured audit trail for account security lifecycle events.
+    Records security actions (username change, email update, password reset,
+    avatar edits, reauth failure) without logging passwords, tokens, or raw OTPs.
+    """
+
+    class EventType(models.TextChoices):
+        USERNAME_CHANGED = "username_changed", "Username Changed"
+        EMAIL_CHANGE_REQUESTED = "email_change_requested", "Email Change Requested"
+        EMAIL_CHANGED = "email_changed", "Email Address Changed"
+        PASSWORD_CHANGED = "password_changed", "Password Changed"
+        PASSWORD_OTP_SENT = "password_otp_sent", "Password Reset Code Sent"
+        AVATAR_UPDATED = "avatar_updated", "Avatar Updated"
+        AVATAR_REMOVED = "avatar_removed", "Avatar Removed"
+        REAUTH_FAILED = "reauth_failed", "Re-authentication Failed"
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="account_events", db_index=True
+    )
+    event_type = models.CharField(max_length=50, choices=EventType.choices, db_index=True)
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    user_agent = models.CharField(max_length=200, blank=True, default="")
+    metadata = models.JSONField(default=dict, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name = "Account Event"
+        verbose_name_plural = "Account Events"
+        indexes = [
+            models.Index(fields=["user", "-created_at"]),
+            models.Index(fields=["event_type", "-created_at"]),
+        ]
+
+    def __str__(self):
+        return (
+            f"[{self.created_at.strftime('%Y-%m-%d %H:%M:%S')}] {self.user.username} — {self.get_event_type_display()}"
+        )
+
+
+class ActionThrottle(models.Model):
+    """
+    Persistent database-backed throttle tracker for sensitive account actions
+    (e.g., password change re-authentication).
+    Enforces exponential lockout on repeated failures per user and action type.
+    """
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="action_throttles")
+    action = models.CharField(max_length=50, db_index=True)
+    failed_attempts = models.PositiveIntegerField(default=0)
+    locked_until = models.DateTimeField(null=True, blank=True, db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=["user", "action"], name="unique_user_action_throttle")]
+        indexes = [
+            models.Index(fields=["user", "action"]),
+            models.Index(fields=["locked_until"]),
+        ]
+        verbose_name = "Action Throttle"
+        verbose_name_plural = "Action Throttles"
+
+    def __str__(self):
+        return f"Throttle for {self.user.username} ({self.action}): {self.failed_attempts} fails"
+
+    @property
+    def is_locked(self) -> bool:
+        if self.locked_until and self.locked_until > timezone.now():
+            return True
+        return False
+
+    @property
+    def retry_after_seconds(self) -> int:
+        if not self.is_locked:
+            return 0
+        diff = (self.locked_until - timezone.now()).total_seconds()
+        return max(1, int(diff + 0.999))

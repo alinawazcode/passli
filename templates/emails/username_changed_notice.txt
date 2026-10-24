@@ -1,0 +1,13 @@
+Passli — Username Updated
+
+Hello {{ new_username }},
+
+The username for your Passli vault account was recently changed from {{ old_username }} to {{ new_username }} on {{ changed_at }}.
+
+Security Notice:
+You can use your new username or your verified email address the next time you sign in to your vault. Usernames can only be changed once every 30 days.
+
+If you did not authorize this change, please sign in immediately and update your master passphrase, or contact security support.
+
+Passli Security Team
+{{ app_url }}

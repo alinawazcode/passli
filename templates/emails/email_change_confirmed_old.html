@@ -1,0 +1,19 @@
+{% extends "emails/base_email.html" %}
+
+{% block email_title %}Email Address Changed — Passli{% endblock %}
+
+{% block email_content %}
+    <h1 class="email-title">Email Address Updated</h1>
+    <p>Hello <strong>{{ username }}</strong>,</p>
+    <p>This confirmation is to notify you that the primary email address for your Passli vault account has been successfully changed from <strong>{{ old_email }}</strong> to <strong>{{ new_email }}</strong>.</p>
+
+    <div class="info-card">
+        <p style="margin: 0; font-size: 13px; color: #cbd5e1;">
+            <strong>Notice:</strong> This address ({{ old_email }}) will no longer receive security notifications or verification codes for this vault. All future notifications will be routed to {{ new_email }}.
+        </p>
+    </div>
+
+    <p style="font-size: 13px; color: #94a3b8; margin-top: 20px;">
+        If you did not make this change, your account may be compromised. Please contact support immediately.
+    </p>
+{% endblock %}
