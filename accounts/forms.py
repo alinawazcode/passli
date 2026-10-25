@@ -365,3 +365,112 @@ class EmailChangeConfirmForm(forms.Form):
         if not raw.isdigit() or len(raw) != 6:
             raise ValidationError("Please enter a valid 6-digit numerical code.")
         return raw
+
+
+class PasswordChangeNormalForm(forms.Form):
+    """Form to change password with current password authentication."""
+
+    current_password = forms.CharField(
+        required=True,
+        widget=forms.PasswordInput(
+            attrs={
+                "class": "form-input",
+                "placeholder": "Enter your current password",
+                "autocomplete": "current-password",
+                "id": "settings-current-password",
+            }
+        ),
+    )
+    new_password = forms.CharField(
+        required=True,
+        widget=forms.PasswordInput(
+            attrs={
+                "class": "form-input",
+                "placeholder": "Enter new secure password",
+                "autocomplete": "new-password",
+                "id": "settings-new-password",
+            }
+        ),
+    )
+    confirm_password = forms.CharField(
+        required=True,
+        widget=forms.PasswordInput(
+            attrs={
+                "class": "form-input",
+                "placeholder": "Confirm new password",
+                "autocomplete": "new-password",
+                "id": "settings-confirm-password",
+            }
+        ),
+    )
+
+    def clean(self):
+        cleaned_data = super().clean()
+        new_pwd = cleaned_data.get("new_password")
+        confirm_pwd = cleaned_data.get("confirm_password")
+        if new_pwd and confirm_pwd and new_pwd != confirm_pwd:
+            self.add_error("confirm_password", "The new passwords do not match.")
+        return cleaned_data
+
+
+class PasswordResetOTPConfirmForm(forms.Form):
+    """Form to submit 6-digit OTP code for forgotten password reset authorization."""
+
+    code = forms.CharField(
+        max_length=6,
+        min_length=6,
+        required=True,
+        widget=forms.TextInput(
+            attrs={
+                "class": "form-input font-mono-data",
+                "placeholder": "123456",
+                "id": "password-otp-combined-input",
+                "autocomplete": "one-time-code",
+                "inputmode": "numeric",
+                "pattern": "[0-9]{6}",
+                "maxlength": "6",
+                "style": "letter-spacing: 0.25em; text-align: center; font-size: 1.15rem; max-width: 200px;",
+            }
+        ),
+    )
+
+    def clean_code(self):
+        raw = self.cleaned_data.get("code", "").strip()
+        if not raw.isdigit() or len(raw) != 6:
+            raise ValidationError("Please enter a valid 6-digit numerical code.")
+        return raw
+
+
+class SetNewPasswordAfterOTPForm(forms.Form):
+    """Form to set new password after email OTP session authorization."""
+
+    new_password = forms.CharField(
+        required=True,
+        widget=forms.PasswordInput(
+            attrs={
+                "class": "form-input",
+                "placeholder": "Enter new secure password",
+                "autocomplete": "new-password",
+                "id": "settings-otp-new-password",
+            }
+        ),
+    )
+    confirm_password = forms.CharField(
+        required=True,
+        widget=forms.PasswordInput(
+            attrs={
+                "class": "form-input",
+                "placeholder": "Confirm new password",
+                "autocomplete": "new-password",
+                "id": "settings-otp-confirm-password",
+            }
+        ),
+    )
+
+    def clean(self):
+        cleaned_data = super().clean()
+        new_pwd = cleaned_data.get("new_password")
+        confirm_pwd = cleaned_data.get("confirm_password")
+        if new_pwd and confirm_pwd and new_pwd != confirm_pwd:
+            self.add_error("confirm_password", "The new passwords do not match.")
+        return cleaned_data

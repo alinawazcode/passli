@@ -1,8 +1,3 @@
-/**
- * Passli Account Settings Vanilla ES Module
- * Progressive enhancement for avatar preview, tab routing, and responsive interactions.
- */
-
 document.documentElement.classList.add('js-ready');
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -10,6 +5,8 @@ document.addEventListener('DOMContentLoaded', () => {
     initAvatarUploader();
     initOtpInputs();
     initResendTimer();
+    initPasswordToggles();
+    initPasswordStrength();
 });
 
 function initNavigationTabs() {
@@ -116,98 +113,175 @@ function initAvatarUploader() {
 }
 
 function initOtpInputs() {
-    const container = document.getElementById('email-otp-boxes-container');
-    const fallbackInput = document.getElementById('email-otp-combined-input');
-    if (!container || !fallbackInput) return;
+    function bindOtpGroup(containerId, fallbackInputId) {
+        const container = document.getElementById(containerId);
+        const fallbackInput = document.getElementById(fallbackInputId);
+        if (!container || !fallbackInput) return;
 
-    const boxes = Array.from(container.querySelectorAll('.settings-otp-box'));
-    if (boxes.length !== 6) return;
+        const boxes = Array.from(container.querySelectorAll('.settings-otp-box'));
+        if (boxes.length !== 6) return;
 
-    function syncToFallback() {
-        const fullVal = boxes.map(b => b.value.trim()).join('');
-        fallbackInput.value = fullVal;
-        boxes.forEach(b => {
-            b.classList.toggle('filled', b.value.length > 0);
+        function syncToFallback() {
+            const fullVal = boxes.map(b => b.value.trim()).join('');
+            fallbackInput.value = fullVal;
+            boxes.forEach(b => {
+                b.classList.toggle('filled', b.value.length > 0);
+            });
+        }
+
+        boxes.forEach((box, index) => {
+            box.addEventListener('input', () => {
+                const val = box.value.replace(/[^0-9]/g, '');
+                box.value = val ? val[0] : '';
+                syncToFallback();
+                if (box.value && index < 5) {
+                    boxes[index + 1].focus();
+                    boxes[index + 1].select();
+                }
+            });
+
+            box.addEventListener('keydown', (e) => {
+                if (e.key === 'Backspace') {
+                    if (!box.value && index > 0) {
+                        boxes[index - 1].focus();
+                        boxes[index - 1].value = '';
+                        syncToFallback();
+                        e.preventDefault();
+                    } else if (box.value) {
+                        box.value = '';
+                        syncToFallback();
+                        e.preventDefault();
+                    }
+                } else if (e.key === 'ArrowLeft' && index > 0) {
+                    boxes[index - 1].focus();
+                    boxes[index - 1].select();
+                    e.preventDefault();
+                } else if (e.key === 'ArrowRight' && index < 5) {
+                    boxes[index + 1].focus();
+                    boxes[index + 1].select();
+                    e.preventDefault();
+                }
+            });
+
+            box.addEventListener('paste', (e) => {
+                e.preventDefault();
+                const pasteData = (e.clipboardData || window.clipboardData).getData('text');
+                const cleanDigits = pasteData.replace(/[^0-9]/g, '').slice(0, 6);
+                if (!cleanDigits) return;
+
+                cleanDigits.split('').forEach((digit, i) => {
+                    if (boxes[i]) {
+                        boxes[i].value = digit;
+                    }
+                });
+                syncToFallback();
+                const focusIndex = Math.min(cleanDigits.length, 5);
+                boxes[focusIndex].focus();
+            });
+
+            box.addEventListener('focus', () => {
+                box.select();
+            });
         });
     }
 
-    boxes.forEach((box, index) => {
-        box.addEventListener('input', () => {
-            const val = box.value.replace(/[^0-9]/g, '');
-            box.value = val ? val[0] : '';
-            syncToFallback();
-            if (box.value && index < 5) {
-                boxes[index + 1].focus();
-                boxes[index + 1].select();
-            }
-        });
+    bindOtpGroup('email-otp-boxes-container', 'email-otp-combined-input');
+    bindOtpGroup('password-otp-boxes-container', 'password-otp-combined-input');
+}
 
-        box.addEventListener('keydown', (e) => {
-            if (e.key === 'Backspace') {
-                if (!box.value && index > 0) {
-                    boxes[index - 1].focus();
-                    boxes[index - 1].value = '';
-                    syncToFallback();
-                    e.preventDefault();
-                } else if (box.value) {
-                    box.value = '';
-                    syncToFallback();
-                    e.preventDefault();
-                }
-            } else if (e.key === 'ArrowLeft' && index > 0) {
-                boxes[index - 1].focus();
-                boxes[index - 1].select();
-                e.preventDefault();
-            } else if (e.key === 'ArrowRight' && index < 5) {
-                boxes[index + 1].focus();
-                boxes[index + 1].select();
-                e.preventDefault();
-            }
-        });
+function initResendTimer() {
+    function bindTimer(buttonId, textId) {
+        const resendBtn = document.getElementById(buttonId);
+        const timerText = document.getElementById(textId);
+        if (!resendBtn || !timerText) return;
 
-        box.addEventListener('paste', (e) => {
+        let cooldownSeconds = parseInt(resendBtn.getAttribute('data-cooldown') || '0', 10);
+        if (isNaN(cooldownSeconds) || cooldownSeconds <= 0) return;
+
+        resendBtn.disabled = true;
+        timerText.textContent = `Resend in ${cooldownSeconds}s`;
+
+        const timer = setInterval(() => {
+            cooldownSeconds -= 1;
+            if (cooldownSeconds <= 0) {
+                clearInterval(timer);
+                resendBtn.disabled = false;
+                timerText.textContent = 'Resend Code';
+                resendBtn.removeAttribute('data-cooldown');
+            } else {
+                timerText.textContent = `Resend in ${cooldownSeconds}s`;
+            }
+        }, 1000);
+    }
+
+    bindTimer('btn-resend-email-otp', 'resend-email-timer-text');
+    bindTimer('btn-resend-password-otp', 'resend-pwd-timer-text');
+}
+
+function initPasswordToggles() {
+    const toggleButtons = document.querySelectorAll('.settings-password-toggle');
+    toggleButtons.forEach(btn => {
+        btn.addEventListener('click', (e) => {
             e.preventDefault();
-            const pasteData = (e.clipboardData || window.clipboardData).getData('text');
-            const cleanDigits = pasteData.replace(/[^0-9]/g, '').slice(0, 6);
-            if (!cleanDigits) return;
+            const wrapper = btn.closest('.settings-password-field-wrapper');
+            if (!wrapper) return;
+            const input = wrapper.querySelector('input');
+            const icon = btn.querySelector('.material-symbols-outlined');
+            if (!input) return;
 
-            cleanDigits.split('').forEach((digit, i) => {
-                if (boxes[i]) {
-                    boxes[i].value = digit;
-                }
-            });
-            syncToFallback();
-            const focusIndex = Math.min(cleanDigits.length, 5);
-            boxes[focusIndex].focus();
-        });
-
-        box.addEventListener('focus', () => {
-            box.select();
+            if (input.type === 'password') {
+                input.type = 'text';
+                if (icon) icon.textContent = 'visibility_off';
+                btn.setAttribute('aria-label', 'Hide password');
+            } else {
+                input.type = 'password';
+                if (icon) icon.textContent = 'visibility';
+                btn.setAttribute('aria-label', 'Show password');
+            }
         });
     });
 }
 
-function initResendTimer() {
-    const resendBtn = document.getElementById('btn-resend-email-otp');
-    const timerText = document.getElementById('resend-email-timer-text');
-    if (!resendBtn || !timerText) return;
+function initPasswordStrength() {
+    function setupStrengthMeter(inputId, barId, hintId) {
+        const input = document.getElementById(inputId);
+        const bar = document.getElementById(barId);
+        const hint = document.getElementById(hintId);
+        if (!input || !bar || !hint) return;
 
-    let cooldownSeconds = parseInt(resendBtn.getAttribute('data-cooldown') || '0', 10);
-    if (isNaN(cooldownSeconds) || cooldownSeconds <= 0) return;
+        input.addEventListener('input', () => {
+            const val = input.value;
+            if (!val) {
+                bar.className = 'settings-strength-bar';
+                hint.textContent = 'Strength hint: Enter password (hint only; server validators enforce policy)';
+                return;
+            }
 
-    resendBtn.disabled = true;
-    timerText.textContent = `Resend in ${cooldownSeconds}s`;
+            let score = 0;
+            if (val.length >= 8) score += 1;
+            if (val.length >= 12) score += 1;
+            if (/[a-z]/.test(val) && /[A-Z]/.test(val)) score += 1;
+            if (/[0-9]/.test(val) && /[^a-zA-Z0-9]/.test(val)) score += 1;
 
-    const timer = setInterval(() => {
-        cooldownSeconds -= 1;
-        if (cooldownSeconds <= 0) {
-            clearInterval(timer);
-            resendBtn.disabled = false;
-            timerText.textContent = 'Resend Code';
-            resendBtn.removeAttribute('data-cooldown');
-        } else {
-            timerText.textContent = `Resend in ${cooldownSeconds}s`;
-        }
-    }, 1000);
+            bar.className = 'settings-strength-bar';
+            if (score <= 1) {
+                bar.classList.add('weak');
+                hint.textContent = 'Strength hint: Weak (hint only; server validators enforce policy)';
+            } else if (score === 2) {
+                bar.classList.add('fair');
+                hint.textContent = 'Strength hint: Fair (hint only; server validators enforce policy)';
+            } else if (score === 3) {
+                bar.classList.add('good');
+                hint.textContent = 'Strength hint: Good (hint only; server validators enforce policy)';
+            } else {
+                bar.classList.add('strong');
+                hint.textContent = 'Strength hint: Strong (hint only; server validators enforce policy)';
+            }
+        });
+    }
+
+    setupStrengthMeter('settings-new-password', 'strength-bar-normal', 'strength-hint-normal');
+    setupStrengthMeter('settings-otp-new-password', 'strength-bar-otp', 'strength-hint-otp');
 }
+
 
