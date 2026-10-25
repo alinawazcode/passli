@@ -1,0 +1,321 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Account Settings — Passli{% endblock %}
+{% block meta_description %}Manage your Passli profile, credentials, security boundaries, and review recent account activity.{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/settings.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="settings-container">
+    <div class="settings-page-header">
+        <h1 class="settings-page-title">Account Settings</h1>
+        <p class="settings-page-desc">Manage your identity, authentication credentials, and security audit log.</p>
+    </div>
+
+    <div class="settings-layout">
+        <!-- Sticky Section Navigation Sidebar -->
+        <aside class="settings-sidebar" aria-label="Settings sections">
+            <nav class="settings-nav">
+                <a href="#profile" class="settings-nav-item active" id="nav-profile" aria-current="true">
+                    <span class="material-symbols-outlined">badge</span>
+                    <span>Profile & Avatar</span>
+                </a>
+                <a href="#username" class="settings-nav-item" id="nav-username">
+                    <span class="material-symbols-outlined">alternate_email</span>
+                    <span>Username</span>
+                </a>
+                <a href="#email" class="settings-nav-item" id="nav-email">
+                    <span class="material-symbols-outlined">mail</span>
+                    <span>Email Address</span>
+                </a>
+                <a href="#password" class="settings-nav-item" id="nav-password">
+                    <span class="material-symbols-outlined">lock</span>
+                    <span>Password</span>
+                </a>
+                <a href="#activity" class="settings-nav-item" id="nav-activity">
+                    <span class="material-symbols-outlined">history</span>
+                    <span>Account Activity</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content Cards -->
+        <div class="settings-content">
+
+            <!-- Section 1: Profile & Avatar -->
+            <section class="settings-card" id="profile" aria-labelledby="heading-profile">
+                <div class="settings-card-header">
+                    <div>
+                        <h2 class="settings-card-title" id="heading-profile">Personal Profile & Avatar</h2>
+                        <p class="settings-card-desc">Your display name and profile image. Note: Unlike encrypted vault records, avatars are stored unencrypted on server disk and served only to authenticated sessions.</p>
+                    </div>
+                </div>
+
+                <!-- Avatar Management Row -->
+                <div class="settings-avatar-row">
+                    <div class="settings-avatar-preview-wrapper" id="avatar-preview-wrapper">
+                        {% if has_avatar %}
+                            <img src="{{ avatar_url }}" alt="{{ user.username }}" class="settings-avatar-img" id="avatar-preview-img">
+                            <span class="settings-avatar-fallback font-mono-data" id="avatar-fallback-initial" style="display: none;">{{ user.username|make_list|first|upper }}</span>
+                        {% else %}
+                            <img src="" alt="" class="settings-avatar-img" id="avatar-preview-img" style="display: none;">
+                            <span class="settings-avatar-fallback font-mono-data" id="avatar-fallback-initial">{{ user.username|make_list|first|upper }}</span>
+                        {% endif %}
+                    </div>
+
+                    <div class="settings-avatar-controls">
+                        <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+                            <form action="{% url 'account_settings' %}" method="post" enctype="multipart/form-data" id="avatar-upload-form" style="display: inline;">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="upload_avatar">
+                                <input type="file" name="avatar" id="avatar-file-input" class="settings-avatar-file-input" accept="image/jpeg,image/png,image/webp" aria-label="Upload new avatar image">
+                                <button type="button" class="btn btn-secondary btn-sm" id="btn-choose-avatar">
+                                    <span class="material-symbols-outlined" style="font-size: 16px;">photo_camera</span> Change Avatar
+                                </button>
+                            </form>
+
+                            {% if has_avatar %}
+                            <form action="{% url 'account_settings' %}" method="post" id="avatar-remove-form" style="display: inline;">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="remove_avatar">
+                                <button type="submit" class="btn-danger-outline" id="btn-remove-avatar" onclick="return confirm('Are you sure you want to remove your avatar?');">
+                                    <span class="material-symbols-outlined" style="font-size: 15px;">delete</span> Remove
+                                </button>
+                            </form>
+                            {% endif %}
+                        </div>
+
+                        <span class="settings-form-hint">JPEG, PNG or WebP. Max 2 MB. Square cropped and resized to 256×256 WebP.</span>
+                        <div id="avatar-client-error" class="settings-form-error" style="display: none;" role="alert"></div>
+                    </div>
+                </div>
+
+                <div class="nav-divider" style="margin: 1.5rem 0;"></div>
+
+                <!-- Display Name Form -->
+                <form action="{% url 'account_settings' %}" method="post" id="form-update-profile" novalidate>
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="update_profile">
+
+                    <div class="settings-form-group">
+                        <label for="profile-display-name" class="settings-form-label">Display Name</label>
+                        {{ profile_form.display_name }}
+                        <span class="settings-form-hint">An optional name (up to 50 characters) displayed in personal vault greetings and user interface chips.</span>
+                        {% if profile_form.display_name.errors %}
+                            <div class="settings-form-error" role="alert">{{ profile_form.display_name.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="settings-card-actions">
+                        <button type="submit" class="btn btn-primary btn-sm" id="btn-save-profile">
+                            <span class="material-symbols-outlined" style="font-size: 16px;">check</span> Save Profile
+                        </button>
+                    </div>
+                </form>
+            </section>
+
+            <!-- Section 2: Username -->
+            <section class="settings-card" id="username" aria-labelledby="heading-username">
+                <div class="settings-card-header">
+                    <div>
+                        <h2 class="settings-card-title" id="heading-username">Username</h2>
+                        <p class="settings-card-desc">Your unique account identifier. For security and anti-takeover hygiene, usernames may only be changed once every 30 days.</p>
+                    </div>
+                </div>
+
+                <!-- Current Username Banner -->
+                <div class="settings-current-value">
+                    <div>
+                        <div class="settings-current-label">CURRENT USERNAME</div>
+                        <div class="settings-current-data font-mono-data">@{{ user.username }}</div>
+                    </div>
+                    <div>
+                        {% if cooldown_status.can_change %}
+                            <span class="settings-badge settings-badge-success">ELIGIBLE TO CHANGE</span>
+                        {% else %}
+                            <span class="settings-badge settings-badge-warning">COOLDOWN ACTIVE</span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                {% if not cooldown_status.can_change %}
+                    <div style="background-color: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 0.85rem 1rem; margin-bottom: 1.25rem; font-size: 0.875rem; color: #92400e;">
+                        <span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle; margin-right: 0.35rem;">schedule</span>
+                        You can change your username again on <strong>{{ cooldown_status.next_change_date|date:"d M Y" }}</strong>.
+                    </div>
+                {% endif %}
+
+                <!-- Username Change Form -->
+                <form action="{% url 'account_settings' %}" method="post" id="form-change-username" novalidate>
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="change_username">
+
+                    <div class="settings-form-group">
+                        <label for="settings-new-username" class="settings-form-label">New Username</label>
+                        {{ username_form.new_username }}
+                        <span class="settings-form-hint">3 to 30 characters. Letters, digits, and underscores. Cannot contain '@' or reserved system words.</span>
+                        {% if username_form.new_username.errors %}
+                            <div class="settings-form-error" role="alert">{{ username_form.new_username.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="settings-form-group">
+                        <label for="settings-username-password" class="settings-form-label">Current Password</label>
+                        {{ username_form.current_password }}
+                        <span class="settings-form-hint">Re-enter your current password to authorize this sensitive change.</span>
+                        {% if username_form.current_password.errors %}
+                            <div class="settings-form-error" role="alert">{{ username_form.current_password.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="settings-card-actions">
+                        <button type="submit" class="btn btn-primary btn-sm" id="btn-submit-username" {% if not cooldown_status.can_change %}disabled title="Username change is on a 30-day cooldown"{% endif %}>
+                            <span class="material-symbols-outlined" style="font-size: 16px;">lock_open</span> Update Username
+                        </button>
+                    </div>
+                </form>
+            </section>
+
+            <!-- Section 3: Email Address -->
+            <section class="settings-card" id="email" aria-labelledby="heading-email">
+                <div class="settings-card-header">
+                    <div>
+                        <h2 class="settings-card-title" id="heading-email">Email Address</h2>
+                        <p class="settings-card-desc">Your primary destination for security notifications, password resets, and audit alerts.</p>
+                    </div>
+                </div>
+
+                <div class="settings-current-value">
+                    <div>
+                        <div class="settings-current-label">CURRENT EMAIL</div>
+                        <div class="settings-current-data">
+                            {% if user.email %}
+                                {{ user.email }}
+                            {% else %}
+                                <span style="color: var(--text-muted); font-weight: 400; font-style: italic;">No email address on file</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div>
+                        {% if user.email and profile.is_email_verified %}
+                            <span class="settings-badge settings-badge-success">VERIFIED</span>
+                        {% elif user.email %}
+                            <span class="settings-badge settings-badge-warning">UNVERIFIED</span>
+                        {% else %}
+                            <span class="settings-badge settings-badge-muted">NONE</span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                {% if not user.email %}
+                    <p class="settings-form-hint" style="margin-bottom: 1rem;">
+                        Your account currently has no email address configured. Adding a verified email enables self-service password recovery and critical security alerts.
+                    </p>
+                {% elif not profile.is_email_verified %}
+                    <p class="settings-form-hint" style="margin-bottom: 1rem;">
+                        Your email address is unverified. Please verify your address to activate full account recovery capabilities.
+                    </p>
+                    <a href="{% url 'verify_email' %}" class="btn btn-secondary btn-sm" style="margin-bottom: 1rem;">
+                        <span class="material-symbols-outlined" style="font-size: 16px;">verified</span> Enter Verification Code
+                    </a>
+                {% endif %}
+
+                <!-- Email Change Placeholder (Phase 3 will render interactive flow) -->
+                <div id="email-change-section" style="margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid var(--border-light);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+                        <div>
+                            <div style="font-weight: 600; font-size: 0.95rem; color: var(--text-main);">Change Email Address</div>
+                            <span class="settings-form-hint">Requires entering your current password and confirming a 6-digit code sent to your new address.</span>
+                        </div>
+                        <button type="button" class="btn btn-secondary btn-sm" id="btn-toggle-email-change" {% if not user.email and not profile.is_email_verified %}style="display:none;"{% endif %}>
+                            <span class="material-symbols-outlined" style="font-size: 16px;">edit</span> Update Email
+                        </button>
+                    </div>
+
+                    <div id="email-change-workflow" style="margin-top: 1.25rem; display: none;">
+                        <!-- Will be populated by Phase 3 form -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- Section 4: Password -->
+            <section class="settings-card" id="password" aria-labelledby="heading-password">
+                <div class="settings-card-header">
+                    <div>
+                        <h2 class="settings-card-title" id="heading-password">Password & Authentication</h2>
+                        <p class="settings-card-desc">Update your master vault password. Changing your password immediately invalidates all other active login sessions.</p>
+                    </div>
+                </div>
+
+                <div id="password-change-section">
+                    <p class="settings-form-hint" style="margin-bottom: 1.25rem;">
+                        For maximum protection, choose a passphrase of at least 10 characters combining uppercase, lowercase, numbers, and symbols.
+                    </p>
+
+                    <!-- Will be fully wired in Phase 4 -->
+                    <div style="background-color: var(--bg-subtle); border: 1px solid var(--border-light); border-radius: 8px; padding: 1rem; font-size: 0.85rem; color: var(--text-muted);">
+                        <span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle; margin-right: 0.35rem; color: var(--brand-navy);">shield</span>
+                        Active session security is monitored with database-backed throttle guards.
+                    </div>
+                </div>
+            </section>
+
+            <!-- Section 5: Recent Activity -->
+            <section class="settings-card" id="activity" aria-labelledby="heading-activity">
+                <div class="settings-card-header">
+                    <div>
+                        <h2 class="settings-card-title" id="heading-activity">Recent Account Activity</h2>
+                        <p class="settings-card-desc">The 10 most recent security events recorded on your account.</p>
+                    </div>
+                </div>
+
+                {% if recent_activity %}
+                    <div style="overflow-x: auto;">
+                        <table class="settings-activity-table" aria-label="Recent Account Events">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Event</th>
+                                    <th scope="col">IP Address</th>
+                                    <th scope="col">Device / Agent</th>
+                                    <th scope="col">Timestamp</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for event in recent_activity %}
+                                    <tr>
+                                        <td>
+                                            <span class="settings-activity-event">{{ event.get_event_type_display }}</span>
+                                        </td>
+                                        <td>
+                                            <span class="settings-activity-meta">{{ event.ip_address|default:"—" }}</span>
+                                        </td>
+                                        <td>
+                                            <span class="settings-activity-meta" title="{{ event.user_agent }}">{{ event.user_agent|truncatechars:35|default:"—" }}</span>
+                                        </td>
+                                        <td>
+                                            <span class="settings-activity-meta">{{ event.created_at|date:"d M Y, H:i" }}</span>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="settings-empty-state">
+                        <span class="material-symbols-outlined" style="font-size: 32px; display: block; margin: 0 auto 0.5rem; opacity: 0.6;">history_toggle_off</span>
+                        No recent account activity recorded yet.
+                    </div>
+                {% endif %}
+            </section>
+
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/settings.js' %}"></script>
+{% endblock %}

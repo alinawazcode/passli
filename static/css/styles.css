@@ -246,6 +246,19 @@ a {
   color: var(--brand-navy);
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
   flex-shrink: 0;
+  text-decoration: none;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.nav-user-pill:hover {
+  background-color: var(--bg-subtle);
+  border-color: #cbd5e1;
+}
+
+.nav-user-pill:focus-visible {
+  outline: 2px solid var(--brand-blue);
+  outline-offset: 2px;
 }
 
 .user-nav-avatar {
@@ -259,6 +272,15 @@ a {
   justify-content: center;
   font-size: 0.7rem;
   font-weight: 700;
+  flex-shrink: 0;
+}
+
+.user-nav-avatar-img {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  object-fit: cover;
+  display: block;
   flex-shrink: 0;
 }
 

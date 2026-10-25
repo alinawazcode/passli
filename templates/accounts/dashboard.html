@@ -31,10 +31,18 @@
         <div class="alert alert-warning" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 0.75rem;" data-testid="unverified-email-banner">
             <div style="display: flex; align-items: center; gap: 0.5rem;">
                 <span class="material-symbols-outlined" style="font-size: 20px; color: #f59e0b;">mark_email_unread</span>
+                {% if request.user.email %}
                 <span>Your email address (<strong>{{ request.user.email }}</strong>) is unverified. Verify to activate password recovery & security alerts.</span>
+                {% else %}
+                <span>You have no email address on file. Add an email address to activate password recovery and security alerts.</span>
+                {% endif %}
             </div>
             <div style="display: flex; gap: 0.5rem; align-items: center;">
+                {% if request.user.email %}
                 <a href="{% url 'verify_email' %}" class="btn btn-primary btn-sm">Enter Code</a>
+                {% else %}
+                <a href="{% url 'account_settings' %}#email" class="btn btn-primary btn-sm">Add an email address</a>
+                {% endif %}
             </div>
         </div>
         {% endif %}
