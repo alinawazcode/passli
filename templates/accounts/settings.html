@@ -210,35 +210,130 @@
                     </div>
                 </div>
 
-                {% if not user.email %}
-                    <p class="settings-form-hint" style="margin-bottom: 1rem;">
-                        Your account currently has no email address configured. Adding a verified email enables self-service password recovery and critical security alerts.
-                    </p>
-                {% elif not profile.is_email_verified %}
-                    <p class="settings-form-hint" style="margin-bottom: 1rem;">
-                        Your email address is unverified. Please verify your address to activate full account recovery capabilities.
-                    </p>
-                    <a href="{% url 'verify_email' %}" class="btn btn-secondary btn-sm" style="margin-bottom: 1rem;">
-                        <span class="material-symbols-outlined" style="font-size: 16px;">verified</span> Enter Verification Code
-                    </a>
-                {% endif %}
-
-                <!-- Email Change Placeholder (Phase 3 will render interactive flow) -->
-                <div id="email-change-section" style="margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid var(--border-light);">
-                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
-                        <div>
-                            <div style="font-weight: 600; font-size: 0.95rem; color: var(--text-main);">Change Email Address</div>
-                            <span class="settings-form-hint">Requires entering your current password and confirming a 6-digit code sent to your new address.</span>
+                {% if pending_email_change %}
+                    <!-- Pending Email Change Verification Flow -->
+                    <div class="settings-pending-alert">
+                        <div class="settings-pending-alert-icon">
+                            <span class="material-symbols-outlined" style="font-size: 20px;">mark_email_unread</span>
                         </div>
-                        <button type="button" class="btn btn-secondary btn-sm" id="btn-toggle-email-change" {% if not user.email and not profile.is_email_verified %}style="display:none;"{% endif %}>
-                            <span class="material-symbols-outlined" style="font-size: 16px;">edit</span> Update Email
-                        </button>
+                        <div>
+                            <div style="font-weight: 600; font-size: 0.95rem; color: var(--text-main);">Verification in Progress</div>
+                            <p style="margin: 0.25rem 0 0 0; font-size: 0.875rem; color: var(--text-secondary); line-height: 1.45;">
+                                A 6-digit confirmation code was sent to <strong class="font-mono-data" style="color: var(--text-main);">{{ pending_email_change.new_email }}</strong>. Your email stays unchanged until you enter it.
+                            </p>
+                        </div>
                     </div>
 
-                    <div id="email-change-workflow" style="margin-top: 1.25rem; display: none;">
-                        <!-- Will be populated by Phase 3 form -->
+                    <!-- OTP Code Form -->
+                    <form action="{% url 'account_settings' %}" method="post" id="form-confirm-email-otp" novalidate>
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="confirm_email_change">
+
+                        <div class="settings-form-group">
+                            <label for="email-otp-combined-input" class="settings-form-label">6-Digit Verification Code</label>
+                            
+                            <!-- Enhanced 6 Digit Boxes for JavaScript -->
+                            <div class="settings-otp-wrapper" id="email-otp-boxes-container">
+                                <input type="text" maxlength="1" inputmode="numeric" pattern="[0-9]" class="settings-otp-box" data-index="0" aria-label="Digit 1" autocomplete="off">
+                                <input type="text" maxlength="1" inputmode="numeric" pattern="[0-9]" class="settings-otp-box" data-index="1" aria-label="Digit 2" autocomplete="off">
+                                <input type="text" maxlength="1" inputmode="numeric" pattern="[0-9]" class="settings-otp-box" data-index="2" aria-label="Digit 3" autocomplete="off">
+                                <input type="text" maxlength="1" inputmode="numeric" pattern="[0-9]" class="settings-otp-box" data-index="3" aria-label="Digit 4" autocomplete="off">
+                                <input type="text" maxlength="1" inputmode="numeric" pattern="[0-9]" class="settings-otp-box" data-index="4" aria-label="Digit 5" autocomplete="off">
+                                <input type="text" maxlength="1" inputmode="numeric" pattern="[0-9]" class="settings-otp-box" data-index="5" aria-label="Digit 6" autocomplete="off">
+                            </div>
+
+                            <!-- Progressive Enhancement Text Input Fallback -->
+                            <div class="settings-otp-fallback">
+                                {{ email_confirm_form.code }}
+                            </div>
+
+                            <span class="settings-form-hint">Code expires in 15 minutes. 5 attempts maximum.</span>
+                            {% if email_confirm_form.code.errors %}
+                                <div class="settings-form-error" role="alert">{{ email_confirm_form.code.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="settings-card-actions" style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
+                            <button type="submit" class="btn btn-primary btn-sm" id="btn-submit-email-otp">
+                                <span class="material-symbols-outlined" style="font-size: 16px;">verified</span> Verify & Update Email
+                            </button>
+                    </form>
+
+                    <form action="{% url 'account_settings' %}" method="post" id="form-resend-email-otp" style="display: inline;">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="resend_email_change_otp">
+                        <button type="submit" class="btn btn-secondary btn-sm" id="btn-resend-email-otp" data-cooldown="{{ resend_cooldown_seconds }}">
+                            <span class="material-symbols-outlined" style="font-size: 16px;">refresh</span>
+                            <span id="resend-email-timer-text">Resend Code</span>
+                        </button>
+                    </form>
+
+                    <form action="{% url 'account_settings' %}" method="post" id="form-cancel-email-change" style="display: inline;">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="cancel_email_change">
+                        <button type="submit" class="btn btn-secondary btn-sm" style="color: #b91c1c; border-color: #fca5a5;">
+                            Cancel Request
+                        </button>
+                    </form>
                     </div>
-                </div>
+
+                {% else %}
+                    <!-- Normal Email State (No Pending Change) -->
+                    {% if not user.email %}
+                        <p class="settings-form-hint" style="margin-bottom: 1.25rem;">
+                            Your account currently has no email address configured. Adding an email enables security alerts, change notifications, and self-service password recovery.
+                        </p>
+                    {% elif not profile.is_email_verified %}
+                        <p class="settings-form-hint" style="margin-bottom: 1rem;">
+                            Your current email address is unverified. Please verify your address to activate full account recovery capabilities.
+                        </p>
+                        <a href="{% url 'verify_email' %}" class="btn btn-secondary btn-sm" style="margin-bottom: 1.5rem; display: inline-flex;">
+                            <span class="material-symbols-outlined" style="font-size: 16px;">verified</span> Enter Verification Code
+                        </a>
+                    {% endif %}
+
+                    <div id="email-change-section" style="margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid var(--border-light);">
+                        <div style="margin-bottom: 1rem;">
+                            <div style="font-weight: 600; font-size: 0.95rem; color: var(--text-main);">
+                                {% if user.email %}Change Email Address{% else %}Add Email Address{% endif %}
+                            </div>
+                            <span class="settings-form-hint">
+                                We'll send a 6-digit code to the new address. Your email stays unchanged until you enter it.
+                            </span>
+                        </div>
+
+                        <form action="{% url 'account_settings' %}" method="post" id="form-request-email-change" novalidate>
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="request_email_change">
+
+                            <div class="settings-form-group">
+                                <label for="settings-new-email" class="settings-form-label">
+                                    {% if user.email %}New Email Address{% else %}Email Address{% endif %}
+                                </label>
+                                {{ email_request_form.new_email }}
+                                {% if email_request_form.new_email.errors %}
+                                    <div class="settings-form-error" role="alert">{{ email_request_form.new_email.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="settings-form-group">
+                                <label for="settings-email-password" class="settings-form-label">Current Password</label>
+                                {{ email_request_form.current_password }}
+                                <span class="settings-form-hint">Enter your current password to authorize this sensitive change.</span>
+                                {% if email_request_form.current_password.errors %}
+                                    <div class="settings-form-error" role="alert">{{ email_request_form.current_password.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="settings-card-actions">
+                                <button type="submit" class="btn btn-primary btn-sm" id="btn-request-email-change">
+                                    <span class="material-symbols-outlined" style="font-size: 16px;">send</span>
+                                    {% if user.email %}Send Verification Code{% else %}Add Email Address{% endif %}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                {% endif %}
             </section>
 
             <!-- Section 4: Password -->

@@ -355,6 +355,67 @@
     outline-offset: 2px;
 }
 
+/* Pending Alert Banner */
+.settings-pending-alert {
+    background-color: var(--bg-subtle);
+    border: 1px solid var(--border-light);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1.25rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+}
+
+.settings-pending-alert-icon {
+    color: var(--brand-blue);
+    display: flex;
+    align-items: center;
+    padding-top: 0.1rem;
+}
+
+/* 6-Digit OTP Box UI & Progressive Enhancement */
+.settings-otp-wrapper {
+    display: none;
+    gap: 8px;
+    margin: 0.5rem 0 0.5rem;
+    align-items: center;
+}
+
+.js-ready .settings-otp-wrapper {
+    display: flex;
+}
+
+.js-ready .settings-otp-fallback {
+    display: none;
+}
+
+.settings-otp-box {
+    width: 48px;
+    height: 54px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1.5rem;
+    font-weight: 600;
+    text-align: center;
+    border: 1.5px solid var(--border-light);
+    border-radius: 8px;
+    background: var(--bg-surface);
+    color: var(--text-main);
+    outline: none;
+    transition: border-color 150ms ease, box-shadow 150ms ease;
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.settings-otp-box:focus {
+    border-color: var(--brand-navy);
+    box-shadow: 0 0 0 3px rgba(15, 23, 42, 0.1);
+}
+
+.settings-otp-box.filled {
+    border-color: #94a3b8;
+}
+
 /* Mobile Responsiveness */
 @media (max-width: 768px) {
     .settings-layout {
@@ -382,6 +443,16 @@
 
     .settings-card {
         padding: 1.25rem;
+    }
+
+    .settings-otp-wrapper {
+        gap: 6px;
+    }
+
+    .settings-otp-box {
+        width: 40px;
+        height: 48px;
+        font-size: 1.25rem;
     }
 }
 

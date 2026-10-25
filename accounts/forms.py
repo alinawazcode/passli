@@ -299,3 +299,69 @@ class UsernameChangeForm(forms.Form):
 
         raw = self.cleaned_data.get("new_username", "").strip()
         return validate_username_format(raw, current_user=self.user)
+
+
+class EmailChangeRequestForm(forms.Form):
+    """Form to initiate email address change with password confirmation."""
+
+    new_email = forms.EmailField(
+        required=True,
+        widget=forms.EmailInput(
+            attrs={
+                "class": "form-input",
+                "placeholder": "new.email@example.com",
+                "autocomplete": "email",
+                "id": "settings-new-email",
+            }
+        ),
+    )
+    current_password = forms.CharField(
+        required=True,
+        widget=forms.PasswordInput(
+            attrs={
+                "class": "form-input",
+                "placeholder": "Enter current password to authorize",
+                "autocomplete": "current-password",
+                "id": "settings-email-password",
+            }
+        ),
+    )
+
+    def __init__(self, user, *args, **kwargs):
+        self.user = user
+        super().__init__(*args, **kwargs)
+
+    def clean_new_email(self):
+        raw = self.cleaned_data.get("new_email", "").strip().lower()
+        current_email = (self.user.email or "").strip().lower()
+        if raw == current_email:
+            raise ValidationError("The new email address cannot be the same as your current address.")
+        return raw
+
+
+class EmailChangeConfirmForm(forms.Form):
+    """Form to confirm 6-digit OTP code sent to the new email address."""
+
+    code = forms.CharField(
+        max_length=6,
+        min_length=6,
+        required=True,
+        widget=forms.TextInput(
+            attrs={
+                "class": "form-input font-mono-data",
+                "placeholder": "123456",
+                "id": "email-otp-combined-input",
+                "autocomplete": "one-time-code",
+                "inputmode": "numeric",
+                "pattern": "[0-9]{6}",
+                "maxlength": "6",
+                "style": "letter-spacing: 0.25em; text-align: center; font-size: 1.15rem; max-width: 200px;",
+            }
+        ),
+    )
+
+    def clean_code(self):
+        raw = self.cleaned_data.get("code", "").strip()
+        if not raw.isdigit() or len(raw) != 6:
+            raise ValidationError("Please enter a valid 6-digit numerical code.")
+        return raw
