@@ -30,24 +30,17 @@ class AdministrationConsoleTests(TestCase):
 
         # Regular non-staff user
         self.regular_user = User.objects.create_user(
-            username="regularuser",
-            email="regular@passli.dev",
-            password=self.password
+            username="regularuser", email="regular@passli.dev", password=self.password
         )
 
         # Staff admin user
         self.staff_user = User.objects.create_user(
-            username="staffadmin",
-            email="staff@passli.dev",
-            password=self.password,
-            is_staff=True
+            username="staffadmin", email="staff@passli.dev", password=self.password, is_staff=True
         )
 
         # Superuser
         self.super_user = User.objects.create_superuser(
-            username="rootadmin",
-            email="root@passli.dev",
-            password=self.password
+            username="rootadmin", email="root@passli.dev", password=self.password
         )
 
         # Create sample documents
@@ -55,13 +48,13 @@ class AdministrationConsoleTests(TestCase):
             user=self.regular_user,
             title="Passport_Scan.pdf",
             category="personal",
-            file=SimpleUploadedFile("Passport_Scan.pdf", b"%PDF-1.4 sample passport", content_type="application/pdf")
+            file=SimpleUploadedFile("Passport_Scan.pdf", b"%PDF-1.4 sample passport", content_type="application/pdf"),
         )
         self.doc2 = Document.objects.create(
             user=self.staff_user,
             title="Medical_Chart.pdf",
             category="medical",
-            file=SimpleUploadedFile("Medical_Chart.pdf", b"%PDF-1.4 sample medical", content_type="application/pdf")
+            file=SimpleUploadedFile("Medical_Chart.pdf", b"%PDF-1.4 sample medical", content_type="application/pdf"),
         )
 
         # Create active share pass
@@ -73,7 +66,7 @@ class AdministrationConsoleTests(TestCase):
             can_download=True,
             max_uses=5,
             access_count=1,
-            is_revoked=False
+            is_revoked=False,
         )
         self.active_pass.set_key(raw_key)
         self.active_pass.save()
@@ -87,32 +80,32 @@ class AdministrationConsoleTests(TestCase):
             status=ShareAccessLog.Status.SUCCESS,
             ip_address="192.168.1.50",
             user_agent="Mozilla/5.0 TestBrowser",
-            details="Pass accessed successfully"
+            details="Pass accessed successfully",
         )
 
     def test_anonymous_user_redirected(self):
         """Anonymous requests to admin dashboard are redirected to login."""
         endpoints = [
-            reverse('admin_dashboard_overview'),
-            reverse('admin_dashboard_users'),
-            reverse('admin_dashboard_documents'),
-            reverse('admin_dashboard_passes'),
-            reverse('admin_dashboard_audit'),
+            reverse("admin_dashboard_overview"),
+            reverse("admin_dashboard_users"),
+            reverse("admin_dashboard_documents"),
+            reverse("admin_dashboard_passes"),
+            reverse("admin_dashboard_audit"),
         ]
         for url in endpoints:
             response = self.client.get(url)
             self.assertEqual(response.status_code, 302)
-            self.assertIn('/login/', response.url)
+            self.assertIn("/login/", response.url)
 
     def test_non_staff_user_denied(self):
         """Non-staff logged-in users are redirected away from admin dashboard."""
         self.client.force_login(self.regular_user)
         endpoints = [
-            reverse('admin_dashboard_overview'),
-            reverse('admin_dashboard_users'),
-            reverse('admin_dashboard_documents'),
-            reverse('admin_dashboard_passes'),
-            reverse('admin_dashboard_audit'),
+            reverse("admin_dashboard_overview"),
+            reverse("admin_dashboard_users"),
+            reverse("admin_dashboard_documents"),
+            reverse("admin_dashboard_passes"),
+            reverse("admin_dashboard_audit"),
         ]
         for url in endpoints:
             response = self.client.get(url)
@@ -123,31 +116,31 @@ class AdministrationConsoleTests(TestCase):
         self.client.force_login(self.staff_user)
 
         # 1. Overview Tab
-        resp_overview = self.client.get(reverse('admin_dashboard_overview'))
+        resp_overview = self.client.get(reverse("admin_dashboard_overview"))
         self.assertEqual(resp_overview.status_code, 200)
         self.assertContains(resp_overview, "Platform Administration Console")
         self.assertContains(resp_overview, "Total Users")
 
         # 2. Users Tab
-        resp_users = self.client.get(reverse('admin_dashboard_users'))
+        resp_users = self.client.get(reverse("admin_dashboard_users"))
         self.assertEqual(resp_users.status_code, 200)
         self.assertContains(resp_users, "User Accounts")
         self.assertContains(resp_users, "regularuser")
 
         # 3. Documents Tab
-        resp_docs = self.client.get(reverse('admin_dashboard_documents'))
+        resp_docs = self.client.get(reverse("admin_dashboard_documents"))
         self.assertEqual(resp_docs.status_code, 200)
         self.assertContains(resp_docs, "Vault Storage & Files")
         self.assertContains(resp_docs, "Passport_Scan.pdf")
 
         # 4. Passes Tab
-        resp_passes = self.client.get(reverse('admin_dashboard_passes'))
+        resp_passes = self.client.get(reverse("admin_dashboard_passes"))
         self.assertEqual(resp_passes.status_code, 200)
         self.assertContains(resp_passes, "Share Pass Operations")
         self.assertContains(resp_passes, "HR Verification Pass")
 
         # 5. Audit Tab
-        resp_audit = self.client.get(reverse('admin_dashboard_audit'))
+        resp_audit = self.client.get(reverse("admin_dashboard_audit"))
         self.assertEqual(resp_audit.status_code, 200)
         self.assertContains(resp_audit, "Global Audit & Threats")
         self.assertContains(resp_audit, "192.168.1.50")
@@ -157,15 +150,15 @@ class AdministrationConsoleTests(TestCase):
         self.client.force_login(self.staff_user)
         self.assertTrue(self.regular_user.is_active)
 
-        url = reverse('admin_user_toggle_status', kwargs={'user_id': self.regular_user.id})
-        response = self.client.post(url, {'action_type': 'toggle_active'})
+        url = reverse("admin_user_toggle_status", kwargs={"user_id": self.regular_user.id})
+        response = self.client.post(url, {"action_type": "toggle_active"})
         self.assertEqual(response.status_code, 302)
 
         self.regular_user.refresh_from_db()
         self.assertFalse(self.regular_user.is_active)
 
         # Reactivate
-        response = self.client.post(url, {'action_type': 'toggle_active'})
+        response = self.client.post(url, {"action_type": "toggle_active"})
         self.assertEqual(response.status_code, 302)
         self.regular_user.refresh_from_db()
         self.assertTrue(self.regular_user.is_active)
@@ -175,8 +168,8 @@ class AdministrationConsoleTests(TestCase):
         self.client.force_login(self.super_user)
         self.assertFalse(self.regular_user.is_staff)
 
-        url = reverse('admin_user_toggle_status', kwargs={'user_id': self.regular_user.id})
-        response = self.client.post(url, {'action_type': 'toggle_staff'})
+        url = reverse("admin_user_toggle_status", kwargs={"user_id": self.regular_user.id})
+        response = self.client.post(url, {"action_type": "toggle_staff"})
         self.assertEqual(response.status_code, 302)
 
         self.regular_user.refresh_from_db()
@@ -187,7 +180,7 @@ class AdministrationConsoleTests(TestCase):
         self.client.force_login(self.staff_user)
         self.assertFalse(self.active_pass.is_revoked)
 
-        url = reverse('admin_pass_revoke', kwargs={'pass_id': self.active_pass.id})
+        url = reverse("admin_pass_revoke", kwargs={"pass_id": self.active_pass.id})
         response = self.client.post(url)
         self.assertEqual(response.status_code, 302)
 
@@ -199,7 +192,7 @@ class AdministrationConsoleTests(TestCase):
         self.client.force_login(self.staff_user)
         doc_id = self.doc1.id
 
-        url = reverse('admin_document_delete', kwargs={'doc_id': doc_id})
+        url = reverse("admin_document_delete", kwargs={"doc_id": doc_id})
         response = self.client.post(url)
         self.assertEqual(response.status_code, 302)
 
@@ -209,7 +202,7 @@ class AdministrationConsoleTests(TestCase):
         """Staff can filter audit logs by status, event type, and search query."""
         self.client.force_login(self.staff_user)
 
-        url = reverse('admin_dashboard_audit') + "?status=success&event=key_success&q=192.168.1.50"
+        url = reverse("admin_dashboard_audit") + "?status=success&event=key_success&q=192.168.1.50"
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "192.168.1.50")
@@ -223,32 +216,37 @@ class AdministrationConsoleTests(TestCase):
 
         admin_pw = get_test_password()
         superadmin_pw = get_test_password()
-        os.environ['DJANGO_SUPERUSER_USERNAME'] = 'admin'
-        os.environ['DJANGO_SUPERUSER_PASSWORD'] = admin_pw
-        os.environ['DJANGO_SECONDARY_SUPERUSER_USERNAME'] = 'superadmin'
-        os.environ['DJANGO_SECONDARY_SUPERUSER_PASSWORD'] = superadmin_pw
+        os.environ["DJANGO_SUPERUSER_USERNAME"] = "admin"
+        os.environ["DJANGO_SUPERUSER_PASSWORD"] = admin_pw
+        os.environ["DJANGO_SECONDARY_SUPERUSER_USERNAME"] = "superadmin"
+        os.environ["DJANGO_SECONDARY_SUPERUSER_PASSWORD"] = superadmin_pw
 
         try:
             out = StringIO()
-            call_command('ensure_superadmin', stdout=out)
+            # 1. Unforced run when active superuser (rootadmin) exists must skip and print notice
+            call_command("ensure_superadmin", stdout=out)
+            self.assertIn("Active superuser already exists", out.getvalue())
+            self.assertFalse(User.objects.filter(username="superadmin").exists())
+
+            # 2. Forced run with --force must create/synchronize configured superadmins
+            forced_out = StringIO()
+            call_command("ensure_superadmin", "--force", stdout=forced_out)
 
             # Verify superadmin user exists and is fully privileged
-            superadmin = User.objects.get(username='superadmin')
+            superadmin = User.objects.get(username="superadmin")
             self.assertTrue(superadmin.is_superuser)
             self.assertTrue(superadmin.is_staff)
             self.assertTrue(superadmin.is_active)
-            self.assertIsNotNone(authenticate(username='superadmin', password=superadmin_pw))
+            self.assertIsNotNone(authenticate(username="superadmin", password=superadmin_pw))
 
             # Verify admin user exists and is fully privileged
-            admin = User.objects.get(username='admin')
+            admin = User.objects.get(username="admin")
             self.assertTrue(admin.is_superuser)
             self.assertTrue(admin.is_staff)
             self.assertTrue(admin.is_active)
-            self.assertIsNotNone(authenticate(username='admin', password=admin_pw))
+            self.assertIsNotNone(authenticate(username="admin", password=admin_pw))
         finally:
-            os.environ.pop('DJANGO_SUPERUSER_USERNAME', None)
-            os.environ.pop('DJANGO_SUPERUSER_PASSWORD', None)
-            os.environ.pop('DJANGO_SECONDARY_SUPERUSER_USERNAME', None)
-            os.environ.pop('DJANGO_SECONDARY_SUPERUSER_PASSWORD', None)
-
-
+            os.environ.pop("DJANGO_SUPERUSER_USERNAME", None)
+            os.environ.pop("DJANGO_SUPERUSER_PASSWORD", None)
+            os.environ.pop("DJANGO_SECONDARY_SUPERUSER_USERNAME", None)
+            os.environ.pop("DJANGO_SECONDARY_SUPERUSER_PASSWORD", None)

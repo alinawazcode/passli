@@ -1,0 +1,13 @@
+Passli — Email Address Updated
+
+Hello {{ username }},
+
+This confirmation is to notify you that the primary email address for your Passli vault account has been successfully changed from {{ old_email }} to {{ new_email }}.
+
+Notice:
+This address ({{ old_email }}) will no longer receive security notifications or verification codes for this vault. All future notifications will be routed to {{ new_email }}.
+
+If you did not make this change, please contact support immediately.
+
+Passli Security Team
+{{ app_url }}
