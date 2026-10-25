@@ -58,6 +58,22 @@ When sharing sensitive records with doctors, employers, financial institutions, 
 - **Global File Inventory**: Platform-wide vault explorer with SHA-256 hash inspection, encryption status verification, and physical disk file cleanup.
 - **Emergency Pass Governance**: System-wide pass monitor with instant emergency revocation capabilities.
 
+### ⚙️ 7. Account Settings & Profile Management
+- **Unified Settings Dashboard**: Accessible at `/settings/` for standard users and administrators with `Cache-Control: no-store` and strict CSRF protection.
+- **Profile Customization**: Optional display name (up to 50 characters, control character sanitized) and profile avatar.
+- **Validated Avatar Pipeline**: Validated with Pillow MIME headers (JPEG, PNG, WebP only; max 2 MB; 10M pixel decompression bomb guard; animated/multi-frame files rejected), square-cropped, resized to 256x256, and re-encoded to WebP with EXIF/metadata stripped. Served strictly through an authenticated Django route with `X-Content-Type-Options: nosniff` and `Cache-Control: private` (no public `/media/` routing).
+- **Username Change Policy**: Usernames can be changed at most once every 30 days, enforced under atomic database row locks (`select_for_update()`). Validated against reserved system identifiers and '@' symbol exclusion to prevent login ambiguity.
+- **Two-Step Email Change**: Email addresses are never modified without verification. Changes require current password authorization, store pending state isolated from the user record, dispatch a 6-digit OTP to the new address, and send security notifications to the old address if verified. Addresses are atomically re-checked upon confirmation.
+- **Dual-Path Password Change**:
+  - *Standard*: Requires current password re-authentication, enforces `AUTH_PASSWORD_VALIDATORS`, rejects previous passwords, updates session auth hashes to maintain current session while invalidating all other sessions, and sends notification to verified emails.
+  - *Forgot Password*: Authorized users with verified emails can receive a 6-digit email OTP (purpose `change_password`), unlocking a 10-minute session window to reset their password without the old credential.
+- **Database-Backed Action Throttling**: 5 consecutive failed current-password attempts lock the action for 15 minutes, doubling exponentially per subsequent failure up to 24 hours.
+- **Account Event Audit**: Records security milestones (`username_changed`, `email_change_requested`, `email_changed`, `password_changed`, `password_otp_sent`, `avatar_updated`, `avatar_removed`, `reauth_failed`) with sanitized client IP and user agent metadata.
+- **Transparent Security Disclosures**:
+  - *No Two-Factor Authentication (2FA/TOTP)*: Account login and settings do not currently implement time-based one-time password (TOTP) or hardware security key 2FA.
+  - *Avatars Stored Unencrypted*: Unlike vault documents which use AES-256-GCM AEAD encryption at rest, avatar images are stored as standard WebP image files on disk under `MEDIA_ROOT/avatars/`.
+  - *Email OTPs via SMTP*: Verification and reset codes are delivered as 6-digit numerical OTPs via standard transactional SMTP email.
+
 ---
 
 ## 🔐 Cryptographic Architecture Flow

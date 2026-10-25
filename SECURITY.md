@@ -74,6 +74,18 @@ We actively support and release security updates for the following versions of P
 - Access events are recorded in an append-only relational audit table (`ShareAccessLog`), capturing client IP, user agent, event type, and outcome timestamp for owner visibility.
 - Sensitive values (passcode characters, authorization tokens, full email addresses) are sanitized and masked before log persistence.
 
+### 9. Account Settings Security Model
+- **Username Modification Policy**: Usernames may be changed at most once every 30 days. Changes are checked and committed under atomic database row locks (`select_for_update()`) on `UserProfile` to prevent race conditions. Usernames cannot contain '@' symbols, eliminating authentication ambiguity with email addresses.
+- **Two-Step Email Verification**: Modifying an account email requires re-authenticating with the current password. The new email is stored in a pending state and verified via a 6-digit OTP code dispatched to the new address. Unverified old addresses receive no codes, while verified old addresses receive security notifications on request and completion. Uniqueness is re-verified atomically upon code confirmation.
+- **Two-Path Password Change & DB Throttling**:
+  - *Standard*: Requires current password, enforces Django password validators, rejects current password reuse, rotates session auth hashes (invalidating all other device sessions), and notifies the verified email.
+  - *Forgot Password*: Accessible only when a verified email is on file; dispatches a purpose-scoped 6-digit OTP granting a 10-minute session authorization window to set a new password without current credential entry.
+  - *Brute-Force Throttling*: Failed current-password attempts are tracked in the database (`ActionThrottle`): 5 failures trigger a 15-minute action lockout, doubling exponentially per subsequent failure up to 24 hours.
+- **Transparent Security Disclosures**:
+  - **No 2FA**: The application does not currently support multi-factor authentication (MFA) or time-based one-time password (TOTP) app authenticators.
+  - **Avatars Stored Unencrypted**: User avatars are stored as standard unencrypted WebP files under `MEDIA_ROOT/avatars/`. They are never exposed via public `/media/` routes and are served strictly through an authenticated view enforcing `X-Content-Type-Options: nosniff` and `Cache-Control: private`.
+  - **Email OTP via SMTP**: Verification codes are delivered as 6-digit numerical codes through transactional SMTP email.
+
 ---
 
 ## 🚨 Reporting a Vulnerability
