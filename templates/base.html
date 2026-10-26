@@ -223,6 +223,7 @@
     </header>
 
     <!-- Global Alert Notifications -->
+    {% block global_messages %}
     <div class="container">
         {% if messages %}
             <div style="margin-top: 1rem;" data-testid="messages-container">
@@ -234,6 +235,7 @@
             </div>
         {% endif %}
     </div>
+    {% endblock %}
 
     <!-- Main View Content -->
     <main class="main-content">

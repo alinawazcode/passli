@@ -8,6 +8,7 @@
 document.documentElement.classList.add('js-ready');
 
 document.addEventListener('DOMContentLoaded', () => {
+    initAlertDismiss();
     initSectionNavigation();
     initDisclosurePanels();
     initAvatarControls();
@@ -17,6 +18,24 @@ document.addEventListener('DOMContentLoaded', () => {
     initPasswordStrength();
     initRemoveAvatarDialog();
 });
+
+/**
+ * 0. Flash Alert Dismiss Handler
+ */
+function initAlertDismiss() {
+    document.querySelectorAll('[data-action="dismiss-alert"]').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            const alert = btn.closest('.settings-alert');
+            if (alert) {
+                alert.style.opacity = '0';
+                alert.style.transform = 'translateY(-4px)';
+                alert.style.transition = 'opacity 150ms ease, transform 150ms ease';
+                setTimeout(() => alert.remove(), 150);
+            }
+        });
+    });
+}
 
 /**
  * 1. Section Navigation & Legacy Hash Mapping
@@ -114,7 +133,7 @@ function initSectionNavigation() {
     });
 
     // Check on load: Did server specify an open panel or errors?
-    const serverOpenPanel = document.querySelector('.settings-panel[data-server-open="true"], .settings-panel:has(.settings-error)');
+    const serverOpenPanel = document.querySelector('.settings-panel[data-server-open="true"], .settings-panel:has(.settings-error:not(:empty))');
     if (serverOpenPanel) {
         const parentSection = serverOpenPanel.closest('.settings-section');
         if (parentSection) {
@@ -165,7 +184,8 @@ function initDisclosurePanels() {
 
     // Hide any panels not explicitly marked open on load
     panels.forEach(p => {
-        if (p.getAttribute('data-server-open') !== 'true' && !p.querySelector('.settings-error')) {
+        const hasVisibleError = Array.from(p.querySelectorAll('.settings-error:not(:empty)')).some(err => !err.hasAttribute('hidden'));
+        if (p.getAttribute('data-server-open') !== 'true' && !hasVisibleError) {
             p.setAttribute('hidden', '');
         }
     });
@@ -254,9 +274,14 @@ function initDisclosurePanels() {
         });
     }
 
-    // Escape closes untouched panel/sheet
+    // Escape closes untouched panel/sheet (unless a native dialog is currently open)
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
+            const openDialog = document.querySelector('dialog[open]');
+            if (openDialog) {
+                // Let the native dialog handle its own Escape dismissal
+                return;
+            }
             const openPan = document.querySelector('.settings-panel:not([hidden])');
             if (openPan) {
                 closePanel(openPan, true);
@@ -303,7 +328,7 @@ function initAvatarControls() {
 
         if (errorContainer) {
             errorContainer.textContent = '';
-            errorContainer.style.display = 'none';
+            errorContainer.setAttribute('hidden', '');
         }
 
         const maxBytes = 2 * 1024 * 1024;
@@ -311,7 +336,7 @@ function initAvatarControls() {
             fileInput.value = '';
             if (errorContainer) {
                 errorContainer.textContent = 'Selected image exceeds the 2 MB limit.';
-                errorContainer.style.display = 'block';
+                errorContainer.removeAttribute('hidden');
             }
             return;
         }
@@ -321,7 +346,7 @@ function initAvatarControls() {
             fileInput.value = '';
             if (errorContainer) {
                 errorContainer.textContent = 'Please choose a JPEG, PNG, or WebP image.';
-                errorContainer.style.display = 'block';
+                errorContainer.removeAttribute('hidden');
             }
             return;
         }
@@ -330,10 +355,10 @@ function initAvatarControls() {
         reader.onload = (e) => {
             if (previewImg) {
                 previewImg.src = e.target.result;
-                previewImg.style.display = 'block';
+                previewImg.removeAttribute('hidden');
             }
             if (fallbackInitial) {
-                fallbackInitial.style.display = 'none';
+                fallbackInitial.setAttribute('hidden', '');
             }
         };
         reader.readAsDataURL(file);

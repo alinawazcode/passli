@@ -4,6 +4,8 @@
 {% block title %}Account Settings — Passli{% endblock %}
 {% block meta_description %}Manage your Passli profile, credentials, security boundaries, and review recent account activity.{% endblock %}
 
+{% block global_messages %}{% endblock %}
+
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/settings.css' %}">
 {% endblock %}
@@ -55,20 +57,43 @@
         <!-- Main Content Area -->
         <div class="settings-main-content">
 
+            <!-- Global In-Page Flash Alerts Region (Visible across all sections) -->
+            {% if messages %}
+            <div class="settings-alerts" aria-live="polite" data-testid="messages-container">
+                {% for message in messages %}
+                    {% if "success" in message.tags %}
+                        <div class="settings-alert settings-alert-success" role="status" data-testid="alert-success">
+                            <svg class="settings-icon-sm" aria-hidden="true"><use href="{% static 'img/icons/settings-sprite.svg' %}#icon-check"></use></svg>
+                            <span class="settings-alert-text">{{ message }}</span>
+                            <button type="button" class="settings-alert-close" data-action="dismiss-alert" aria-label="Dismiss alert">&times;</button>
+                        </div>
+                    {% elif "error" in message.tags %}
+                        <div class="settings-alert settings-alert-danger" role="alert" data-testid="alert-error">
+                            <svg class="settings-icon-sm" aria-hidden="true"><use href="{% static 'img/icons/settings-sprite.svg' %}#icon-clock"></use></svg>
+                            <span class="settings-alert-text">{{ message }}</span>
+                            <button type="button" class="settings-alert-close" data-action="dismiss-alert" aria-label="Dismiss alert">&times;</button>
+                        </div>
+                    {% elif "warning" in message.tags %}
+                        <div class="settings-alert settings-alert-warning" role="alert" data-testid="alert-warning">
+                            <svg class="settings-icon-sm" aria-hidden="true"><use href="{% static 'img/icons/settings-sprite.svg' %}#icon-clock"></use></svg>
+                            <span class="settings-alert-text">{{ message }}</span>
+                            <button type="button" class="settings-alert-close" data-action="dismiss-alert" aria-label="Dismiss alert">&times;</button>
+                        </div>
+                    {% else %}
+                        <div class="settings-alert settings-alert-info" role="status" data-testid="alert-info">
+                            <svg class="settings-icon-sm" aria-hidden="true"><use href="{% static 'img/icons/settings-sprite.svg' %}#icon-clock"></use></svg>
+                            <span class="settings-alert-text">{{ message }}</span>
+                            <button type="button" class="settings-alert-close" data-action="dismiss-alert" aria-label="Dismiss alert">&times;</button>
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+            {% endif %}
+
             <!-- ======================================================= -->
             <!-- SECTION 1: PROFILE                                      -->
             <!-- ======================================================= -->
             <section class="settings-section active" id="profile" aria-labelledby="profile-heading">
-                <!-- In-Section Alert Area -->
-                <div class="settings-alerts" aria-live="polite">
-                    {% if messages %}
-                        {% for message in messages %}
-                            <div class="settings-notice-amber" role="alert" style="margin-bottom: var(--s-space-16); width: 100%; box-sizing: border-box;">
-                                <span>{{ message }}</span>
-                            </div>
-                        {% endfor %}
-                    {% endif %}
-                </div>
 
                 <div class="settings-card">
                     <div class="settings-card-header">
@@ -194,8 +219,8 @@
                         <div class="settings-row-value font-mono-data">
                             @{{ user.username }}
                             {% if not cooldown_status.can_change %}
-                                <span class="settings-pill settings-pill-warning" style="margin-left: var(--s-space-8);">COOLDOWN ACTIVE</span>
-                                <div class="settings-notice-amber" style="margin-top: var(--s-space-8);">
+                                <span class="settings-pill settings-pill-warning settings-pill-spaced">COOLDOWN ACTIVE</span>
+                                <div class="settings-notice-amber settings-notice-cooldown">
                                     <svg class="settings-icon-sm" aria-hidden="true"><use href="{% static 'img/icons/settings-sprite.svg' %}#icon-clock"></use></svg>
                                     <span>You can change your username again on {{ cooldown_status.next_change_date|date:"d M Y" }}</span>
                                 </div>
@@ -274,15 +299,15 @@
                                 {% if user.email %}
                                     {{ user.email }}
                                 {% else %}
-                                    <span style="color: var(--s-color-muted);">No email address on file</span>
+                                    <span class="settings-text-muted">No email address on file</span>
                                 {% endif %}
                             </span>
-                            <span style="margin-left: var(--s-space-8);">
+                            <span class="settings-badge-group">
                                 {% if user.email and profile.is_email_verified %}
                                     <span class="settings-pill settings-pill-success">Verified</span>
                                 {% elif user.email %}
                                     <span class="settings-pill settings-pill-warning">Unverified</span>
-                                    <a href="{% url 'verify_email' %}" class="settings-btn-secondary" style="height: 28px; min-height: 28px; padding: 0 var(--s-space-8); font-size: var(--s-font-12); margin-left: var(--s-space-4);">Verify</a>
+                                    <a href="{% url 'verify_email' %}" class="settings-btn-secondary settings-btn-verify">Verify</a>
                                 {% else %}
                                     <span class="settings-pill settings-pill-muted">None</span>
                                 {% endif %}
@@ -310,7 +335,7 @@
                                 <!-- Step 2 of 2: OTP Verification -->
                                 <div class="settings-step-eyebrow">STEP 2 OF 2</div>
                                 <h3 class="settings-step-title">Check your email</h3>
-                                <p class="settings-hint" style="margin-bottom: var(--s-space-8);">
+                                <p class="settings-hint settings-hint-spaced">
                                     We sent a 6-digit confirmation code to:
                                 </p>
                                 <div class="settings-step-dest font-mono-data">{{ pending_email_change.new_email }}</div>
@@ -351,7 +376,7 @@
                                 </form>
 
                                 <!-- Sibling Resend & Cancel Action Bar (No invalid nesting) -->
-                                <div style="display: flex; gap: var(--s-space-12); align-items: center; justify-content: flex-end; margin-top: var(--s-space-12);">
+                                <div class="settings-panel-subactions">
                                     <form action="{% url 'account_settings' %}" method="post" id="form-resend-email-otp">
                                         {% csrf_token %}
                                         <input type="hidden" name="action" value="resend_email_change_otp">
@@ -412,14 +437,14 @@
                         <div class="settings-row-value font-mono-data">
                             ••••••••••••
                             {% if is_auth_locked %}
-                                <div class="settings-notice-danger" style="margin-top: var(--s-space-8);">
+                                <div class="settings-notice-danger settings-notice-spaced">
                                     <svg class="settings-icon-sm" aria-hidden="true"><use href="{% static 'img/icons/settings-sprite.svg' %}#icon-lock"></use></svg>
                                     <span>Password change is locked. Please try again in {{ lockout_minutes }} minute(s).</span>
                                 </div>
                             {% elif is_reset_authorized %}
-                                <span class="settings-pill settings-pill-success" style="margin-left: var(--s-space-8);">Reset Authorized</span>
+                                <span class="settings-pill settings-pill-success settings-pill-spaced">Reset Authorized</span>
                             {% elif reset_otp_pending %}
-                                <span class="settings-pill settings-pill-warning" style="margin-left: var(--s-space-8);">Code Pending</span>
+                                <span class="settings-pill settings-pill-warning settings-pill-spaced">Code Pending</span>
                             {% endif %}
                         </div>
                         <div class="settings-row-action">
@@ -445,7 +470,7 @@
                         <div class="settings-panel-form">
                             {% if is_reset_authorized %}
                                 <!-- Path B: Authorized Reset Window -->
-                                <div class="settings-notice-amber" style="background-color: var(--s-color-emerald-bg); border-color: var(--s-color-emerald-border); color: var(--s-color-emerald); margin-bottom: var(--s-space-16); width: 100%; box-sizing: border-box;">
+                                <div class="settings-notice-amber settings-notice-emerald settings-notice-full">
                                     <span>Email verification confirmed. You can now define a new password without entering your old password. This authorization expires in 10 minutes.</span>
                                 </div>
 
@@ -493,7 +518,7 @@
                                     </div>
                                 </form>
 
-                                <form action="{% url 'account_settings' %}" method="post" style="display: flex; justify-content: flex-end; margin-top: var(--s-space-8);">
+                                <form action="{% url 'account_settings' %}" method="post" class="settings-form-actions-end">
                                     {% csrf_token %}
                                     <input type="hidden" name="action" value="cancel_password_reset">
                                     <button type="submit" class="settings-btn-text-cancel">Cancel reset</button>
@@ -503,7 +528,7 @@
                                 <!-- Path B: Awaiting Reset Code -->
                                 <div class="settings-step-eyebrow">STEP 2 OF 2</div>
                                 <h3 class="settings-step-title">Enter password reset code</h3>
-                                <p class="settings-hint" style="margin-bottom: var(--s-space-8);">
+                                <p class="settings-hint settings-hint-spaced">
                                     We sent a 6-digit verification code to:
                                 </p>
                                 <div class="settings-step-dest font-mono-data">{{ user.email }}</div>
@@ -541,7 +566,7 @@
                                     </div>
                                 </form>
 
-                                <div style="display: flex; gap: var(--s-space-12); align-items: center; justify-content: flex-end; margin-top: var(--s-space-12);">
+                                <div class="settings-panel-subactions">
                                     <form action="{% url 'account_settings' %}" method="post" id="form-resend-password-otp">
                                         {% csrf_token %}
                                         <input type="hidden" name="action" value="request_password_otp">
@@ -621,7 +646,7 @@
                                 </form>
 
                                 <!-- Path B Trigger: Forgot Password -->
-                                <div style="margin-top: var(--s-space-20); padding-top: var(--s-space-16); border-top: 1px solid var(--s-color-border);">
+                                <div class="settings-panel-divider">
                                     {% if can_use_recovery %}
                                         <form action="{% url 'account_settings' %}" method="post" id="form-request-password-otp">
                                             {% csrf_token %}
@@ -633,7 +658,7 @@
                                         </form>
                                     {% else %}
                                         <span class="settings-hint">
-                                            Self-service password reset requires a verified email address. <a href="#email" class="settings-btn-text-cancel" style="padding: 0; text-decoration: underline;">Configure and verify email</a> first.
+                                            Self-service password reset requires a verified email address. <a href="#email" class="settings-btn-text-cancel settings-link-inline">Configure and verify email</a> first.
                                         </span>
                                     {% endif %}
                                 </div>
@@ -695,7 +720,7 @@
                                     <div class="settings-activity-mobile-meta">
                                         {{ event.user_agent|truncatechars:28|default:"Browser" }} · {{ event.ip_address|default:"127.0.0.1" }}
                                     </div>
-                                    <div class="settings-activity-mobile-meta" style="color: var(--s-color-muted);">
+                                    <div class="settings-activity-mobile-meta">
                                         {{ event.created_at|date:"d M Y, H:i" }}
                                     </div>
                                 </div>
@@ -703,8 +728,8 @@
                         </div>
                     {% else %}
                         <div class="settings-empty-state">
-                            <svg class="settings-icon" style="width: 32px; height: 32px; margin: 0 auto var(--s-space-8); opacity: 0.5;" aria-hidden="true"><use href="{% static 'img/icons/settings-sprite.svg' %}#icon-history"></use></svg>
-                            <p style="margin: 0;">No recent account activity recorded yet.</p>
+                            <svg class="settings-icon settings-empty-icon" aria-hidden="true"><use href="{% static 'img/icons/settings-sprite.svg' %}#icon-history"></use></svg>
+                            <p class="settings-empty-text">No recent account activity recorded yet.</p>
                         </div>
                     {% endif %}
                 </div>

@@ -7,9 +7,12 @@ Unit and integration tests for Account Settings redesign:
 - Preservation of all 13 security/form actions and critical test element IDs.
 """
 
+import re
 from datetime import timedelta
 from django.test import TestCase
 from django.contrib.auth import get_user_model
+from django.contrib.messages import constants as message_constants
+from django.contrib.messages.storage.base import Message
 from django.urls import reverse
 from django.utils import timezone
 
@@ -310,3 +313,195 @@ class TestSettingsFeatureParity(TestCase):
         content = response.content.decode("utf-8")
 
         self.assertIn("No recent account activity recorded yet.", content)
+
+
+class TestSettingsAlertsAndStyles(TestCase):
+    """
+    Phase 1 Test Suite:
+    - Flash messages render exactly once on /settings/ with tag-to-style mapping and ARIA roles.
+    - Global messages block in base.html continues to render on other pages.
+    - Zero inline style= attributes across all major states.
+    - Zero inline event handlers (onclick=, etc.) across all major states.
+    """
+
+    def setUp(self):
+        self.password = get_test_password()
+        self.user = User.objects.create_user(
+            username="alerts_tester",
+            email="alerts@passli.dev",
+            password=self.password,
+        )
+        self.profile = UserProfile.objects.get(user=self.user)
+        self.profile.is_email_verified = True
+        self.profile.display_name = "Alerts Tester"
+        self.profile.save()
+        self.client.force_login(self.user)
+        self.url = reverse("account_settings")
+
+    def test_flash_messages_rendered_once_on_settings_with_roles_and_tags(self):
+        """Messages on /settings/ render once in .settings-alerts with correct role and level style."""
+        # 1. Integration test: update profile triggers success message followed by redirect
+        resp_success = self.client.post(
+            self.url,
+            {"action": "update_profile", "display_name": "Updated Name"},
+            follow=True,
+        )
+        self.assertEqual(resp_success.status_code, 200)
+        content_success = resp_success.content.decode("utf-8")
+
+        # Must appear exactly once
+        self.assertEqual(
+            content_success.count("Your profile details have been updated."),
+            1,
+            "Flash message must render exactly once on the settings page, not duplicated.",
+        )
+        # Must have correct role and style
+        self.assertIn('class="settings-alert settings-alert-success"', content_success)
+        self.assertIn('role="status"', content_success)
+        self.assertIn('data-action="dismiss-alert"', content_success)
+        self.assertIn('data-testid="messages-container"', content_success)
+
+        # 2. Integration test: invalid submission triggers error message
+        resp_error = self.client.post(
+            self.url,
+            {"action": "update_profile", "display_name": "A" * 51},  # exceeds max_length 50
+            follow=True,
+        )
+        self.assertEqual(resp_error.status_code, 200)
+        content_error = resp_error.content.decode("utf-8")
+
+        self.assertEqual(
+            content_error.count("Could not update profile. Please correct the errors below."),
+            1,
+            "Error flash message must render exactly once.",
+        )
+        self.assertIn('class="settings-alert settings-alert-danger"', content_error)
+        self.assertIn('role="alert"', content_error)
+
+    def test_all_message_tag_styles_and_roles_rendered(self):
+        """Test template rendering of all message tag types (success, error, warning, info)."""
+        messages_to_test = [
+            (Message(message_constants.SUCCESS, "Operation succeeded."), "settings-alert-success", "status"),
+            (Message(message_constants.ERROR, "Critical operation failed."), "settings-alert-danger", "alert"),
+            (Message(message_constants.WARNING, "Security warning issued."), "settings-alert-warning", "alert"),
+            (Message(message_constants.INFO, "Informational note."), "settings-alert-info", "status"),
+        ]
+
+        from django.template.loader import render_to_string
+        from django.test import RequestFactory
+
+        rf = RequestFactory()
+        req = rf.get(self.url)
+        req.user = self.user
+
+        for msg_obj, expected_class, expected_role in messages_to_test:
+            rendered = render_to_string(
+                "accounts/settings.html",
+                {
+                    "user": self.user,
+                    "profile": self.profile,
+                    "messages": [msg_obj],
+                    "cooldown_status": {"can_change": True},
+                },
+                request=req,
+            )
+            self.assertEqual(
+                rendered.count(msg_obj.message),
+                1,
+                f"Message '{msg_obj.message}' must render exactly once.",
+            )
+            self.assertIn(expected_class, rendered)
+            self.assertIn(f'role="{expected_role}"', rendered)
+            self.assertIn('data-action="dismiss-alert"', rendered)
+
+    def test_global_messages_block_still_renders_on_other_pages(self):
+        """Global messages container in base.html continues to render for other views (e.g. login)."""
+        from django.template.loader import render_to_string
+        from django.test import RequestFactory
+
+        rf = RequestFactory()
+        req = rf.get("/login/")
+        req.user = self.user
+
+        msg = Message(message_constants.INFO, "Global login banner notice.")
+        rendered = render_to_string(
+            "accounts/login.html",
+            {
+                "messages": [msg],
+            },
+            request=req,
+        )
+        self.assertIn('data-testid="messages-container"', rendered)
+        self.assertIn("Global login banner notice.", rendered)
+
+    def test_zero_inline_styles_and_handlers_across_all_major_states(self):
+        """Assert zero style= attributes and zero inline on* handlers across all major settings states."""
+        # State 1: Default Clean State
+        resp1 = self.client.get(self.url)
+        self._assert_zero_inline_styles_and_handlers(resp1.content.decode("utf-8"), "Default State")
+
+        # State 2: Username Cooldown Active
+        self.profile.username_changed_at = timezone.now() - timedelta(days=2)
+        self.profile.save()
+        resp2 = self.client.get(self.url)
+        self._assert_zero_inline_styles_and_handlers(resp2.content.decode("utf-8"), "Cooldown State")
+
+        # State 3: Pending Email Change Flow
+        PendingEmailChange.objects.create(user=self.user, new_email="pending_test@passli.dev")
+        resp3 = self.client.get(self.url)
+        self._assert_zero_inline_styles_and_handlers(resp3.content.decode("utf-8"), "Pending Email State")
+
+        # State 4: Password Reset OTP Pending Flow
+        session = self.client.session
+        session["pwd_reset_otp_requested"] = True
+        session.save()
+        resp4 = self.client.get(self.url)
+        self._assert_zero_inline_styles_and_handlers(resp4.content.decode("utf-8"), "Reset OTP Pending State")
+
+        # State 5: Password Reset Authorized Window
+        session["pwd_reset_otp_requested"] = False
+        session[PASSWORD_RESET_SESSION_KEY] = timezone.now().isoformat()
+        session.save()
+        resp5 = self.client.get(self.url)
+        self._assert_zero_inline_styles_and_handlers(resp5.content.decode("utf-8"), "Reset Authorized State")
+
+        # State 6: Password Lockout Throttled
+        session[PASSWORD_RESET_SESSION_KEY] = None
+        session.save()
+        ActionThrottle.objects.create(
+            user=self.user,
+            action="password_change",
+            failed_attempts=5,
+            locked_until=timezone.now() + timedelta(minutes=15),
+        )
+        resp6 = self.client.get(self.url)
+        self._assert_zero_inline_styles_and_handlers(resp6.content.decode("utf-8"), "Password Throttled State")
+
+        # State 7: Empty Activity State
+        AccountEvent.objects.filter(user=self.user).delete()
+        resp7 = self.client.get(self.url)
+        self._assert_zero_inline_styles_and_handlers(resp7.content.decode("utf-8"), "Empty Activity State")
+
+    def _assert_zero_inline_styles_and_handlers(self, html_content: str, state_name: str):
+        # Extract the settings container from the rendered page (content defined in settings.html)
+        container_start = html_content.find('<div class="settings-container">')
+        self.assertNotEqual(container_start, -1, f"Settings container not found in {state_name}")
+        container_end = html_content.find("<!-- Backdrop for mobile bottom sheets", container_start)
+        if container_end != -1:
+            settings_html = html_content[container_start:container_end]
+        else:
+            settings_html = html_content[container_start:]
+
+        style_matches = re.findall(r"<[^>]*\bstyle\s*=[^>]*>", settings_html, re.IGNORECASE)
+        self.assertEqual(
+            len(style_matches),
+            0,
+            f"Found inline style attribute(s) in {state_name}: {style_matches}",
+        )
+
+        handler_matches = re.findall(r"<[^>]*\bon[a-z]+\s*=[^>]*>", settings_html, re.IGNORECASE)
+        self.assertEqual(
+            len(handler_matches),
+            0,
+            f"Found inline event handler(s) in {state_name}: {handler_matches}",
+        )
