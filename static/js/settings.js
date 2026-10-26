@@ -115,7 +115,7 @@ function initSectionNavigation() {
 
         if (options.updateHash !== false) {
             if (window.location.hash !== `#${targetSectionId}`) {
-                history.replaceState(null, '', `#${targetSectionId}`);
+                history.pushState(null, '', `#${targetSectionId}`);
             }
         }
     }
@@ -132,8 +132,64 @@ function initSectionNavigation() {
         });
     });
 
-    // Check on load: Did server specify an open panel or errors?
-    const serverOpenPanel = document.querySelector('.settings-panel[data-server-open="true"], .settings-panel:has(.settings-error:not(:empty))');
+    // Check on load: Did server specify an open panel, inline errors, or flash alerts?
+    let serverOpenPanel = document.querySelector('.settings-panel[data-server-open="true"], .settings-panel:has(.settings-error:not(:empty))');
+
+    // Inspect danger flash alerts to connect redirected server rejections with their corresponding panel & fields
+    const dangerAlerts = Array.from(document.querySelectorAll('.settings-alert-danger'));
+    dangerAlerts.forEach(alertElem => {
+        const txt = (alertElem.textContent || '').trim();
+        // 1. Profile display name error
+        if (txt.includes('Could not update profile')) {
+            serverOpenPanel = document.getElementById('panel-display-name');
+            if (serverOpenPanel) {
+                serverOpenPanel.setAttribute('data-server-open', 'true');
+                const dnInput = document.getElementById('profile-display-name');
+                let dnErr = document.getElementById('profile-display-name-error');
+                if (dnInput && !dnErr) {
+                    dnErr = document.createElement('span');
+                    dnErr.className = 'settings-error';
+                    dnErr.id = 'profile-display-name-error';
+                    dnErr.setAttribute('role', 'alert');
+                    dnErr.innerHTML = '<svg class="settings-icon-sm" aria-hidden="true"><use href="/static/img/icons/settings-sprite.svg#icon-clock"></use></svg> Display name cannot exceed 50 characters.';
+                    dnInput.insertAdjacentElement('afterend', dnErr);
+                    dnInput.setAttribute('aria-invalid', 'true');
+                    dnInput.setAttribute('aria-describedby', 'profile-display-name-error');
+                }
+            }
+        }
+        // 2. Current password error in username change
+        if (txt.toLowerCase().includes('password') && (txt.toLowerCase().includes('incorrect') || txt.toLowerCase().includes('wrong'))) {
+            const pwdInput = document.getElementById('settings-username-password');
+            let pwdErr = document.getElementById('username-password-error');
+            if (pwdInput && !pwdErr) {
+                pwdErr = document.createElement('span');
+                pwdErr.className = 'settings-error';
+                pwdErr.id = 'username-password-error';
+                pwdErr.setAttribute('role', 'alert');
+                pwdErr.innerHTML = `<svg class="settings-icon-sm" aria-hidden="true"><use href="/static/img/icons/settings-sprite.svg#icon-clock"></use></svg> ${txt}`;
+                pwdInput.insertAdjacentElement('afterend', pwdErr);
+                pwdInput.setAttribute('aria-invalid', 'true');
+                pwdInput.setAttribute('aria-describedby', 'username-password-error');
+            }
+        }
+        // 3. New username error
+        if (txt.toLowerCase().includes('username') || txt.includes('@')) {
+            const unInput = document.getElementById('settings-new-username');
+            let unErr = document.getElementById('new-username-error');
+            if (unInput && !unErr) {
+                unErr = document.createElement('span');
+                unErr.className = 'settings-error';
+                unErr.id = 'new-username-error';
+                unErr.setAttribute('role', 'alert');
+                unErr.innerHTML = `<svg class="settings-icon-sm" aria-hidden="true"><use href="/static/img/icons/settings-sprite.svg#icon-clock"></use></svg> ${txt}`;
+                unInput.insertAdjacentElement('afterend', unErr);
+                unInput.setAttribute('aria-invalid', 'true');
+                unInput.setAttribute('aria-describedby', 'new-username-error');
+            }
+        }
+    });
+
     if (serverOpenPanel) {
         const parentSection = serverOpenPanel.closest('.settings-section');
         if (parentSection) {
@@ -141,6 +197,10 @@ function initSectionNavigation() {
             serverOpenPanel.removeAttribute('hidden');
             const toggleBtn = document.querySelector(`[aria-controls="${serverOpenPanel.id}"]`);
             if (toggleBtn) toggleBtn.setAttribute('aria-expanded', 'true');
+            const invalidField = serverOpenPanel.querySelector('[aria-invalid="true"], input:not([type="hidden"]), select, textarea');
+            if (invalidField) {
+                invalidField.focus();
+            }
             return;
         }
     }
@@ -159,8 +219,8 @@ function initSectionNavigation() {
         }
     }
 
-    // Listen to external hashchange
-    window.addEventListener('hashchange', () => {
+    // Listen to external hashchange and popstate (browser back/forward navigation)
+    function handleHistoryNav() {
         const { sectionId: newSec, panelId: newPan } = getTargetSectionAndPanel(window.location.hash);
         switchSection(newSec, { updateHash: false });
         if (newPan) {
@@ -171,7 +231,9 @@ function initSectionNavigation() {
                 if (tb) tb.setAttribute('aria-expanded', 'true');
             }
         }
-    });
+    }
+    window.addEventListener('hashchange', handleHistoryNav);
+    window.addEventListener('popstate', handleHistoryNav);
 }
 
 /**
@@ -221,7 +283,7 @@ function initDisclosurePanels() {
         // Focus first input
         const firstInput = panel.querySelector('input:not([type="hidden"]), button:not(.settings-sheet-drag-handle)');
         if (firstInput) {
-            setTimeout(() => firstInput.focus(), 50);
+            firstInput.focus();
         }
     }
 
