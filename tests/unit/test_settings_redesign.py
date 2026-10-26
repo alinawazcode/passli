@@ -7,9 +7,12 @@ Unit and integration tests for Account Settings redesign:
 - Preservation of all 13 security/form actions and critical test element IDs.
 """
 
+import re
 from datetime import timedelta
 from django.test import TestCase
 from django.contrib.auth import get_user_model
+from django.contrib.messages import constants as message_constants
+from django.contrib.messages.storage.base import Message
 from django.urls import reverse
 from django.utils import timezone
 
@@ -273,7 +276,7 @@ class TestSettingsFeatureParity(TestCase):
         self.assertIn('value="cancel_password_reset"', content_auth)
 
     def test_cooldown_username_state_hides_form_and_renders_cooldown_badge(self):
-        """When username is in cooldown, change button is replaced by cooldown message."""
+        """When username is in cooldown, change button is replaced by single-line cooldown notice without pill."""
         self.profile.username_changed_at = timezone.now() - timedelta(days=5)
         self.profile.save()
 
@@ -281,7 +284,8 @@ class TestSettingsFeatureParity(TestCase):
         self.assertEqual(response.status_code, 200)
         content = response.content.decode("utf-8")
 
-        self.assertIn("COOLDOWN ACTIVE", content)
+        # Per item 5: COOLDOWN ACTIVE pill is removed, replaced by single clock line
+        self.assertNotIn("COOLDOWN ACTIVE", content)
         self.assertIn("You can change your username again on", content)
         # Button to toggle username change should NOT exist
         self.assertNotIn('id="btn-toggle-username"', content)
@@ -310,3 +314,325 @@ class TestSettingsFeatureParity(TestCase):
         content = response.content.decode("utf-8")
 
         self.assertIn("No recent account activity recorded yet.", content)
+
+
+class TestSettingsAlertsAndStyles(TestCase):
+    """
+    Phase 1 Test Suite:
+    - Flash messages render exactly once on /settings/ with tag-to-style mapping and ARIA roles.
+    - Global messages block in base.html continues to render on other pages.
+    - Zero inline style= attributes across all major states.
+    - Zero inline event handlers (onclick=, etc.) across all major states.
+    """
+
+    def setUp(self):
+        self.password = get_test_password()
+        self.user = User.objects.create_user(
+            username="alerts_tester",
+            email="alerts@passli.dev",
+            password=self.password,
+        )
+        self.profile = UserProfile.objects.get(user=self.user)
+        self.profile.is_email_verified = True
+        self.profile.display_name = "Alerts Tester"
+        self.profile.save()
+        self.client.force_login(self.user)
+        self.url = reverse("account_settings")
+
+    def test_flash_messages_rendered_once_on_settings_with_roles_and_tags(self):
+        """Messages on /settings/ render once in .settings-alerts with correct role and level style."""
+        # 1. Integration test: update profile triggers success message followed by redirect
+        resp_success = self.client.post(
+            self.url,
+            {"action": "update_profile", "display_name": "Updated Name"},
+            follow=True,
+        )
+        self.assertEqual(resp_success.status_code, 200)
+        content_success = resp_success.content.decode("utf-8")
+
+        # Must appear exactly once
+        self.assertEqual(
+            content_success.count("Your profile details have been updated."),
+            1,
+            "Flash message must render exactly once on the settings page, not duplicated.",
+        )
+        # Must have correct role and style
+        self.assertIn('class="settings-alert settings-alert-success"', content_success)
+        self.assertIn('role="status"', content_success)
+        self.assertIn('data-action="dismiss-alert"', content_success)
+        self.assertIn('data-testid="messages-container"', content_success)
+
+        # 2. Integration test: invalid submission triggers error message
+        resp_error = self.client.post(
+            self.url,
+            {"action": "update_profile", "display_name": "A" * 51},  # exceeds max_length 50
+            follow=True,
+        )
+        self.assertEqual(resp_error.status_code, 200)
+        content_error = resp_error.content.decode("utf-8")
+
+        self.assertEqual(
+            content_error.count("Could not update profile. Please correct the errors below."),
+            1,
+            "Error flash message must render exactly once.",
+        )
+        self.assertIn('class="settings-alert settings-alert-danger"', content_error)
+        self.assertIn('role="alert"', content_error)
+
+    def test_all_message_tag_styles_and_roles_rendered(self):
+        """Test template rendering of all message tag types (success, error, warning, info)."""
+        messages_to_test = [
+            (Message(message_constants.SUCCESS, "Operation succeeded."), "settings-alert-success", "status"),
+            (Message(message_constants.ERROR, "Critical operation failed."), "settings-alert-danger", "alert"),
+            (Message(message_constants.WARNING, "Security warning issued."), "settings-alert-warning", "alert"),
+            (Message(message_constants.INFO, "Informational note."), "settings-alert-info", "status"),
+        ]
+
+        from django.template.loader import render_to_string
+        from django.test import RequestFactory
+
+        rf = RequestFactory()
+        req = rf.get(self.url)
+        req.user = self.user
+
+        for msg_obj, expected_class, expected_role in messages_to_test:
+            rendered = render_to_string(
+                "accounts/settings.html",
+                {
+                    "user": self.user,
+                    "profile": self.profile,
+                    "messages": [msg_obj],
+                    "cooldown_status": {"can_change": True},
+                },
+                request=req,
+            )
+            self.assertEqual(
+                rendered.count(msg_obj.message),
+                1,
+                f"Message '{msg_obj.message}' must render exactly once.",
+            )
+            self.assertIn(expected_class, rendered)
+            self.assertIn(f'role="{expected_role}"', rendered)
+            self.assertIn('data-action="dismiss-alert"', rendered)
+
+    def test_global_messages_block_still_renders_on_other_pages(self):
+        """Global messages container in base.html continues to render for other views (e.g. login)."""
+        from django.template.loader import render_to_string
+        from django.test import RequestFactory
+
+        rf = RequestFactory()
+        req = rf.get("/login/")
+        req.user = self.user
+
+        msg = Message(message_constants.INFO, "Global login banner notice.")
+        rendered = render_to_string(
+            "accounts/login.html",
+            {
+                "messages": [msg],
+            },
+            request=req,
+        )
+        self.assertIn('data-testid="messages-container"', rendered)
+        self.assertIn("Global login banner notice.", rendered)
+
+    def test_zero_inline_styles_and_handlers_across_all_major_states(self):
+        """Assert zero style= attributes and zero inline on* handlers across all major settings states."""
+        # State 1: Default Clean State
+        resp1 = self.client.get(self.url)
+        self._assert_zero_inline_styles_and_handlers(resp1.content.decode("utf-8"), "Default State")
+
+        # State 2: Username Cooldown Active
+        self.profile.username_changed_at = timezone.now() - timedelta(days=2)
+        self.profile.save()
+        resp2 = self.client.get(self.url)
+        self._assert_zero_inline_styles_and_handlers(resp2.content.decode("utf-8"), "Cooldown State")
+
+        # State 3: Pending Email Change Flow
+        PendingEmailChange.objects.create(user=self.user, new_email="pending_test@passli.dev")
+        resp3 = self.client.get(self.url)
+        self._assert_zero_inline_styles_and_handlers(resp3.content.decode("utf-8"), "Pending Email State")
+
+        # State 4: Password Reset OTP Pending Flow
+        session = self.client.session
+        session["pwd_reset_otp_requested"] = True
+        session.save()
+        resp4 = self.client.get(self.url)
+        self._assert_zero_inline_styles_and_handlers(resp4.content.decode("utf-8"), "Reset OTP Pending State")
+
+        # State 5: Password Reset Authorized Window
+        session["pwd_reset_otp_requested"] = False
+        session[PASSWORD_RESET_SESSION_KEY] = timezone.now().isoformat()
+        session.save()
+        resp5 = self.client.get(self.url)
+        self._assert_zero_inline_styles_and_handlers(resp5.content.decode("utf-8"), "Reset Authorized State")
+
+        # State 6: Password Lockout Throttled
+        session[PASSWORD_RESET_SESSION_KEY] = None
+        session.save()
+        ActionThrottle.objects.create(
+            user=self.user,
+            action="password_change",
+            failed_attempts=5,
+            locked_until=timezone.now() + timedelta(minutes=15),
+        )
+        resp6 = self.client.get(self.url)
+        self._assert_zero_inline_styles_and_handlers(resp6.content.decode("utf-8"), "Password Throttled State")
+
+        # State 7: Empty Activity State
+        AccountEvent.objects.filter(user=self.user).delete()
+        resp7 = self.client.get(self.url)
+        self._assert_zero_inline_styles_and_handlers(resp7.content.decode("utf-8"), "Empty Activity State")
+
+    def _assert_zero_inline_styles_and_handlers(self, html_content: str, state_name: str):
+        # Extract the settings container from the rendered page (content defined in settings.html)
+        container_start = html_content.find('<div class="settings-container">')
+        self.assertNotEqual(container_start, -1, f"Settings container not found in {state_name}")
+        container_end = html_content.find("<!-- Backdrop for mobile bottom sheets", container_start)
+        if container_end != -1:
+            settings_html = html_content[container_start:container_end]
+        else:
+            settings_html = html_content[container_start:]
+
+        style_matches = re.findall(r"<[^>]*\bstyle\s*=[^>]*>", settings_html, re.IGNORECASE)
+        self.assertEqual(
+            len(style_matches),
+            0,
+            f"Found inline style attribute(s) in {state_name}: {style_matches}",
+        )
+
+        handler_matches = re.findall(r"<[^>]*\bon[a-z]+\s*=[^>]*>", settings_html, re.IGNORECASE)
+        self.assertEqual(
+            len(handler_matches),
+            0,
+            f"Found inline event handler(s) in {state_name}: {handler_matches}",
+        )
+
+
+class TestSettingsProfileSectionPolish(TestCase):
+    """
+    Phase 2 Test Suite:
+    - Profile card title, copy, and sentence case consistency.
+    - Avatar footnote position (outside card).
+    - Photo row and panel layout with and without avatar.
+    - Username cooldown single line and no uppercase pill or button.
+    - JetBrains Mono font stack with weight 500.
+    """
+
+    def setUp(self):
+        self.password = get_test_password()
+        self.user = User.objects.create_user(
+            username="profile_polisher",
+            email="polisher@passli.dev",
+            password=self.password,
+        )
+        self.profile = UserProfile.objects.get(user=self.user)
+        self.profile.is_email_verified = True
+        self.profile.save()
+        self.client.force_login(self.user)
+        self.url = reverse("account_settings")
+
+    def test_copy_consistency_and_footnote_outside_card(self):
+        """Card title is Profile, subtitle updated, 'Not set' used for empty display name, footnote outside card."""
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode("utf-8")
+
+        # 1. Card title and description
+        self.assertIn('<h2 class="settings-card-title" id="profile-heading">Profile</h2>', content)
+        self.assertNotIn("Personal profile", content)
+        self.assertIn("How you appear across Passli.", content)
+        self.assertNotIn("username identifier", content)
+
+        # 2. Subtitle
+        self.assertIn("Manage your profile, sign-in details and security.", content)
+        container_start = content.find('<div class="settings-container">')
+        settings_html = content[container_start:]
+        self.assertNotIn("credentials", settings_html)
+        self.assertNotIn("identifier", settings_html)
+
+        # 3. Empty display name shows 'Not set'
+        self.assertIn("Not set", content)
+        self.assertNotIn("Not configured", content)
+
+        # 4. Avatar footnote rendered outside .settings-card
+        card_end = content.find("<!-- Footnote (Outside Card) -->")
+        self.assertNotEqual(card_end, -1)
+        footnote_tag = content.find('<p class="settings-card-footnote">', card_end)
+        self.assertNotEqual(footnote_tag, -1)
+        self.assertIn(
+            "Avatar photos are stored unencrypted on disk and served only to authenticated sessions.",
+            content,
+        )
+
+    def test_photo_row_and_panel_controls_without_avatar(self):
+        """Without avatar, row shows hint beside initial, panel shows Choose photo button, no Remove button."""
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode("utf-8")
+
+        # Row hint present
+        self.assertIn("JPEG, PNG or WebP, up to 2 MB", content)
+        self.assertIn('id="avatar-preview-img"', content)
+        self.assertIn('id="avatar-fallback-initial"', content)
+
+        # Panel markup
+        self.assertIn('for="avatar-file-input"', content)
+        self.assertIn('id="avatar-file-input"', content)
+        self.assertIn('id="btn-choose-avatar"', content)
+        self.assertIn('id="avatar-pending-actions"', content)
+        self.assertIn('id="btn-save-avatar"', content)
+        self.assertIn('id="btn-cancel-avatar-file"', content)
+
+        # Remove button & dialog must NOT be present when user has no avatar
+        self.assertNotIn('id="btn-remove-avatar-trigger"', content)
+        self.assertNotIn('id="remove-avatar-dialog"', content)
+
+    def test_photo_row_and_panel_controls_with_avatar(self):
+        """With avatar, panel renders Remove photo trigger and native dialog."""
+        self.profile.avatar_path = "avatars/sample.webp"
+        self.profile.save()
+
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode("utf-8")
+
+        # Remove trigger and dialog must exist
+        self.assertIn('id="btn-remove-avatar-trigger"', content)
+        self.assertIn('id="remove-avatar-dialog"', content)
+        self.assertIn('id="btn-dialog-cancel-remove"', content)
+        self.assertIn('id="btn-remove-avatar"', content)
+        self.assertIn('id="btn-choose-avatar"', content)
+
+    def test_username_cooldown_single_amber_line_and_no_button(self):
+        """Username in cooldown displays single line notice with clock and zero buttons."""
+        self.profile.username_changed_at = timezone.now() - timedelta(days=7)
+        self.profile.save()
+
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode("utf-8")
+
+        self.assertIn("You can change your username again on", content)
+        self.assertNotIn("COOLDOWN ACTIVE", content)
+        self.assertNotIn('id="btn-toggle-username"', content)
+        self.assertNotIn('id="panel-username"', content)
+
+    def test_sentence_case_pills_in_security_section(self):
+        """Pills use sentence case ('Reset authorized', 'Code pending')."""
+        # 1. Reset authorized state
+        session = self.client.session
+        session[PASSWORD_RESET_SESSION_KEY] = timezone.now().isoformat()
+        session.save()
+        resp_auth = self.client.get(self.url)
+        content_auth = resp_auth.content.decode("utf-8")
+        self.assertIn("Reset authorized", content_auth)
+        self.assertNotIn("Reset Authorized", content_auth)
+
+        # 2. Reset OTP pending state
+        session[PASSWORD_RESET_SESSION_KEY] = None
+        session["pwd_reset_otp_requested"] = True
+        session.save()
+        resp_otp = self.client.get(self.url)
+        content_otp = resp_otp.content.decode("utf-8")
+        self.assertIn("Code pending", content_otp)
+        self.assertNotIn("Code Pending", content_otp)

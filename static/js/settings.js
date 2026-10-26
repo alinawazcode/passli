@@ -8,6 +8,7 @@
 document.documentElement.classList.add('js-ready');
 
 document.addEventListener('DOMContentLoaded', () => {
+    initAlertDismiss();
     initSectionNavigation();
     initDisclosurePanels();
     initAvatarControls();
@@ -17,6 +18,24 @@ document.addEventListener('DOMContentLoaded', () => {
     initPasswordStrength();
     initRemoveAvatarDialog();
 });
+
+/**
+ * 0. Flash Alert Dismiss Handler
+ */
+function initAlertDismiss() {
+    document.querySelectorAll('[data-action="dismiss-alert"]').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            const alert = btn.closest('.settings-alert');
+            if (alert) {
+                alert.style.opacity = '0';
+                alert.style.transform = 'translateY(-4px)';
+                alert.style.transition = 'opacity 150ms ease, transform 150ms ease';
+                setTimeout(() => alert.remove(), 150);
+            }
+        });
+    });
+}
 
 /**
  * 1. Section Navigation & Legacy Hash Mapping
@@ -96,7 +115,7 @@ function initSectionNavigation() {
 
         if (options.updateHash !== false) {
             if (window.location.hash !== `#${targetSectionId}`) {
-                history.replaceState(null, '', `#${targetSectionId}`);
+                history.pushState(null, '', `#${targetSectionId}`);
             }
         }
     }
@@ -113,8 +132,64 @@ function initSectionNavigation() {
         });
     });
 
-    // Check on load: Did server specify an open panel or errors?
-    const serverOpenPanel = document.querySelector('.settings-panel[data-server-open="true"], .settings-panel:has(.settings-error)');
+    // Check on load: Did server specify an open panel, inline errors, or flash alerts?
+    let serverOpenPanel = document.querySelector('.settings-panel[data-server-open="true"], .settings-panel:has(.settings-error:not(:empty))');
+
+    // Inspect danger flash alerts to connect redirected server rejections with their corresponding panel & fields
+    const dangerAlerts = Array.from(document.querySelectorAll('.settings-alert-danger'));
+    dangerAlerts.forEach(alertElem => {
+        const txt = (alertElem.textContent || '').trim();
+        // 1. Profile display name error
+        if (txt.includes('Could not update profile')) {
+            serverOpenPanel = document.getElementById('panel-display-name');
+            if (serverOpenPanel) {
+                serverOpenPanel.setAttribute('data-server-open', 'true');
+                const dnInput = document.getElementById('profile-display-name');
+                let dnErr = document.getElementById('profile-display-name-error');
+                if (dnInput && !dnErr) {
+                    dnErr = document.createElement('span');
+                    dnErr.className = 'settings-error';
+                    dnErr.id = 'profile-display-name-error';
+                    dnErr.setAttribute('role', 'alert');
+                    dnErr.innerHTML = '<svg class="settings-icon-sm" aria-hidden="true"><use href="/static/img/icons/settings-sprite.svg#icon-clock"></use></svg> Display name cannot exceed 50 characters.';
+                    dnInput.insertAdjacentElement('afterend', dnErr);
+                    dnInput.setAttribute('aria-invalid', 'true');
+                    dnInput.setAttribute('aria-describedby', 'profile-display-name-error');
+                }
+            }
+        }
+        // 2. Current password error in username change
+        if (txt.toLowerCase().includes('password') && (txt.toLowerCase().includes('incorrect') || txt.toLowerCase().includes('wrong'))) {
+            const pwdInput = document.getElementById('settings-username-password');
+            let pwdErr = document.getElementById('username-password-error');
+            if (pwdInput && !pwdErr) {
+                pwdErr = document.createElement('span');
+                pwdErr.className = 'settings-error';
+                pwdErr.id = 'username-password-error';
+                pwdErr.setAttribute('role', 'alert');
+                pwdErr.innerHTML = `<svg class="settings-icon-sm" aria-hidden="true"><use href="/static/img/icons/settings-sprite.svg#icon-clock"></use></svg> ${txt}`;
+                pwdInput.insertAdjacentElement('afterend', pwdErr);
+                pwdInput.setAttribute('aria-invalid', 'true');
+                pwdInput.setAttribute('aria-describedby', 'username-password-error');
+            }
+        }
+        // 3. New username error
+        if (txt.toLowerCase().includes('username') || txt.includes('@')) {
+            const unInput = document.getElementById('settings-new-username');
+            let unErr = document.getElementById('new-username-error');
+            if (unInput && !unErr) {
+                unErr = document.createElement('span');
+                unErr.className = 'settings-error';
+                unErr.id = 'new-username-error';
+                unErr.setAttribute('role', 'alert');
+                unErr.innerHTML = `<svg class="settings-icon-sm" aria-hidden="true"><use href="/static/img/icons/settings-sprite.svg#icon-clock"></use></svg> ${txt}`;
+                unInput.insertAdjacentElement('afterend', unErr);
+                unInput.setAttribute('aria-invalid', 'true');
+                unInput.setAttribute('aria-describedby', 'new-username-error');
+            }
+        }
+    });
+
     if (serverOpenPanel) {
         const parentSection = serverOpenPanel.closest('.settings-section');
         if (parentSection) {
@@ -122,6 +197,10 @@ function initSectionNavigation() {
             serverOpenPanel.removeAttribute('hidden');
             const toggleBtn = document.querySelector(`[aria-controls="${serverOpenPanel.id}"]`);
             if (toggleBtn) toggleBtn.setAttribute('aria-expanded', 'true');
+            const invalidField = serverOpenPanel.querySelector('[aria-invalid="true"], input:not([type="hidden"]), select, textarea');
+            if (invalidField) {
+                invalidField.focus();
+            }
             return;
         }
     }
@@ -140,8 +219,8 @@ function initSectionNavigation() {
         }
     }
 
-    // Listen to external hashchange
-    window.addEventListener('hashchange', () => {
+    // Listen to external hashchange and popstate (browser back/forward navigation)
+    function handleHistoryNav() {
         const { sectionId: newSec, panelId: newPan } = getTargetSectionAndPanel(window.location.hash);
         switchSection(newSec, { updateHash: false });
         if (newPan) {
@@ -152,7 +231,9 @@ function initSectionNavigation() {
                 if (tb) tb.setAttribute('aria-expanded', 'true');
             }
         }
-    });
+    }
+    window.addEventListener('hashchange', handleHistoryNav);
+    window.addEventListener('popstate', handleHistoryNav);
 }
 
 /**
@@ -165,7 +246,8 @@ function initDisclosurePanels() {
 
     // Hide any panels not explicitly marked open on load
     panels.forEach(p => {
-        if (p.getAttribute('data-server-open') !== 'true' && !p.querySelector('.settings-error')) {
+        const hasVisibleError = Array.from(p.querySelectorAll('.settings-error:not(:empty)')).some(err => !err.hasAttribute('hidden'));
+        if (p.getAttribute('data-server-open') !== 'true' && !hasVisibleError) {
             p.setAttribute('hidden', '');
         }
     });
@@ -201,7 +283,7 @@ function initDisclosurePanels() {
         // Focus first input
         const firstInput = panel.querySelector('input:not([type="hidden"]), button:not(.settings-sheet-drag-handle)');
         if (firstInput) {
-            setTimeout(() => firstInput.focus(), 50);
+            firstInput.focus();
         }
     }
 
@@ -254,9 +336,14 @@ function initDisclosurePanels() {
         });
     }
 
-    // Escape closes untouched panel/sheet
+    // Escape closes untouched panel/sheet (unless a native dialog is currently open)
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
+            const openDialog = document.querySelector('dialog[open]');
+            if (openDialog) {
+                // Let the native dialog handle its own Escape dismissal
+                return;
+            }
             const openPan = document.querySelector('.settings-panel:not([hidden])');
             if (openPan) {
                 closePanel(openPan, true);
@@ -286,54 +373,118 @@ function initDisclosurePanels() {
 function initAvatarControls() {
     const fileInput = document.getElementById('avatar-file-input');
     const chooseBtn = document.getElementById('btn-choose-avatar');
-    const previewImg = document.getElementById('avatar-preview-img');
-    const fallbackInitial = document.getElementById('avatar-fallback-initial');
+    const rowPreviewImg = document.getElementById('avatar-preview-img');
+    const rowFallbackInitial = document.getElementById('avatar-fallback-initial');
+    const panelPreviewImg = document.getElementById('avatar-panel-preview');
+    const panelFallbackInitial = document.getElementById('avatar-panel-initial');
+    const pendingActions = document.getElementById('avatar-pending-actions');
+    const cancelFileBtn = document.getElementById('btn-cancel-avatar-file');
     const errorContainer = document.getElementById('avatar-client-error');
 
     if (!fileInput || !chooseBtn) return;
+
+    // Cache original state for cancel restoration
+    const originalRowSrc = rowPreviewImg ? rowPreviewImg.getAttribute('src') : '';
+    const hadInitialAvatar = rowPreviewImg && originalRowSrc && !rowPreviewImg.hasAttribute('hidden');
+
+    function resetFileSelection() {
+        fileInput.value = '';
+        if (errorContainer) {
+            errorContainer.textContent = '';
+            errorContainer.setAttribute('hidden', '');
+        }
+        if (pendingActions) {
+            pendingActions.setAttribute('hidden', '');
+        }
+        // Restore previews to initial persisted state
+        if (hadInitialAvatar) {
+            if (rowPreviewImg) {
+                rowPreviewImg.src = originalRowSrc;
+                rowPreviewImg.removeAttribute('hidden');
+            }
+            if (rowFallbackInitial) rowFallbackInitial.setAttribute('hidden', '');
+            if (panelPreviewImg) {
+                panelPreviewImg.src = originalRowSrc;
+                panelPreviewImg.removeAttribute('hidden');
+            }
+            if (panelFallbackInitial) panelFallbackInitial.setAttribute('hidden', '');
+        } else {
+            if (rowPreviewImg) {
+                rowPreviewImg.src = '';
+                rowPreviewImg.setAttribute('hidden', '');
+            }
+            if (rowFallbackInitial) rowFallbackInitial.removeAttribute('hidden');
+            if (panelPreviewImg) {
+                panelPreviewImg.src = '';
+                panelPreviewImg.setAttribute('hidden', '');
+            }
+            if (panelFallbackInitial) panelFallbackInitial.removeAttribute('hidden');
+        }
+    }
 
     chooseBtn.addEventListener('click', (e) => {
         e.preventDefault();
         fileInput.click();
     });
 
+    if (cancelFileBtn) {
+        cancelFileBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            resetFileSelection();
+        });
+    }
+
     fileInput.addEventListener('change', () => {
         const file = fileInput.files && fileInput.files[0];
-        if (!file) return;
+        if (!file) {
+            resetFileSelection();
+            return;
+        }
 
         if (errorContainer) {
             errorContainer.textContent = '';
-            errorContainer.style.display = 'none';
+            errorContainer.setAttribute('hidden', '');
         }
 
         const maxBytes = 2 * 1024 * 1024;
         if (file.size > maxBytes) {
-            fileInput.value = '';
+            resetFileSelection();
             if (errorContainer) {
                 errorContainer.textContent = 'Selected image exceeds the 2 MB limit.';
-                errorContainer.style.display = 'block';
+                errorContainer.removeAttribute('hidden');
             }
             return;
         }
 
         const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
         if (!allowedTypes.includes(file.type)) {
-            fileInput.value = '';
+            resetFileSelection();
             if (errorContainer) {
                 errorContainer.textContent = 'Please choose a JPEG, PNG, or WebP image.';
-                errorContainer.style.display = 'block';
+                errorContainer.removeAttribute('hidden');
             }
             return;
         }
 
         const reader = new FileReader();
         reader.onload = (e) => {
-            if (previewImg) {
-                previewImg.src = e.target.result;
-                previewImg.style.display = 'block';
+            const dataUrl = e.target.result;
+            if (rowPreviewImg) {
+                rowPreviewImg.src = dataUrl;
+                rowPreviewImg.removeAttribute('hidden');
             }
-            if (fallbackInitial) {
-                fallbackInitial.style.display = 'none';
+            if (rowFallbackInitial) {
+                rowFallbackInitial.setAttribute('hidden', '');
+            }
+            if (panelPreviewImg) {
+                panelPreviewImg.src = dataUrl;
+                panelPreviewImg.removeAttribute('hidden');
+            }
+            if (panelFallbackInitial) {
+                panelFallbackInitial.setAttribute('hidden', '');
+            }
+            if (pendingActions) {
+                pendingActions.removeAttribute('hidden');
             }
         };
         reader.readAsDataURL(file);

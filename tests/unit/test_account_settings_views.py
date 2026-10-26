@@ -390,9 +390,9 @@ class TestAccountSettingsViews(TestCase):
         self.user.refresh_from_db()
         self.assertEqual(self.user.username, "renamed_user")
 
-        # Inspect GET page: COOLDOWN ACTIVE badge and next date
+        # Inspect GET page: Per item 5 design, COOLDOWN ACTIVE pill is removed in favor of single clock note
         page_resp = self.client.get(reverse("account_settings"))
-        self.assertContains(page_resp, "COOLDOWN ACTIVE")
+        self.assertNotContains(page_resp, "COOLDOWN ACTIVE")
         self.assertContains(page_resp, "You can change your username again on")
 
         # Attempting second change within cooldown must fail
