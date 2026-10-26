@@ -10,607 +10,711 @@
 
 {% block content %}
 <div class="settings-container">
-    <div class="settings-page-header">
-        <h1 class="settings-page-title">Account Settings</h1>
-        <p class="settings-page-desc">Manage your identity, authentication credentials, and security audit log.</p>
-    </div>
+    <!-- Header -->
+    <header class="settings-header">
+        <h1 class="settings-title">Settings</h1>
+        <p class="settings-subtitle">Manage your personal identity, credentials, and review your account activity.</p>
+    </header>
 
+    <!-- Mobile Sticky Pill Tab Bar (<960px) -->
+    <nav class="settings-tab-bar-wrapper" aria-label="Settings mobile sections">
+        <div class="settings-tab-bar" role="tablist">
+            <a href="#profile" class="settings-tab-pill active" id="tab-profile" role="tab" aria-selected="true" aria-current="page">
+                <svg class="settings-icon-sm" aria-hidden="true"><use href="{% static 'img/icons/settings-sprite.svg' %}#icon-user"></use></svg>
+                <span>Profile</span>
+            </a>
+            <a href="#security" class="settings-tab-pill" id="tab-security" role="tab" aria-selected="false">
+                <svg class="settings-icon-sm" aria-hidden="true"><use href="{% static 'img/icons/settings-sprite.svg' %}#icon-lock"></use></svg>
+                <span>Sign-in & security</span>
+            </a>
+            <a href="#activity" class="settings-tab-pill" id="tab-activity" role="tab" aria-selected="false">
+                <svg class="settings-icon-sm" aria-hidden="true"><use href="{% static 'img/icons/settings-sprite.svg' %}#icon-history"></use></svg>
+                <span>Activity</span>
+            </a>
+        </div>
+    </nav>
+
+    <!-- Main Layout Grid -->
     <div class="settings-layout">
-        <!-- Sticky Section Navigation Sidebar -->
-        <aside class="settings-sidebar" aria-label="Settings sections">
-            <nav class="settings-nav">
-                <a href="#profile" class="settings-nav-item active" id="nav-profile" aria-current="true">
-                    <span class="material-symbols-outlined">badge</span>
-                    <span>Profile & Avatar</span>
-                </a>
-                <a href="#username" class="settings-nav-item" id="nav-username">
-                    <span class="material-symbols-outlined">alternate_email</span>
-                    <span>Username</span>
-                </a>
-                <a href="#email" class="settings-nav-item" id="nav-email">
-                    <span class="material-symbols-outlined">mail</span>
-                    <span>Email Address</span>
-                </a>
-                <a href="#password" class="settings-nav-item" id="nav-password">
-                    <span class="material-symbols-outlined">lock</span>
-                    <span>Password</span>
-                </a>
-                <a href="#activity" class="settings-nav-item" id="nav-activity">
-                    <span class="material-symbols-outlined">history</span>
-                    <span>Account Activity</span>
-                </a>
-            </nav>
-        </aside>
+        <!-- Desktop Sidebar Menu (>=960px) -->
+        <nav class="settings-menu" aria-label="Settings navigation menu">
+            <a href="#profile" class="settings-menu-item active" id="nav-profile" aria-current="page">
+                <svg class="settings-icon" aria-hidden="true"><use href="{% static 'img/icons/settings-sprite.svg' %}#icon-user"></use></svg>
+                <span>Profile</span>
+            </a>
+            <a href="#security" class="settings-menu-item" id="nav-security">
+                <svg class="settings-icon" aria-hidden="true"><use href="{% static 'img/icons/settings-sprite.svg' %}#icon-lock"></use></svg>
+                <span>Sign-in & security</span>
+            </a>
+            <a href="#activity" class="settings-menu-item" id="nav-activity">
+                <svg class="settings-icon" aria-hidden="true"><use href="{% static 'img/icons/settings-sprite.svg' %}#icon-history"></use></svg>
+                <span>Activity</span>
+            </a>
+        </nav>
 
-        <!-- Main Content Cards -->
-        <div class="settings-content">
+        <!-- Main Content Area -->
+        <div class="settings-main-content">
 
-            <!-- Section 1: Profile & Avatar -->
-            <section class="settings-card" id="profile" aria-labelledby="heading-profile">
-                <div class="settings-card-header">
-                    <div>
-                        <h2 class="settings-card-title" id="heading-profile">Personal Profile & Avatar</h2>
-                        <p class="settings-card-desc">Your display name and profile image. Note: Unlike encrypted vault records, avatars are stored unencrypted on server disk and served only to authenticated sessions.</p>
-                    </div>
+            <!-- ======================================================= -->
+            <!-- SECTION 1: PROFILE                                      -->
+            <!-- ======================================================= -->
+            <section class="settings-section active" id="profile" aria-labelledby="profile-heading">
+                <!-- In-Section Alert Area -->
+                <div class="settings-alerts" aria-live="polite">
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="settings-notice-amber" role="alert" style="margin-bottom: var(--s-space-16); width: 100%; box-sizing: border-box;">
+                                <span>{{ message }}</span>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
                 </div>
 
-                <!-- Avatar Management Row -->
-                <div class="settings-avatar-row">
-                    <div class="settings-avatar-preview-wrapper" id="avatar-preview-wrapper">
-                        {% if has_avatar %}
-                            <img src="{{ avatar_url }}" alt="{{ user.username }}" class="settings-avatar-img" id="avatar-preview-img">
-                            <span class="settings-avatar-fallback font-mono-data" id="avatar-fallback-initial" style="display: none;">{{ user.username|make_list|first|upper }}</span>
-                        {% else %}
-                            <img src="" alt="" class="settings-avatar-img" id="avatar-preview-img" style="display: none;">
-                            <span class="settings-avatar-fallback font-mono-data" id="avatar-fallback-initial">{{ user.username|make_list|first|upper }}</span>
-                        {% endif %}
+                <div class="settings-card">
+                    <div class="settings-card-header">
+                        <h2 class="settings-card-title" id="profile-heading">Personal profile</h2>
+                        <p class="settings-card-desc">Your display name, username identifier, and account photo.</p>
                     </div>
 
-                    <div class="settings-avatar-controls">
-                        <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
-                            <form action="{% url 'account_settings' %}" method="post" enctype="multipart/form-data" id="avatar-upload-form" style="display: inline;">
+                    <!-- Row 1: Photo -->
+                    <div class="settings-row" id="row-photo" data-panel-id="panel-photo">
+                        <div class="settings-row-label">Photo</div>
+                        <div class="settings-row-value">
+                            <div class="settings-avatar-wrap">
+                                {% if has_avatar %}
+                                    <img src="{{ avatar_url }}" alt="{{ user.username }}" class="settings-avatar-img" id="avatar-preview-img">
+                                    <span class="settings-avatar-initial" id="avatar-fallback-initial" hidden>{{ user.username|make_list|first|upper }}</span>
+                                {% else %}
+                                    <img src="" alt="" class="settings-avatar-img" id="avatar-preview-img" hidden>
+                                    <span class="settings-avatar-initial" id="avatar-fallback-initial">{{ user.username|make_list|first|upper }}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="settings-row-action">
+                            <button type="button" class="settings-btn-secondary" id="btn-toggle-photo" data-action="toggle-panel" aria-controls="panel-photo" aria-expanded="false">
+                                Change photo
+                            </button>
+                            <svg class="settings-icon settings-row-chevron" aria-hidden="true"><use href="{% static 'img/icons/settings-sprite.svg' %}#icon-chevron"></use></svg>
+                        </div>
+                    </div>
+
+                    <!-- Panel 1: Photo Upload / Remove -->
+                    <div class="settings-panel" id="panel-photo" hidden>
+                        <div class="settings-sheet-drag-handle" aria-hidden="true"></div>
+                        <div class="settings-panel-form">
+                            <form action="{% url 'account_settings' %}" method="post" enctype="multipart/form-data" id="avatar-upload-form" class="settings-form">
                                 {% csrf_token %}
                                 <input type="hidden" name="action" value="upload_avatar">
-                                <input type="file" name="avatar" id="avatar-file-input" class="settings-avatar-file-input" accept="image/jpeg,image/png,image/webp" aria-label="Upload new avatar image">
-                                <button type="button" class="btn btn-secondary btn-sm" id="btn-choose-avatar">
-                                    <span class="material-symbols-outlined" style="font-size: 16px;">photo_camera</span> Change Avatar
-                                </button>
+                                <input type="file" name="avatar" id="avatar-file-input" accept="image/jpeg,image/png,image/webp" aria-label="Upload new avatar image" hidden>
+
+                                <div class="settings-form-group">
+                                    <label class="settings-form-label">Profile photo</label>
+                                    <span class="settings-hint">JPEG, PNG, or WebP up to 2 MB. Square cropped and resized.</span>
+                                    <div id="avatar-client-error" class="settings-error" role="alert" hidden></div>
+                                </div>
+
+                                <div class="settings-panel-actions">
+                                    {% if has_avatar %}
+                                        <button type="button" class="settings-btn-danger-text" id="btn-remove-avatar-trigger">
+                                            Remove photo
+                                        </button>
+                                    {% endif %}
+                                    <button type="button" class="settings-btn-text-cancel" data-action="close-panel">Cancel</button>
+                                    <button type="button" class="settings-btn-secondary" id="btn-choose-avatar">
+                                        Select file
+                                    </button>
+                                    <button type="submit" class="settings-btn-primary" id="btn-save-avatar">
+                                        Save photo
+                                    </button>
+                                </div>
                             </form>
 
+                            <!-- Native Dialog Confirmation for Remove Photo -->
                             {% if has_avatar %}
-                            <form action="{% url 'account_settings' %}" method="post" id="avatar-remove-form" style="display: inline;">
-                                {% csrf_token %}
-                                <input type="hidden" name="action" value="remove_avatar">
-                                <button type="submit" class="btn-danger-outline" id="btn-remove-avatar" onclick="return confirm('Are you sure you want to remove your avatar?');">
-                                    <span class="material-symbols-outlined" style="font-size: 15px;">delete</span> Remove
-                                </button>
-                            </form>
-                            {% endif %}
-                        </div>
-
-                        <span class="settings-form-hint">JPEG, PNG or WebP. Max 2 MB. Square cropped and resized to 256×256 WebP.</span>
-                        <div id="avatar-client-error" class="settings-form-error" style="display: none;" role="alert"></div>
-                    </div>
-                </div>
-
-                <div class="nav-divider" style="margin: 1.5rem 0;"></div>
-
-                <!-- Display Name Form -->
-                <form action="{% url 'account_settings' %}" method="post" id="form-update-profile" novalidate>
-                    {% csrf_token %}
-                    <input type="hidden" name="action" value="update_profile">
-
-                    <div class="settings-form-group">
-                        <label for="profile-display-name" class="settings-form-label">Display Name</label>
-                        {{ profile_form.display_name }}
-                        <span class="settings-form-hint">An optional name (up to 50 characters) displayed in personal vault greetings and user interface chips.</span>
-                        {% if profile_form.display_name.errors %}
-                            <div class="settings-form-error" role="alert">{{ profile_form.display_name.errors.0 }}</div>
-                        {% endif %}
-                    </div>
-
-                    <div class="settings-card-actions">
-                        <button type="submit" class="btn btn-primary btn-sm" id="btn-save-profile">
-                            <span class="material-symbols-outlined" style="font-size: 16px;">check</span> Save Profile
-                        </button>
-                    </div>
-                </form>
-            </section>
-
-            <!-- Section 2: Username -->
-            <section class="settings-card" id="username" aria-labelledby="heading-username">
-                <div class="settings-card-header">
-                    <div>
-                        <h2 class="settings-card-title" id="heading-username">Username</h2>
-                        <p class="settings-card-desc">Your unique account identifier. For security and anti-takeover hygiene, usernames may only be changed once every 30 days.</p>
-                    </div>
-                </div>
-
-                <!-- Current Username Banner -->
-                <div class="settings-current-value">
-                    <div>
-                        <div class="settings-current-label">CURRENT USERNAME</div>
-                        <div class="settings-current-data font-mono-data">@{{ user.username }}</div>
-                    </div>
-                    <div>
-                        {% if cooldown_status.can_change %}
-                            <span class="settings-badge settings-badge-success">ELIGIBLE TO CHANGE</span>
-                        {% else %}
-                            <span class="settings-badge settings-badge-warning">COOLDOWN ACTIVE</span>
-                        {% endif %}
-                    </div>
-                </div>
-
-                {% if not cooldown_status.can_change %}
-                    <div style="background-color: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 0.85rem 1rem; margin-bottom: 1.25rem; font-size: 0.875rem; color: #92400e;">
-                        <span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle; margin-right: 0.35rem;">schedule</span>
-                        You can change your username again on <strong>{{ cooldown_status.next_change_date|date:"d M Y" }}</strong>.
-                    </div>
-                {% endif %}
-
-                <!-- Username Change Form -->
-                <form action="{% url 'account_settings' %}" method="post" id="form-change-username" novalidate>
-                    {% csrf_token %}
-                    <input type="hidden" name="action" value="change_username">
-
-                    <div class="settings-form-group">
-                        <label for="settings-new-username" class="settings-form-label">New Username</label>
-                        {{ username_form.new_username }}
-                        <span class="settings-form-hint">3 to 30 characters. Letters, digits, and underscores. Cannot contain '@' or reserved system words.</span>
-                        {% if username_form.new_username.errors %}
-                            <div class="settings-form-error" role="alert">{{ username_form.new_username.errors.0 }}</div>
-                        {% endif %}
-                    </div>
-
-                    <div class="settings-form-group">
-                        <label for="settings-username-password" class="settings-form-label">Current Password</label>
-                        {{ username_form.current_password }}
-                        <span class="settings-form-hint">Re-enter your current password to authorize this sensitive change.</span>
-                        {% if username_form.current_password.errors %}
-                            <div class="settings-form-error" role="alert">{{ username_form.current_password.errors.0 }}</div>
-                        {% endif %}
-                    </div>
-
-                    <div class="settings-card-actions">
-                        <button type="submit" class="btn btn-primary btn-sm" id="btn-submit-username" {% if not cooldown_status.can_change %}disabled title="Username change is on a 30-day cooldown"{% endif %}>
-                            <span class="material-symbols-outlined" style="font-size: 16px;">lock_open</span> Update Username
-                        </button>
-                    </div>
-                </form>
-            </section>
-
-            <!-- Section 3: Email Address -->
-            <section class="settings-card" id="email" aria-labelledby="heading-email">
-                <div class="settings-card-header">
-                    <div>
-                        <h2 class="settings-card-title" id="heading-email">Email Address</h2>
-                        <p class="settings-card-desc">Your primary destination for security notifications, password resets, and audit alerts.</p>
-                    </div>
-                </div>
-
-                <div class="settings-current-value">
-                    <div>
-                        <div class="settings-current-label">CURRENT EMAIL</div>
-                        <div class="settings-current-data">
-                            {% if user.email %}
-                                {{ user.email }}
-                            {% else %}
-                                <span style="color: var(--text-muted); font-weight: 400; font-style: italic;">No email address on file</span>
+                                <dialog id="remove-avatar-dialog" class="settings-dialog" aria-labelledby="dialog-remove-title" aria-describedby="dialog-remove-desc">
+                                    <form action="{% url 'account_settings' %}" method="post" id="avatar-remove-form">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="action" value="remove_avatar">
+                                        <h3 class="settings-dialog-title" id="dialog-remove-title">Remove profile photo?</h3>
+                                        <p class="settings-dialog-desc" id="dialog-remove-desc">Your photo will be deleted immediately and replaced by your default initial placeholder.</p>
+                                        <div class="settings-dialog-actions">
+                                            <button type="button" class="settings-btn-secondary" id="btn-dialog-cancel-remove">Keep photo</button>
+                                            <button type="submit" class="settings-btn-primary" id="btn-remove-avatar">Remove</button>
+                                        </div>
+                                    </form>
+                                </dialog>
                             {% endif %}
                         </div>
                     </div>
-                    <div>
-                        {% if user.email and profile.is_email_verified %}
-                            <span class="settings-badge settings-badge-success">VERIFIED</span>
-                        {% elif user.email %}
-                            <span class="settings-badge settings-badge-warning">UNVERIFIED</span>
-                        {% else %}
-                            <span class="settings-badge settings-badge-muted">NONE</span>
-                        {% endif %}
-                    </div>
-                </div>
 
-                {% if pending_email_change %}
-                    <!-- Pending Email Change Verification Flow -->
-                    <div class="settings-pending-alert">
-                        <div class="settings-pending-alert-icon">
-                            <span class="material-symbols-outlined" style="font-size: 20px;">mark_email_unread</span>
+                    <!-- Row 2: Display name -->
+                    <div class="settings-row" id="row-display-name" data-panel-id="panel-display-name">
+                        <div class="settings-row-label">Display name</div>
+                        <div class="settings-row-value">
+                            {{ profile.display_name|default:"Not configured" }}
                         </div>
-                        <div>
-                            <div style="font-weight: 600; font-size: 0.95rem; color: var(--text-main);">Verification in Progress</div>
-                            <p style="margin: 0.25rem 0 0 0; font-size: 0.875rem; color: var(--text-secondary); line-height: 1.45;">
-                                A 6-digit confirmation code was sent to <strong class="font-mono-data" style="color: var(--text-main);">{{ pending_email_change.new_email }}</strong>. Your email stays unchanged until you enter it.
-                            </p>
-                        </div>
-                    </div>
-
-                    <!-- OTP Code Form -->
-                    <form action="{% url 'account_settings' %}" method="post" id="form-confirm-email-otp" novalidate>
-                        {% csrf_token %}
-                        <input type="hidden" name="action" value="confirm_email_change">
-
-                        <div class="settings-form-group">
-                            <label for="email-otp-combined-input" class="settings-form-label">6-Digit Verification Code</label>
-                            
-                            <!-- Enhanced 6 Digit Boxes for JavaScript -->
-                            <div class="settings-otp-wrapper" id="email-otp-boxes-container">
-                                <input type="text" maxlength="1" inputmode="numeric" pattern="[0-9]" class="settings-otp-box" data-index="0" aria-label="Digit 1" autocomplete="off">
-                                <input type="text" maxlength="1" inputmode="numeric" pattern="[0-9]" class="settings-otp-box" data-index="1" aria-label="Digit 2" autocomplete="off">
-                                <input type="text" maxlength="1" inputmode="numeric" pattern="[0-9]" class="settings-otp-box" data-index="2" aria-label="Digit 3" autocomplete="off">
-                                <input type="text" maxlength="1" inputmode="numeric" pattern="[0-9]" class="settings-otp-box" data-index="3" aria-label="Digit 4" autocomplete="off">
-                                <input type="text" maxlength="1" inputmode="numeric" pattern="[0-9]" class="settings-otp-box" data-index="4" aria-label="Digit 5" autocomplete="off">
-                                <input type="text" maxlength="1" inputmode="numeric" pattern="[0-9]" class="settings-otp-box" data-index="5" aria-label="Digit 6" autocomplete="off">
-                            </div>
-
-                            <!-- Progressive Enhancement Text Input Fallback -->
-                            <div class="settings-otp-fallback">
-                                {{ email_confirm_form.code }}
-                            </div>
-
-                            <span class="settings-form-hint">Code expires in 15 minutes. 5 attempts maximum.</span>
-                            {% if email_confirm_form.code.errors %}
-                                <div class="settings-form-error" role="alert">{{ email_confirm_form.code.errors.0 }}</div>
-                            {% endif %}
-                        </div>
-
-                        <div class="settings-card-actions" style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
-                            <button type="submit" class="btn btn-primary btn-sm" id="btn-submit-email-otp">
-                                <span class="material-symbols-outlined" style="font-size: 16px;">verified</span> Verify & Update Email
+                        <div class="settings-row-action">
+                            <button type="button" class="settings-btn-secondary" id="btn-toggle-display-name" data-action="toggle-panel" aria-controls="panel-display-name" aria-expanded="false">
+                                {% if profile.display_name %}Edit{% else %}Add{% endif %}
                             </button>
-                    </form>
-
-                    <form action="{% url 'account_settings' %}" method="post" id="form-resend-email-otp" style="display: inline;">
-                        {% csrf_token %}
-                        <input type="hidden" name="action" value="resend_email_change_otp">
-                        <button type="submit" class="btn btn-secondary btn-sm" id="btn-resend-email-otp" data-cooldown="{{ resend_cooldown_seconds }}">
-                            <span class="material-symbols-outlined" style="font-size: 16px;">refresh</span>
-                            <span id="resend-email-timer-text">Resend Code</span>
-                        </button>
-                    </form>
-
-                    <form action="{% url 'account_settings' %}" method="post" id="form-cancel-email-change" style="display: inline;">
-                        {% csrf_token %}
-                        <input type="hidden" name="action" value="cancel_email_change">
-                        <button type="submit" class="btn btn-secondary btn-sm" style="color: #b91c1c; border-color: #fca5a5;">
-                            Cancel Request
-                        </button>
-                    </form>
+                            <svg class="settings-icon settings-row-chevron" aria-hidden="true"><use href="{% static 'img/icons/settings-sprite.svg' %}#icon-chevron"></use></svg>
+                        </div>
                     </div>
 
-                {% else %}
-                    <!-- Normal Email State (No Pending Change) -->
-                    {% if not user.email %}
-                        <p class="settings-form-hint" style="margin-bottom: 1.25rem;">
-                            Your account currently has no email address configured. Adding an email enables security alerts, change notifications, and self-service password recovery.
-                        </p>
-                    {% elif not profile.is_email_verified %}
-                        <p class="settings-form-hint" style="margin-bottom: 1rem;">
-                            Your current email address is unverified. Please verify your address to activate full account recovery capabilities.
-                        </p>
-                        <a href="{% url 'verify_email' %}" class="btn btn-secondary btn-sm" style="margin-bottom: 1.5rem; display: inline-flex;">
-                            <span class="material-symbols-outlined" style="font-size: 16px;">verified</span> Enter Verification Code
-                        </a>
+                    <!-- Panel 2: Display Name Edit -->
+                    <div class="settings-panel" id="panel-display-name" {% if profile_form.display_name.errors %}data-server-open="true"{% else %}hidden{% endif %}>
+                        <div class="settings-sheet-drag-handle" aria-hidden="true"></div>
+                        <div class="settings-panel-form">
+                            <form action="{% url 'account_settings' %}" method="post" id="form-update-profile" novalidate>
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="update_profile">
+
+                                <div class="settings-form-group">
+                                    <label for="profile-display-name" class="settings-form-label">Display name</label>
+                                    <input type="text" name="display_name" id="profile-display-name" class="settings-input" maxlength="50" value="{{ profile_form.display_name.value|default:'' }}" placeholder="e.g. Dr. Alex Vance">
+                                    <span class="settings-hint">An optional name up to 50 characters displayed in greetings and sharing chips.</span>
+                                    {% if profile_form.display_name.errors %}
+                                        <span class="settings-error" role="alert">{{ profile_form.display_name.errors.0 }}</span>
+                                    {% endif %}
+                                </div>
+
+                                <div class="settings-panel-actions">
+                                    <button type="button" class="settings-btn-text-cancel" data-action="close-panel">Cancel</button>
+                                    <button type="submit" class="settings-btn-primary" id="btn-save-profile">
+                                        Save changes
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Row 3: Username -->
+                    <div class="settings-row" id="row-username" {% if cooldown_status.can_change %}data-panel-id="panel-username"{% endif %}>
+                        <div class="settings-row-label">Username</div>
+                        <div class="settings-row-value font-mono-data">
+                            @{{ user.username }}
+                            {% if not cooldown_status.can_change %}
+                                <span class="settings-pill settings-pill-warning" style="margin-left: var(--s-space-8);">COOLDOWN ACTIVE</span>
+                                <div class="settings-notice-amber" style="margin-top: var(--s-space-8);">
+                                    <svg class="settings-icon-sm" aria-hidden="true"><use href="{% static 'img/icons/settings-sprite.svg' %}#icon-clock"></use></svg>
+                                    <span>You can change your username again on {{ cooldown_status.next_change_date|date:"d M Y" }}</span>
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="settings-row-action">
+                            {% if cooldown_status.can_change %}
+                                <button type="button" class="settings-btn-secondary" id="btn-toggle-username" data-action="toggle-panel" aria-controls="panel-username" aria-expanded="false">
+                                    Change
+                                </button>
+                                <svg class="settings-icon settings-row-chevron" aria-hidden="true"><use href="{% static 'img/icons/settings-sprite.svg' %}#icon-chevron"></use></svg>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Panel 3: Username Change -->
+                    {% if cooldown_status.can_change %}
+                    <div class="settings-panel" id="panel-username" {% if username_form.errors %}data-server-open="true"{% else %}hidden{% endif %}>
+                        <div class="settings-sheet-drag-handle" aria-hidden="true"></div>
+                        <div class="settings-panel-form">
+                            <form action="{% url 'account_settings' %}" method="post" id="form-change-username" novalidate>
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="change_username">
+
+                                <div class="settings-form-group">
+                                    <label for="settings-new-username" class="settings-form-label">New username</label>
+                                    <input type="text" name="new_username" id="settings-new-username" class="settings-input" value="{{ username_form.new_username.value|default:'' }}" placeholder="e.g. alex_vance">
+                                    <span class="settings-hint">3 to 30 characters. Letters, digits, and underscores. Cannot contain '@'.</span>
+                                    {% if username_form.new_username.errors %}
+                                        <span class="settings-error" role="alert">{{ username_form.new_username.errors.0 }}</span>
+                                    {% endif %}
+                                </div>
+
+                                <div class="settings-form-group">
+                                    <label for="settings-username-password" class="settings-form-label">Current password</label>
+                                    <input type="password" name="current_password" id="settings-username-password" class="settings-input" autocomplete="current-password" placeholder="Enter current password">
+                                    <span class="settings-hint">Enter your current password to authorize this sensitive change.</span>
+                                    {% if username_form.current_password.errors %}
+                                        <span class="settings-error" role="alert">{{ username_form.current_password.errors.0 }}</span>
+                                    {% endif %}
+                                </div>
+
+                                <div class="settings-panel-actions">
+                                    <button type="button" class="settings-btn-text-cancel" data-action="close-panel">Cancel</button>
+                                    <button type="submit" class="settings-btn-primary" id="btn-submit-username">
+                                        Update username
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
                     {% endif %}
 
-                    <div id="email-change-section" style="margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid var(--border-light);">
-                        <div style="margin-bottom: 1rem;">
-                            <div style="font-weight: 600; font-size: 0.95rem; color: var(--text-main);">
-                                {% if user.email %}Change Email Address{% else %}Add Email Address{% endif %}
-                            </div>
-                            <span class="settings-form-hint">
-                                We'll send a 6-digit code to the new address. Your email stays unchanged until you enter it.
+                    <!-- Footnote -->
+                    <div class="settings-card-footnote">
+                        Avatar photos are stored unencrypted on disk and served only to authenticated sessions.
+                    </div>
+                </div>
+            </section>
+
+            <!-- ======================================================= -->
+            <!-- SECTION 2: SIGN-IN & SECURITY                           -->
+            <!-- ======================================================= -->
+            <section class="settings-section" id="security" aria-labelledby="security-heading">
+                <div class="settings-card">
+                    <div class="settings-card-header">
+                        <h2 class="settings-card-title" id="security-heading">Sign-in & security</h2>
+                        <p class="settings-card-desc">Manage your email address, password, and account recovery options.</p>
+                    </div>
+
+                    <!-- Row 1: Email -->
+                    <div class="settings-row" id="row-email" data-panel-id="panel-email">
+                        <div class="settings-row-label">Email address</div>
+                        <div class="settings-row-value">
+                            <span class="font-mono-data">
+                                {% if user.email %}
+                                    {{ user.email }}
+                                {% else %}
+                                    <span style="color: var(--s-color-muted);">No email address on file</span>
+                                {% endif %}
+                            </span>
+                            <span style="margin-left: var(--s-space-8);">
+                                {% if user.email and profile.is_email_verified %}
+                                    <span class="settings-pill settings-pill-success">Verified</span>
+                                {% elif user.email %}
+                                    <span class="settings-pill settings-pill-warning">Unverified</span>
+                                    <a href="{% url 'verify_email' %}" class="settings-btn-secondary" style="height: 28px; min-height: 28px; padding: 0 var(--s-space-8); font-size: var(--s-font-12); margin-left: var(--s-space-4);">Verify</a>
+                                {% else %}
+                                    <span class="settings-pill settings-pill-muted">None</span>
+                                {% endif %}
                             </span>
                         </div>
-
-                        <form action="{% url 'account_settings' %}" method="post" id="form-request-email-change" novalidate>
-                            {% csrf_token %}
-                            <input type="hidden" name="action" value="request_email_change">
-
-                            <div class="settings-form-group">
-                                <label for="settings-new-email" class="settings-form-label">
-                                    {% if user.email %}New Email Address{% else %}Email Address{% endif %}
-                                </label>
-                                {{ email_request_form.new_email }}
-                                {% if email_request_form.new_email.errors %}
-                                    <div class="settings-form-error" role="alert">{{ email_request_form.new_email.errors.0 }}</div>
+                        <div class="settings-row-action">
+                            <button type="button" class="settings-btn-secondary" id="btn-toggle-email" data-action="toggle-panel" aria-controls="panel-email" aria-expanded="false">
+                                {% if pending_email_change %}
+                                    Verify code
+                                {% elif user.email %}
+                                    Change
+                                {% else %}
+                                    Add email
                                 {% endif %}
-                            </div>
-
-                            <div class="settings-form-group">
-                                <label for="settings-email-password" class="settings-form-label">Current Password</label>
-                                {{ email_request_form.current_password }}
-                                <span class="settings-form-hint">Enter your current password to authorize this sensitive change.</span>
-                                {% if email_request_form.current_password.errors %}
-                                    <div class="settings-form-error" role="alert">{{ email_request_form.current_password.errors.0 }}</div>
-                                {% endif %}
-                            </div>
-
-                            <div class="settings-card-actions">
-                                <button type="submit" class="btn btn-primary btn-sm" id="btn-request-email-change">
-                                    <span class="material-symbols-outlined" style="font-size: 16px;">send</span>
-                                    {% if user.email %}Send Verification Code{% else %}Add Email Address{% endif %}
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                {% endif %}
-            </section>
-
-            <!-- Section 4: Password -->
-            <section class="settings-card" id="password" aria-labelledby="heading-password">
-                <div class="settings-card-header">
-                    <div>
-                        <h2 class="settings-card-title" id="heading-password">Password & Authentication</h2>
-                        <p class="settings-card-desc">Update your master vault password. Changing your password immediately invalidates all other active login sessions.</p>
-                    </div>
-                </div>
-
-                <div id="password-change-section">
-                    <p class="settings-form-hint" style="margin-bottom: 1.25rem;">
-                        For maximum protection, choose a passphrase combining uppercase, lowercase, numbers, and symbols. Changing your password invalidates all other active sessions.
-                    </p>
-
-                    {% if is_auth_locked %}
-                        <div style="background-color: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 0.85rem 1rem; margin-bottom: 1.25rem; font-size: 0.875rem; color: #991b1b;" role="alert">
-                            <span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle; margin-right: 0.35rem;">lock_clock</span>
-                            Password change is temporarily locked due to repeated incorrect password attempts. Please try again in <strong>{{ lockout_minutes }} minute(s)</strong>.
-                        </div>
-                    {% endif %}
-
-                    {% if is_reset_authorized %}
-                        <!-- Path B: Authorized via Email OTP (10-Minute Window) -->
-                        <div class="settings-pending-alert" style="border-color: #a7f3d0; background-color: #f0fdf4;">
-                            <div class="settings-pending-alert-icon" style="color: #059669;">
-                                <span class="material-symbols-outlined" style="font-size: 20px;">lock_reset</span>
-                            </div>
-                            <div>
-                                <div style="font-weight: 600; font-size: 0.95rem; color: #065f46;">Email Verification Confirmed</div>
-                                <p style="margin: 0.25rem 0 0 0; font-size: 0.875rem; color: #047857; line-height: 1.45;">
-                                    You are authorized to define a new master password without entering your current password. This authorization expires in 10 minutes.
-                                </p>
-                            </div>
-                        </div>
-
-                        <form action="{% url 'account_settings' %}" method="post" id="form-set-password-after-otp" novalidate>
-                            {% csrf_token %}
-                            <input type="hidden" name="action" value="set_password_after_otp">
-
-                            <div class="settings-form-group">
-                                <label for="settings-otp-new-password" class="settings-form-label">New Password</label>
-                                <div class="settings-password-field-wrapper">
-                                    {{ password_set_new_form.new_password }}
-                                    <button type="button" class="settings-password-toggle" aria-label="Toggle password visibility">
-                                        <span class="material-symbols-outlined" style="font-size: 18px;">visibility</span>
-                                    </button>
-                                </div>
-                                <div class="settings-strength-meter"><div class="settings-strength-bar" id="strength-bar-otp"></div></div>
-                                <span class="settings-strength-hint" id="strength-hint-otp">Strength hint: Enter password (hint only; server validators enforce policy)</span>
-                                {% if password_set_new_form.new_password.errors %}
-                                    <div class="settings-form-error" role="alert">{{ password_set_new_form.new_password.errors.0 }}</div>
-                                {% endif %}
-                            </div>
-
-                            <div class="settings-form-group">
-                                <label for="settings-otp-confirm-password" class="settings-form-label">Confirm New Password</label>
-                                <div class="settings-password-field-wrapper">
-                                    {{ password_set_new_form.confirm_password }}
-                                    <button type="button" class="settings-password-toggle" aria-label="Toggle password visibility">
-                                        <span class="material-symbols-outlined" style="font-size: 18px;">visibility</span>
-                                    </button>
-                                </div>
-                                {% if password_set_new_form.confirm_password.errors %}
-                                    <div class="settings-form-error" role="alert">{{ password_set_new_form.confirm_password.errors.0 }}</div>
-                                {% endif %}
-                            </div>
-
-                            <div class="settings-card-actions" style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
-                                <button type="submit" class="btn btn-primary btn-sm" id="btn-submit-otp-new-password">
-                                    <span class="material-symbols-outlined" style="font-size: 16px;">lock</span> Set New Master Password
-                                </button>
-                        </form>
-                        <form action="{% url 'account_settings' %}" method="post" style="display: inline;">
-                            {% csrf_token %}
-                            <input type="hidden" name="action" value="cancel_password_reset">
-                            <button type="submit" class="btn btn-secondary btn-sm">Cancel</button>
-                        </form>
-                        </div>
-
-                    {% elif reset_otp_pending %}
-                        <!-- Path B: Awaiting Password Reset OTP -->
-                        <div class="settings-pending-alert">
-                            <div class="settings-pending-alert-icon">
-                                <span class="material-symbols-outlined" style="font-size: 20px;">mark_email_unread</span>
-                            </div>
-                            <div>
-                                <div style="font-weight: 600; font-size: 0.95rem; color: var(--text-main);">Password Reset Code Dispatched</div>
-                                <p style="margin: 0.25rem 0 0 0; font-size: 0.875rem; color: var(--text-secondary); line-height: 1.45;">
-                                    A 6-digit verification code was sent to <strong class="font-mono-data" style="color: var(--text-main);">{{ user.email }}</strong>. Enter it below to unlock password reset without your old password.
-                                </p>
-                            </div>
-                        </div>
-
-                        <form action="{% url 'account_settings' %}" method="post" id="form-confirm-password-otp" novalidate>
-                            {% csrf_token %}
-                            <input type="hidden" name="action" value="verify_password_otp">
-
-                            <div class="settings-form-group">
-                                <label for="password-otp-combined-input" class="settings-form-label">6-Digit Verification Code</label>
-                                
-                                <div class="settings-otp-wrapper" id="password-otp-boxes-container">
-                                    <input type="text" maxlength="1" inputmode="numeric" pattern="[0-9]" class="settings-otp-box" data-index="0" aria-label="Digit 1" autocomplete="off">
-                                    <input type="text" maxlength="1" inputmode="numeric" pattern="[0-9]" class="settings-otp-box" data-index="1" aria-label="Digit 2" autocomplete="off">
-                                    <input type="text" maxlength="1" inputmode="numeric" pattern="[0-9]" class="settings-otp-box" data-index="2" aria-label="Digit 3" autocomplete="off">
-                                    <input type="text" maxlength="1" inputmode="numeric" pattern="[0-9]" class="settings-otp-box" data-index="3" aria-label="Digit 4" autocomplete="off">
-                                    <input type="text" maxlength="1" inputmode="numeric" pattern="[0-9]" class="settings-otp-box" data-index="4" aria-label="Digit 5" autocomplete="off">
-                                    <input type="text" maxlength="1" inputmode="numeric" pattern="[0-9]" class="settings-otp-box" data-index="5" aria-label="Digit 6" autocomplete="off">
-                                </div>
-
-                                <div class="settings-otp-fallback">
-                                    {{ password_otp_form.code }}
-                                </div>
-
-                                <span class="settings-form-hint">Code expires in 15 minutes. 5 attempts maximum.</span>
-                                {% if password_otp_form.code.errors %}
-                                    <div class="settings-form-error" role="alert">{{ password_otp_form.code.errors.0 }}</div>
-                                {% endif %}
-                            </div>
-
-                            <div class="settings-card-actions" style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
-                                <button type="submit" class="btn btn-primary btn-sm" id="btn-submit-pwd-otp">
-                                    <span class="material-symbols-outlined" style="font-size: 16px;">verified</span> Verify Code & Continue
-                                </button>
-                        </form>
-
-                        <form action="{% url 'account_settings' %}" method="post" id="form-resend-password-otp" style="display: inline;">
-                            {% csrf_token %}
-                            <input type="hidden" name="action" value="request_password_otp">
-                            <button type="submit" class="btn btn-secondary btn-sm" id="btn-resend-password-otp" data-cooldown="{{ reset_resend_wait }}">
-                                <span class="material-symbols-outlined" style="font-size: 16px;">refresh</span>
-                                <span id="resend-pwd-timer-text">Resend Code</span>
                             </button>
-                        </form>
-
-                        <form action="{% url 'account_settings' %}" method="post" style="display: inline;">
-                            {% csrf_token %}
-                            <input type="hidden" name="action" value="cancel_password_reset">
-                            <button type="submit" class="btn btn-secondary btn-sm" style="color: #b91c1c; border-color: #fca5a5;">
-                                Cancel Request
-                            </button>
-                        </form>
+                            <svg class="settings-icon settings-row-chevron" aria-hidden="true"><use href="{% static 'img/icons/settings-sprite.svg' %}#icon-chevron"></use></svg>
                         </div>
+                    </div>
 
-                    {% else %}
-                        <!-- Path A: Normal Password Change Form -->
-                        <form action="{% url 'account_settings' %}" method="post" id="form-change-password-normal" novalidate>
-                            {% csrf_token %}
-                            <input type="hidden" name="action" value="change_password_normal">
-
-                            <div class="settings-form-group">
-                                <label for="settings-current-password" class="settings-form-label">Current Password</label>
-                                <div class="settings-password-field-wrapper">
-                                    {{ password_normal_form.current_password }}
-                                    <button type="button" class="settings-password-toggle" aria-label="Toggle password visibility">
-                                        <span class="material-symbols-outlined" style="font-size: 18px;">visibility</span>
-                                    </button>
-                                </div>
-                                <span class="settings-form-hint">Enter your current master password to authorize change.</span>
-                                {% if password_normal_form.current_password.errors %}
-                                    <div class="settings-form-error" role="alert">{{ password_normal_form.current_password.errors.0 }}</div>
-                                {% endif %}
-                            </div>
-
-                            <div class="settings-form-group">
-                                <label for="settings-new-password" class="settings-form-label">New Password</label>
-                                <div class="settings-password-field-wrapper">
-                                    {{ password_normal_form.new_password }}
-                                    <button type="button" class="settings-password-toggle" aria-label="Toggle password visibility">
-                                        <span class="material-symbols-outlined" style="font-size: 18px;">visibility</span>
-                                    </button>
-                                </div>
-                                <div class="settings-strength-meter"><div class="settings-strength-bar" id="strength-bar-normal"></div></div>
-                                <span class="settings-strength-hint" id="strength-hint-normal">Strength hint: Enter password (hint only; server validators enforce policy)</span>
-                                {% if password_normal_form.new_password.errors %}
-                                    <div class="settings-form-error" role="alert">{{ password_normal_form.new_password.errors.0 }}</div>
-                                {% endif %}
-                            </div>
-
-                            <div class="settings-form-group">
-                                <label for="settings-confirm-password" class="settings-form-label">Confirm New Password</label>
-                                <div class="settings-password-field-wrapper">
-                                    {{ password_normal_form.confirm_password }}
-                                    <button type="button" class="settings-password-toggle" aria-label="Toggle password visibility">
-                                        <span class="material-symbols-outlined" style="font-size: 18px;">visibility</span>
-                                    </button>
-                                </div>
-                                {% if password_normal_form.confirm_password.errors %}
-                                    <div class="settings-form-error" role="alert">{{ password_normal_form.confirm_password.errors.0 }}</div>
-                                {% endif %}
-                            </div>
-
-                            <div class="settings-card-actions">
-                                <button type="submit" class="btn btn-primary btn-sm" id="btn-submit-password-change" {% if is_auth_locked %}disabled title="Password change is currently locked"{% endif %}>
-                                    <span class="material-symbols-outlined" style="font-size: 16px;">lock</span> Update Password
-                                </button>
-                            </div>
-                        </form>
-
-                        <!-- Path B Entry Point: "I don't remember my current password" -->
-                        <div style="margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid var(--border-light);">
-                            <div style="font-weight: 600; font-size: 0.95rem; color: var(--text-main); margin-bottom: 0.25rem;">
-                                Don't remember your current password?
-                            </div>
-                            {% if can_use_recovery %}
-                                <p class="settings-form-hint" style="margin-bottom: 1rem;">
-                                    We can send a 6-digit verification code to your verified email (<strong>{{ user.email }}</strong>) to verify your identity.
+                    <!-- Panel 1: Email Management & Step 2 OTP -->
+                    <div class="settings-panel" id="panel-email" {% if pending_email_change or email_request_form.errors or email_confirm_form.errors %}data-server-open="true"{% else %}hidden{% endif %}>
+                        <div class="settings-sheet-drag-handle" aria-hidden="true"></div>
+                        <div class="settings-panel-form">
+                            {% if pending_email_change %}
+                                <!-- Step 2 of 2: OTP Verification -->
+                                <div class="settings-step-eyebrow">STEP 2 OF 2</div>
+                                <h3 class="settings-step-title">Check your email</h3>
+                                <p class="settings-hint" style="margin-bottom: var(--s-space-8);">
+                                    We sent a 6-digit confirmation code to:
                                 </p>
-                                <form action="{% url 'account_settings' %}" method="post" id="form-request-password-otp">
+                                <div class="settings-step-dest font-mono-data">{{ pending_email_change.new_email }}</div>
+
+                                <!-- Primary OTP Confirm Form -->
+                                <form action="{% url 'account_settings' %}" method="post" id="form-confirm-email-otp" novalidate>
                                     {% csrf_token %}
-                                    <input type="hidden" name="action" value="request_password_otp">
-                                    <button type="submit" class="btn btn-secondary btn-sm" id="btn-forgot-password-otp">
-                                        <span class="material-symbols-outlined" style="font-size: 16px;">mail</span> Send Reset Code to Email
-                                    </button>
+                                    <input type="hidden" name="action" value="confirm_email_change">
+
+                                    <div class="settings-form-group">
+                                        <label for="email-otp-combined-input" class="settings-form-label">6-digit verification code</label>
+                                        
+                                        <!-- Accessible 6 Digit Box Grid -->
+                                        <div class="settings-otp-grid" id="email-otp-boxes-container">
+                                            <input type="text" maxlength="1" inputmode="numeric" pattern="[0-9]" class="settings-otp-box" data-index="0" aria-label="Digit 1" autocomplete="one-time-code">
+                                            <input type="text" maxlength="1" inputmode="numeric" pattern="[0-9]" class="settings-otp-box" data-index="1" aria-label="Digit 2">
+                                            <input type="text" maxlength="1" inputmode="numeric" pattern="[0-9]" class="settings-otp-box" data-index="2" aria-label="Digit 3">
+                                            <input type="text" maxlength="1" inputmode="numeric" pattern="[0-9]" class="settings-otp-box" data-index="3" aria-label="Digit 4">
+                                            <input type="text" maxlength="1" inputmode="numeric" pattern="[0-9]" class="settings-otp-box" data-index="4" aria-label="Digit 5">
+                                            <input type="text" maxlength="1" inputmode="numeric" pattern="[0-9]" class="settings-otp-box" data-index="5" aria-label="Digit 6">
+                                        </div>
+
+                                        <div class="settings-otp-fallback">
+                                            <input type="text" name="code" id="email-otp-combined-input" value="{{ email_confirm_form.code.value|default:'' }}">
+                                        </div>
+
+                                        <span class="settings-hint">Expires in 15 minutes. 5 attempts maximum.</span>
+                                        {% if email_confirm_form.code.errors %}
+                                            <span class="settings-error" role="alert">{{ email_confirm_form.code.errors.0 }}</span>
+                                        {% endif %}
+                                    </div>
+
+                                    <div class="settings-panel-actions">
+                                        <button type="submit" class="settings-btn-primary" id="btn-submit-email-otp">
+                                            Verify and update email
+                                        </button>
+                                    </div>
                                 </form>
+
+                                <!-- Sibling Resend & Cancel Action Bar (No invalid nesting) -->
+                                <div style="display: flex; gap: var(--s-space-12); align-items: center; justify-content: flex-end; margin-top: var(--s-space-12);">
+                                    <form action="{% url 'account_settings' %}" method="post" id="form-resend-email-otp">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="action" value="resend_email_change_otp">
+                                        <button type="submit" class="settings-btn-secondary" id="btn-resend-email-otp" data-cooldown="{{ resend_cooldown_seconds }}">
+                                            <span id="resend-email-timer-text">Resend code</span>
+                                        </button>
+                                    </form>
+
+                                    <form action="{% url 'account_settings' %}" method="post" id="form-cancel-email-change">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="action" value="cancel_email_change">
+                                        <button type="submit" class="settings-btn-danger-text">
+                                            Cancel request
+                                        </button>
+                                    </form>
+                                </div>
+
                             {% else %}
-                                <div style="background-color: var(--bg-subtle); border: 1px solid var(--border-light); border-radius: 8px; padding: 0.85rem 1rem; margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-secondary);">
-                                    <span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle; margin-right: 0.35rem; color: var(--text-muted);">info</span>
-                                    Self-service password reset requires an added and verified email address. Please configure and verify your email in the section above first.
+                                <!-- Step 1: Request Email Change Form -->
+                                <form action="{% url 'account_settings' %}" method="post" id="form-request-email-change" novalidate>
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action" value="request_email_change">
+
+                                    <div class="settings-form-group">
+                                        <label for="settings-new-email" class="settings-form-label">
+                                            {% if user.email %}New email address{% else %}Email address{% endif %}
+                                        </label>
+                                        <input type="email" name="new_email" id="settings-new-email" class="settings-input" value="{{ email_request_form.new_email.value|default:'' }}" placeholder="name@example.com">
+                                        <span class="settings-hint">We'll send a 6-digit confirmation code to this address.</span>
+                                        {% if email_request_form.new_email.errors %}
+                                            <span class="settings-error" role="alert">{{ email_request_form.new_email.errors.0 }}</span>
+                                        {% endif %}
+                                    </div>
+
+                                    <div class="settings-form-group">
+                                        <label for="settings-email-password" class="settings-form-label">Current password</label>
+                                        <input type="password" name="current_password" id="settings-email-password" class="settings-input" autocomplete="current-password" placeholder="Enter current password">
+                                        <span class="settings-hint">Enter your current password to authorize this sensitive change.</span>
+                                        {% if email_request_form.current_password.errors %}
+                                            <span class="settings-error" role="alert">{{ email_request_form.current_password.errors.0 }}</span>
+                                        {% endif %}
+                                    </div>
+
+                                    <div class="settings-panel-actions">
+                                        <button type="button" class="settings-btn-text-cancel" data-action="close-panel">Cancel</button>
+                                        <button type="submit" class="settings-btn-primary" id="btn-request-email-change">
+                                            {% if user.email %}Send verification code{% else %}Add email address{% endif %}
+                                        </button>
+                                    </div>
+                                </form>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Row 2: Password -->
+                    <div class="settings-row" id="row-password" {% if not is_auth_locked %}data-panel-id="panel-password"{% endif %}>
+                        <div class="settings-row-label">Password</div>
+                        <div class="settings-row-value font-mono-data">
+                            ••••••••••••
+                            {% if is_auth_locked %}
+                                <div class="settings-notice-danger" style="margin-top: var(--s-space-8);">
+                                    <svg class="settings-icon-sm" aria-hidden="true"><use href="{% static 'img/icons/settings-sprite.svg' %}#icon-lock"></use></svg>
+                                    <span>Password change is locked. Please try again in {{ lockout_minutes }} minute(s).</span>
+                                </div>
+                            {% elif is_reset_authorized %}
+                                <span class="settings-pill settings-pill-success" style="margin-left: var(--s-space-8);">Reset Authorized</span>
+                            {% elif reset_otp_pending %}
+                                <span class="settings-pill settings-pill-warning" style="margin-left: var(--s-space-8);">Code Pending</span>
+                            {% endif %}
+                        </div>
+                        <div class="settings-row-action">
+                            {% if not is_auth_locked %}
+                                <button type="button" class="settings-btn-secondary" id="btn-toggle-password" data-action="toggle-panel" aria-controls="panel-password" aria-expanded="false">
+                                    {% if is_reset_authorized %}
+                                        Define password
+                                    {% elif reset_otp_pending %}
+                                        Enter code
+                                    {% else %}
+                                        Change
+                                    {% endif %}
+                                </button>
+                                <svg class="settings-icon settings-row-chevron" aria-hidden="true"><use href="{% static 'img/icons/settings-sprite.svg' %}#icon-chevron"></use></svg>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Panel 2: Password Management (Normal, Forgot, OTP, Set) -->
+                    {% if not is_auth_locked %}
+                    <div class="settings-panel" id="panel-password" {% if is_reset_authorized or reset_otp_pending or password_normal_form.errors or password_otp_form.errors or password_set_new_form.errors %}data-server-open="true"{% else %}hidden{% endif %}>
+                        <div class="settings-sheet-drag-handle" aria-hidden="true"></div>
+                        <div class="settings-panel-form">
+                            {% if is_reset_authorized %}
+                                <!-- Path B: Authorized Reset Window -->
+                                <div class="settings-notice-amber" style="background-color: var(--s-color-emerald-bg); border-color: var(--s-color-emerald-border); color: var(--s-color-emerald); margin-bottom: var(--s-space-16); width: 100%; box-sizing: border-box;">
+                                    <span>Email verification confirmed. You can now define a new password without entering your old password. This authorization expires in 10 minutes.</span>
+                                </div>
+
+                                <form action="{% url 'account_settings' %}" method="post" id="form-set-password-after-otp" novalidate>
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action" value="set_password_after_otp">
+
+                                    <div class="settings-form-group">
+                                        <label for="settings-otp-new-password" class="settings-form-label">New password</label>
+                                        <div class="settings-password-wrapper">
+                                            <input type="password" name="new_password" id="settings-otp-new-password" class="settings-input" autocomplete="new-password" placeholder="Enter new strong password">
+                                            <button type="button" class="settings-password-toggle-btn" aria-label="Toggle password visibility">
+                                                <svg class="settings-icon-sm" aria-hidden="true"><use href="{% static 'img/icons/settings-sprite.svg' %}#icon-lock"></use></svg>
+                                            </button>
+                                        </div>
+                                        <div class="settings-strength-meter" id="strength-meter-otp">
+                                            <div class="settings-strength-segment"></div>
+                                            <div class="settings-strength-segment"></div>
+                                            <div class="settings-strength-segment"></div>
+                                            <div class="settings-strength-segment"></div>
+                                        </div>
+                                        <span class="settings-hint" id="strength-hint-otp">Enter a password to evaluate strength.</span>
+                                        {% if password_set_new_form.new_password.errors %}
+                                            <span class="settings-error" role="alert">{{ password_set_new_form.new_password.errors.0 }}</span>
+                                        {% endif %}
+                                    </div>
+
+                                    <div class="settings-form-group">
+                                        <label for="settings-otp-confirm-password" class="settings-form-label">Confirm new password</label>
+                                        <div class="settings-password-wrapper">
+                                            <input type="password" name="confirm_password" id="settings-otp-confirm-password" class="settings-input" autocomplete="new-password" placeholder="Repeat new password">
+                                            <button type="button" class="settings-password-toggle-btn" aria-label="Toggle password visibility">
+                                                <svg class="settings-icon-sm" aria-hidden="true"><use href="{% static 'img/icons/settings-sprite.svg' %}#icon-lock"></use></svg>
+                                            </button>
+                                        </div>
+                                        {% if password_set_new_form.confirm_password.errors %}
+                                            <span class="settings-error" role="alert">{{ password_set_new_form.confirm_password.errors.0 }}</span>
+                                        {% endif %}
+                                    </div>
+
+                                    <div class="settings-panel-actions">
+                                        <button type="submit" class="settings-btn-primary" id="btn-submit-otp-new-password">
+                                            Update password
+                                        </button>
+                                    </div>
+                                </form>
+
+                                <form action="{% url 'account_settings' %}" method="post" style="display: flex; justify-content: flex-end; margin-top: var(--s-space-8);">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action" value="cancel_password_reset">
+                                    <button type="submit" class="settings-btn-text-cancel">Cancel reset</button>
+                                </form>
+
+                            {% elif reset_otp_pending %}
+                                <!-- Path B: Awaiting Reset Code -->
+                                <div class="settings-step-eyebrow">STEP 2 OF 2</div>
+                                <h3 class="settings-step-title">Enter password reset code</h3>
+                                <p class="settings-hint" style="margin-bottom: var(--s-space-8);">
+                                    We sent a 6-digit verification code to:
+                                </p>
+                                <div class="settings-step-dest font-mono-data">{{ user.email }}</div>
+
+                                <form action="{% url 'account_settings' %}" method="post" id="form-confirm-password-otp" novalidate>
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action" value="verify_password_otp">
+
+                                    <div class="settings-form-group">
+                                        <label for="password-otp-combined-input" class="settings-form-label">6-digit verification code</label>
+                                        
+                                        <div class="settings-otp-grid" id="password-otp-boxes-container">
+                                            <input type="text" maxlength="1" inputmode="numeric" pattern="[0-9]" class="settings-otp-box" data-index="0" aria-label="Digit 1" autocomplete="one-time-code">
+                                            <input type="text" maxlength="1" inputmode="numeric" pattern="[0-9]" class="settings-otp-box" data-index="1" aria-label="Digit 2">
+                                            <input type="text" maxlength="1" inputmode="numeric" pattern="[0-9]" class="settings-otp-box" data-index="2" aria-label="Digit 3">
+                                            <input type="text" maxlength="1" inputmode="numeric" pattern="[0-9]" class="settings-otp-box" data-index="3" aria-label="Digit 4">
+                                            <input type="text" maxlength="1" inputmode="numeric" pattern="[0-9]" class="settings-otp-box" data-index="4" aria-label="Digit 5">
+                                            <input type="text" maxlength="1" inputmode="numeric" pattern="[0-9]" class="settings-otp-box" data-index="5" aria-label="Digit 6">
+                                        </div>
+
+                                        <div class="settings-otp-fallback">
+                                            <input type="text" name="code" id="password-otp-combined-input" value="{{ password_otp_form.code.value|default:'' }}">
+                                        </div>
+
+                                        <span class="settings-hint">Expires in 15 minutes. 5 attempts maximum.</span>
+                                        {% if password_otp_form.code.errors %}
+                                            <span class="settings-error" role="alert">{{ password_otp_form.code.errors.0 }}</span>
+                                        {% endif %}
+                                    </div>
+
+                                    <div class="settings-panel-actions">
+                                        <button type="submit" class="settings-btn-primary" id="btn-submit-pwd-otp">
+                                            Verify code and continue
+                                        </button>
+                                    </div>
+                                </form>
+
+                                <div style="display: flex; gap: var(--s-space-12); align-items: center; justify-content: flex-end; margin-top: var(--s-space-12);">
+                                    <form action="{% url 'account_settings' %}" method="post" id="form-resend-password-otp">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="action" value="request_password_otp">
+                                        <button type="submit" class="settings-btn-secondary" id="btn-resend-password-otp" data-cooldown="{{ reset_resend_wait }}">
+                                            <span id="resend-pwd-timer-text">Resend code</span>
+                                        </button>
+                                    </form>
+
+                                    <form action="{% url 'account_settings' %}" method="post">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="action" value="cancel_password_reset">
+                                        <button type="submit" class="settings-btn-danger-text">
+                                            Cancel request
+                                        </button>
+                                    </form>
+                                </div>
+
+                            {% else %}
+                                <!-- Path A: Normal Password Change Form -->
+                                <form action="{% url 'account_settings' %}" method="post" id="form-change-password-normal" novalidate>
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action" value="change_password_normal">
+
+                                    <div class="settings-form-group">
+                                        <label for="settings-current-password" class="settings-form-label">Current password</label>
+                                        <div class="settings-password-wrapper">
+                                            <input type="password" name="current_password" id="settings-current-password" class="settings-input" autocomplete="current-password" placeholder="Enter current password">
+                                            <button type="button" class="settings-password-toggle-btn" aria-label="Toggle password visibility">
+                                                <svg class="settings-icon-sm" aria-hidden="true"><use href="{% static 'img/icons/settings-sprite.svg' %}#icon-lock"></use></svg>
+                                            </button>
+                                        </div>
+                                        <span class="settings-hint">Enter your current password to authorize change.</span>
+                                        {% if password_normal_form.current_password.errors %}
+                                            <span class="settings-error" role="alert">{{ password_normal_form.current_password.errors.0 }}</span>
+                                        {% endif %}
+                                    </div>
+
+                                    <div class="settings-form-group">
+                                        <label for="settings-new-password" class="settings-form-label">New password</label>
+                                        <div class="settings-password-wrapper">
+                                            <input type="password" name="new_password" id="settings-new-password" class="settings-input" autocomplete="new-password" placeholder="Enter new secure password">
+                                            <button type="button" class="settings-password-toggle-btn" aria-label="Toggle password visibility">
+                                                <svg class="settings-icon-sm" aria-hidden="true"><use href="{% static 'img/icons/settings-sprite.svg' %}#icon-lock"></use></svg>
+                                            </button>
+                                        </div>
+                                        <div class="settings-strength-meter" id="strength-meter-normal">
+                                            <div class="settings-strength-segment"></div>
+                                            <div class="settings-strength-segment"></div>
+                                            <div class="settings-strength-segment"></div>
+                                            <div class="settings-strength-segment"></div>
+                                        </div>
+                                        <span class="settings-hint" id="strength-hint-normal">Enter a password to evaluate strength.</span>
+                                        {% if password_normal_form.new_password.errors %}
+                                            <span class="settings-error" role="alert">{{ password_normal_form.new_password.errors.0 }}</span>
+                                        {% endif %}
+                                    </div>
+
+                                    <div class="settings-form-group">
+                                        <label for="settings-confirm-password" class="settings-form-label">Confirm new password</label>
+                                        <div class="settings-password-wrapper">
+                                            <input type="password" name="confirm_password" id="settings-confirm-password" class="settings-input" autocomplete="new-password" placeholder="Repeat new password">
+                                            <button type="button" class="settings-password-toggle-btn" aria-label="Toggle password visibility">
+                                                <svg class="settings-icon-sm" aria-hidden="true"><use href="{% static 'img/icons/settings-sprite.svg' %}#icon-lock"></use></svg>
+                                            </button>
+                                        </div>
+                                        {% if password_normal_form.confirm_password.errors %}
+                                            <span class="settings-error" role="alert">{{ password_normal_form.confirm_password.errors.0 }}</span>
+                                        {% endif %}
+                                    </div>
+
+                                    <div class="settings-panel-actions">
+                                        <button type="button" class="settings-btn-text-cancel" data-action="close-panel">Cancel</button>
+                                        <button type="submit" class="settings-btn-primary" id="btn-submit-password-change">
+                                            Update password
+                                        </button>
+                                    </div>
+                                </form>
+
+                                <!-- Path B Trigger: Forgot Password -->
+                                <div style="margin-top: var(--s-space-20); padding-top: var(--s-space-16); border-top: 1px solid var(--s-color-border);">
+                                    {% if can_use_recovery %}
+                                        <form action="{% url 'account_settings' %}" method="post" id="form-request-password-otp">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="action" value="request_password_otp">
+                                            <button type="submit" class="settings-btn-secondary" id="btn-forgot-password-otp">
+                                                <svg class="settings-icon-sm" aria-hidden="true"><use href="{% static 'img/icons/settings-sprite.svg' %}#icon-mail"></use></svg>
+                                                <span>Forgot password? Send code to email</span>
+                                            </button>
+                                        </form>
+                                    {% else %}
+                                        <span class="settings-hint">
+                                            Self-service password reset requires a verified email address. <a href="#email" class="settings-btn-text-cancel" style="padding: 0; text-decoration: underline;">Configure and verify email</a> first.
+                                        </span>
+                                    {% endif %}
                                 </div>
                             {% endif %}
                         </div>
+                    </div>
                     {% endif %}
                 </div>
             </section>
 
-            <!-- Section 5: Recent Activity -->
-            <section class="settings-card" id="activity" aria-labelledby="heading-activity">
-                <div class="settings-card-header">
-                    <div>
-                        <h2 class="settings-card-title" id="heading-activity">Recent Account Activity</h2>
+            <!-- ======================================================= -->
+            <!-- SECTION 3: ACTIVITY                                     -->
+            <!-- ======================================================= -->
+            <section class="settings-section" id="activity" aria-labelledby="activity-heading">
+                <div class="settings-card">
+                    <div class="settings-card-header">
+                        <h2 class="settings-card-title" id="activity-heading">Account activity</h2>
                         <p class="settings-card-desc">The 10 most recent security events recorded on your account.</p>
                     </div>
-                </div>
 
-                {% if recent_activity %}
-                    <div style="overflow-x: auto;">
-                        <table class="settings-activity-table" aria-label="Recent Account Events">
-                            <thead>
-                                <tr>
-                                    <th scope="col">Event</th>
-                                    <th scope="col">IP Address</th>
-                                    <th scope="col">Device / Agent</th>
-                                    <th scope="col">Timestamp</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for event in recent_activity %}
+                    {% if recent_activity %}
+                        <!-- Desktop / Tablet Table (>=640px) -->
+                        <div class="settings-activity-table-wrapper">
+                            <table class="settings-activity-table" aria-label="Recent Account Activity">
+                                <thead>
                                     <tr>
-                                        <td>
-                                            <span class="settings-activity-event">{{ event.get_event_type_display }}</span>
-                                        </td>
-                                        <td>
-                                            <span class="settings-activity-meta">{{ event.ip_address|default:"—" }}</span>
-                                        </td>
-                                        <td>
-                                            <span class="settings-activity-meta" title="{{ event.user_agent }}">{{ event.user_agent|truncatechars:35|default:"—" }}</span>
-                                        </td>
-                                        <td>
-                                            <span class="settings-activity-meta">{{ event.created_at|date:"d M Y, H:i" }}</span>
-                                        </td>
+                                        <th scope="col">Event</th>
+                                        <th scope="col">IP Address</th>
+                                        <th scope="col">Device / Agent</th>
+                                        <th scope="col">Timestamp</th>
                                     </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                {% else %}
-                    <div class="settings-empty-state">
-                        <span class="material-symbols-outlined" style="font-size: 32px; display: block; margin: 0 auto 0.5rem; opacity: 0.6;">history_toggle_off</span>
-                        No recent account activity recorded yet.
-                    </div>
-                {% endif %}
+                                </thead>
+                                <tbody>
+                                    {% for event in recent_activity %}
+                                        <tr>
+                                            <td>
+                                                <span class="settings-activity-event">{{ event.get_event_type_display }}</span>
+                                            </td>
+                                            <td>
+                                                <span class="settings-activity-meta">{{ event.ip_address|default:"—" }}</span>
+                                            </td>
+                                            <td>
+                                                <span class="settings-activity-meta" title="{{ event.user_agent }}">{{ event.user_agent|truncatechars:35|default:"—" }}</span>
+                                            </td>
+                                            <td>
+                                                <span class="settings-activity-meta">{{ event.created_at|date:"d M Y, H:i" }}</span>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Mobile Stacked List (<640px) -->
+                        <div class="settings-activity-mobile-list" aria-label="Recent Account Activity">
+                            {% for event in recent_activity %}
+                                <div class="settings-activity-mobile-item">
+                                    <div class="settings-activity-mobile-title">{{ event.get_event_type_display }}</div>
+                                    <div class="settings-activity-mobile-meta">
+                                        {{ event.user_agent|truncatechars:28|default:"Browser" }} · {{ event.ip_address|default:"127.0.0.1" }}
+                                    </div>
+                                    <div class="settings-activity-mobile-meta" style="color: var(--s-color-muted);">
+                                        {{ event.created_at|date:"d M Y, H:i" }}
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="settings-empty-state">
+                            <svg class="settings-icon" style="width: 32px; height: 32px; margin: 0 auto var(--s-space-8); opacity: 0.5;" aria-hidden="true"><use href="{% static 'img/icons/settings-sprite.svg' %}#icon-history"></use></svg>
+                            <p style="margin: 0;">No recent account activity recorded yet.</p>
+                        </div>
+                    {% endif %}
+                </div>
             </section>
 
         </div>
     </div>
+
+    <!-- Backdrop for mobile bottom sheets (<640px) -->
+    <div class="settings-sheet-backdrop" aria-hidden="true"></div>
 </div>
 {% endblock %}
 
