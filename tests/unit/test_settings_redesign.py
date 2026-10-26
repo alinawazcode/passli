@@ -276,7 +276,7 @@ class TestSettingsFeatureParity(TestCase):
         self.assertIn('value="cancel_password_reset"', content_auth)
 
     def test_cooldown_username_state_hides_form_and_renders_cooldown_badge(self):
-        """When username is in cooldown, change button is replaced by cooldown message."""
+        """When username is in cooldown, change button is replaced by single-line cooldown notice without pill."""
         self.profile.username_changed_at = timezone.now() - timedelta(days=5)
         self.profile.save()
 
@@ -284,7 +284,8 @@ class TestSettingsFeatureParity(TestCase):
         self.assertEqual(response.status_code, 200)
         content = response.content.decode("utf-8")
 
-        self.assertIn("COOLDOWN ACTIVE", content)
+        # Per item 5: COOLDOWN ACTIVE pill is removed, replaced by single clock line
+        self.assertNotIn("COOLDOWN ACTIVE", content)
         self.assertIn("You can change your username again on", content)
         # Button to toggle username change should NOT exist
         self.assertNotIn('id="btn-toggle-username"', content)
@@ -505,3 +506,133 @@ class TestSettingsAlertsAndStyles(TestCase):
             0,
             f"Found inline event handler(s) in {state_name}: {handler_matches}",
         )
+
+
+class TestSettingsProfileSectionPolish(TestCase):
+    """
+    Phase 2 Test Suite:
+    - Profile card title, copy, and sentence case consistency.
+    - Avatar footnote position (outside card).
+    - Photo row and panel layout with and without avatar.
+    - Username cooldown single line and no uppercase pill or button.
+    - JetBrains Mono font stack with weight 500.
+    """
+
+    def setUp(self):
+        self.password = get_test_password()
+        self.user = User.objects.create_user(
+            username="profile_polisher",
+            email="polisher@passli.dev",
+            password=self.password,
+        )
+        self.profile = UserProfile.objects.get(user=self.user)
+        self.profile.is_email_verified = True
+        self.profile.save()
+        self.client.force_login(self.user)
+        self.url = reverse("account_settings")
+
+    def test_copy_consistency_and_footnote_outside_card(self):
+        """Card title is Profile, subtitle updated, 'Not set' used for empty display name, footnote outside card."""
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode("utf-8")
+
+        # 1. Card title and description
+        self.assertIn('<h2 class="settings-card-title" id="profile-heading">Profile</h2>', content)
+        self.assertNotIn("Personal profile", content)
+        self.assertIn("How you appear across Passli.", content)
+        self.assertNotIn("username identifier", content)
+
+        # 2. Subtitle
+        self.assertIn("Manage your profile, sign-in details and security.", content)
+        container_start = content.find('<div class="settings-container">')
+        settings_html = content[container_start:]
+        self.assertNotIn("credentials", settings_html)
+        self.assertNotIn("identifier", settings_html)
+
+        # 3. Empty display name shows 'Not set'
+        self.assertIn("Not set", content)
+        self.assertNotIn("Not configured", content)
+
+        # 4. Avatar footnote rendered outside .settings-card
+        card_end = content.find("<!-- Footnote (Outside Card) -->")
+        self.assertNotEqual(card_end, -1)
+        footnote_tag = content.find('<p class="settings-card-footnote">', card_end)
+        self.assertNotEqual(footnote_tag, -1)
+        self.assertIn(
+            "Avatar photos are stored unencrypted on disk and served only to authenticated sessions.",
+            content,
+        )
+
+    def test_photo_row_and_panel_controls_without_avatar(self):
+        """Without avatar, row shows hint beside initial, panel shows Choose photo button, no Remove button."""
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode("utf-8")
+
+        # Row hint present
+        self.assertIn("JPEG, PNG or WebP, up to 2 MB", content)
+        self.assertIn('id="avatar-preview-img"', content)
+        self.assertIn('id="avatar-fallback-initial"', content)
+
+        # Panel markup
+        self.assertIn('for="avatar-file-input"', content)
+        self.assertIn('id="avatar-file-input"', content)
+        self.assertIn('id="btn-choose-avatar"', content)
+        self.assertIn('id="avatar-pending-actions"', content)
+        self.assertIn('id="btn-save-avatar"', content)
+        self.assertIn('id="btn-cancel-avatar-file"', content)
+
+        # Remove button & dialog must NOT be present when user has no avatar
+        self.assertNotIn('id="btn-remove-avatar-trigger"', content)
+        self.assertNotIn('id="remove-avatar-dialog"', content)
+
+    def test_photo_row_and_panel_controls_with_avatar(self):
+        """With avatar, panel renders Remove photo trigger and native dialog."""
+        self.profile.avatar_path = "avatars/sample.webp"
+        self.profile.save()
+
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode("utf-8")
+
+        # Remove trigger and dialog must exist
+        self.assertIn('id="btn-remove-avatar-trigger"', content)
+        self.assertIn('id="remove-avatar-dialog"', content)
+        self.assertIn('id="btn-dialog-cancel-remove"', content)
+        self.assertIn('id="btn-remove-avatar"', content)
+        self.assertIn('id="btn-choose-avatar"', content)
+
+    def test_username_cooldown_single_amber_line_and_no_button(self):
+        """Username in cooldown displays single line notice with clock and zero buttons."""
+        self.profile.username_changed_at = timezone.now() - timedelta(days=7)
+        self.profile.save()
+
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode("utf-8")
+
+        self.assertIn("You can change your username again on", content)
+        self.assertNotIn("COOLDOWN ACTIVE", content)
+        self.assertNotIn('id="btn-toggle-username"', content)
+        self.assertNotIn('id="panel-username"', content)
+
+    def test_sentence_case_pills_in_security_section(self):
+        """Pills use sentence case ('Reset authorized', 'Code pending')."""
+        # 1. Reset authorized state
+        session = self.client.session
+        session[PASSWORD_RESET_SESSION_KEY] = timezone.now().isoformat()
+        session.save()
+        resp_auth = self.client.get(self.url)
+        content_auth = resp_auth.content.decode("utf-8")
+        self.assertIn("Reset authorized", content_auth)
+        self.assertNotIn("Reset Authorized", content_auth)
+
+        # 2. Reset OTP pending state
+        session[PASSWORD_RESET_SESSION_KEY] = None
+        session["pwd_reset_otp_requested"] = True
+        session.save()
+        resp_otp = self.client.get(self.url)
+        content_otp = resp_otp.content.decode("utf-8")
+        self.assertIn("Code pending", content_otp)
+        self.assertNotIn("Code Pending", content_otp)

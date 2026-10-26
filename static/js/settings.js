@@ -311,20 +311,73 @@ function initDisclosurePanels() {
 function initAvatarControls() {
     const fileInput = document.getElementById('avatar-file-input');
     const chooseBtn = document.getElementById('btn-choose-avatar');
-    const previewImg = document.getElementById('avatar-preview-img');
-    const fallbackInitial = document.getElementById('avatar-fallback-initial');
+    const rowPreviewImg = document.getElementById('avatar-preview-img');
+    const rowFallbackInitial = document.getElementById('avatar-fallback-initial');
+    const panelPreviewImg = document.getElementById('avatar-panel-preview');
+    const panelFallbackInitial = document.getElementById('avatar-panel-initial');
+    const pendingActions = document.getElementById('avatar-pending-actions');
+    const cancelFileBtn = document.getElementById('btn-cancel-avatar-file');
     const errorContainer = document.getElementById('avatar-client-error');
 
     if (!fileInput || !chooseBtn) return;
+
+    // Cache original state for cancel restoration
+    const originalRowSrc = rowPreviewImg ? rowPreviewImg.getAttribute('src') : '';
+    const hadInitialAvatar = rowPreviewImg && originalRowSrc && !rowPreviewImg.hasAttribute('hidden');
+
+    function resetFileSelection() {
+        fileInput.value = '';
+        if (errorContainer) {
+            errorContainer.textContent = '';
+            errorContainer.setAttribute('hidden', '');
+        }
+        if (pendingActions) {
+            pendingActions.setAttribute('hidden', '');
+        }
+        // Restore previews to initial persisted state
+        if (hadInitialAvatar) {
+            if (rowPreviewImg) {
+                rowPreviewImg.src = originalRowSrc;
+                rowPreviewImg.removeAttribute('hidden');
+            }
+            if (rowFallbackInitial) rowFallbackInitial.setAttribute('hidden', '');
+            if (panelPreviewImg) {
+                panelPreviewImg.src = originalRowSrc;
+                panelPreviewImg.removeAttribute('hidden');
+            }
+            if (panelFallbackInitial) panelFallbackInitial.setAttribute('hidden', '');
+        } else {
+            if (rowPreviewImg) {
+                rowPreviewImg.src = '';
+                rowPreviewImg.setAttribute('hidden', '');
+            }
+            if (rowFallbackInitial) rowFallbackInitial.removeAttribute('hidden');
+            if (panelPreviewImg) {
+                panelPreviewImg.src = '';
+                panelPreviewImg.setAttribute('hidden', '');
+            }
+            if (panelFallbackInitial) panelFallbackInitial.removeAttribute('hidden');
+        }
+    }
 
     chooseBtn.addEventListener('click', (e) => {
         e.preventDefault();
         fileInput.click();
     });
 
+    if (cancelFileBtn) {
+        cancelFileBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            resetFileSelection();
+        });
+    }
+
     fileInput.addEventListener('change', () => {
         const file = fileInput.files && fileInput.files[0];
-        if (!file) return;
+        if (!file) {
+            resetFileSelection();
+            return;
+        }
 
         if (errorContainer) {
             errorContainer.textContent = '';
@@ -333,7 +386,7 @@ function initAvatarControls() {
 
         const maxBytes = 2 * 1024 * 1024;
         if (file.size > maxBytes) {
-            fileInput.value = '';
+            resetFileSelection();
             if (errorContainer) {
                 errorContainer.textContent = 'Selected image exceeds the 2 MB limit.';
                 errorContainer.removeAttribute('hidden');
@@ -343,7 +396,7 @@ function initAvatarControls() {
 
         const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
         if (!allowedTypes.includes(file.type)) {
-            fileInput.value = '';
+            resetFileSelection();
             if (errorContainer) {
                 errorContainer.textContent = 'Please choose a JPEG, PNG, or WebP image.';
                 errorContainer.removeAttribute('hidden');
@@ -353,12 +406,23 @@ function initAvatarControls() {
 
         const reader = new FileReader();
         reader.onload = (e) => {
-            if (previewImg) {
-                previewImg.src = e.target.result;
-                previewImg.removeAttribute('hidden');
+            const dataUrl = e.target.result;
+            if (rowPreviewImg) {
+                rowPreviewImg.src = dataUrl;
+                rowPreviewImg.removeAttribute('hidden');
             }
-            if (fallbackInitial) {
-                fallbackInitial.setAttribute('hidden', '');
+            if (rowFallbackInitial) {
+                rowFallbackInitial.setAttribute('hidden', '');
+            }
+            if (panelPreviewImg) {
+                panelPreviewImg.src = dataUrl;
+                panelPreviewImg.removeAttribute('hidden');
+            }
+            if (panelFallbackInitial) {
+                panelFallbackInitial.setAttribute('hidden', '');
+            }
+            if (pendingActions) {
+                pendingActions.removeAttribute('hidden');
             }
         };
         reader.readAsDataURL(file);

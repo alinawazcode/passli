@@ -2,7 +2,7 @@
 {% load static %}
 
 {% block title %}Account Settings — Passli{% endblock %}
-{% block meta_description %}Manage your Passli profile, credentials, security boundaries, and review recent account activity.{% endblock %}
+{% block meta_description %}Manage your profile, sign-in details and security, and review recent account activity.{% endblock %}
 
 {% block global_messages %}{% endblock %}
 
@@ -15,7 +15,7 @@
     <!-- Header -->
     <header class="settings-header">
         <h1 class="settings-title">Settings</h1>
-        <p class="settings-subtitle">Manage your personal identity, credentials, and review your account activity.</p>
+        <p class="settings-subtitle">Manage your profile, sign-in details and security.</p>
     </header>
 
     <!-- Mobile Sticky Pill Tab Bar (<960px) -->
@@ -97,22 +97,25 @@
 
                 <div class="settings-card">
                     <div class="settings-card-header">
-                        <h2 class="settings-card-title" id="profile-heading">Personal profile</h2>
-                        <p class="settings-card-desc">Your display name, username identifier, and account photo.</p>
+                        <h2 class="settings-card-title" id="profile-heading">Profile</h2>
+                        <p class="settings-card-desc">How you appear across Passli.</p>
                     </div>
 
                     <!-- Row 1: Photo -->
                     <div class="settings-row" id="row-photo" data-panel-id="panel-photo">
                         <div class="settings-row-label">Photo</div>
                         <div class="settings-row-value">
-                            <div class="settings-avatar-wrap">
-                                {% if has_avatar %}
-                                    <img src="{{ avatar_url }}" alt="{{ user.username }}" class="settings-avatar-img" id="avatar-preview-img">
-                                    <span class="settings-avatar-initial" id="avatar-fallback-initial" hidden>{{ user.username|make_list|first|upper }}</span>
-                                {% else %}
-                                    <img src="" alt="" class="settings-avatar-img" id="avatar-preview-img" hidden>
-                                    <span class="settings-avatar-initial" id="avatar-fallback-initial">{{ user.username|make_list|first|upper }}</span>
-                                {% endif %}
+                            <div class="settings-avatar-row-content">
+                                <div class="settings-avatar-wrap">
+                                    {% if has_avatar %}
+                                        <img src="{{ avatar_url }}" alt="{{ user.username }}" class="settings-avatar-img" id="avatar-preview-img" width="48" height="48">
+                                        <span class="settings-avatar-initial" id="avatar-fallback-initial" hidden>{{ user.username|make_list|first|upper }}</span>
+                                    {% else %}
+                                        <img src="" alt="" class="settings-avatar-img" id="avatar-preview-img" width="48" height="48" hidden>
+                                        <span class="settings-avatar-initial" id="avatar-fallback-initial">{{ user.username|make_list|first|upper }}</span>
+                                    {% endif %}
+                                </div>
+                                <span class="settings-hint settings-avatar-row-hint">JPEG, PNG or WebP, up to 2 MB</span>
                             </div>
                         </div>
                         <div class="settings-row-action">
@@ -133,25 +136,42 @@
                                 <input type="file" name="avatar" id="avatar-file-input" accept="image/jpeg,image/png,image/webp" aria-label="Upload new avatar image" hidden>
 
                                 <div class="settings-form-group">
-                                    <label class="settings-form-label">Profile photo</label>
-                                    <span class="settings-hint">JPEG, PNG, or WebP up to 2 MB. Square cropped and resized.</span>
+                                    <label for="avatar-file-input" class="settings-form-label">Profile photo</label>
+                                    <span class="settings-hint">JPEG, PNG or WebP, up to 2 MB.</span>
                                     <div id="avatar-client-error" class="settings-error" role="alert" hidden></div>
                                 </div>
 
-                                <div class="settings-panel-actions">
-                                    {% if has_avatar %}
-                                        <button type="button" class="settings-btn-danger-text" id="btn-remove-avatar-trigger">
-                                            Remove photo
+                                <div class="settings-avatar-picker-preview">
+                                    <div class="settings-avatar-wrap">
+                                        {% if has_avatar %}
+                                            <img src="{{ avatar_url }}" alt="{{ user.username }}" class="settings-avatar-img" id="avatar-panel-preview" width="56" height="56">
+                                            <span class="settings-avatar-initial" id="avatar-panel-initial" hidden>{{ user.username|make_list|first|upper }}</span>
+                                        {% else %}
+                                            <img src="" alt="" class="settings-avatar-img" id="avatar-panel-preview" width="56" height="56" hidden>
+                                            <span class="settings-avatar-initial" id="avatar-panel-initial">{{ user.username|make_list|first|upper }}</span>
+                                        {% endif %}
+                                    </div>
+                                    <div class="settings-avatar-picker-controls">
+                                        <button type="button" class="settings-btn-secondary" id="btn-choose-avatar">
+                                            Choose photo
                                         </button>
-                                    {% endif %}
-                                    <button type="button" class="settings-btn-text-cancel" data-action="close-panel">Cancel</button>
-                                    <button type="button" class="settings-btn-secondary" id="btn-choose-avatar">
-                                        Select file
-                                    </button>
+                                    </div>
+                                </div>
+
+                                <div class="settings-panel-actions settings-avatar-pending-actions" id="avatar-pending-actions" hidden>
+                                    <button type="button" class="settings-btn-text-cancel" id="btn-cancel-avatar-file">Cancel</button>
                                     <button type="submit" class="settings-btn-primary" id="btn-save-avatar">
                                         Save photo
                                     </button>
                                 </div>
+
+                                {% if has_avatar %}
+                                    <div class="settings-avatar-remove-row">
+                                        <button type="button" class="settings-btn-danger-text" id="btn-remove-avatar-trigger">
+                                            Remove photo
+                                        </button>
+                                    </div>
+                                {% endif %}
                             </form>
 
                             <!-- Native Dialog Confirmation for Remove Photo -->
@@ -176,7 +196,11 @@
                     <div class="settings-row" id="row-display-name" data-panel-id="panel-display-name">
                         <div class="settings-row-label">Display name</div>
                         <div class="settings-row-value">
-                            {{ profile.display_name|default:"Not configured" }}
+                            {% if profile.display_name %}
+                                {{ profile.display_name }}
+                            {% else %}
+                                <span class="settings-text-muted">Not set</span>
+                            {% endif %}
                         </div>
                         <div class="settings-row-action">
                             <button type="button" class="settings-btn-secondary" id="btn-toggle-display-name" data-action="toggle-panel" aria-controls="panel-display-name" aria-expanded="false">
@@ -196,10 +220,13 @@
 
                                 <div class="settings-form-group">
                                     <label for="profile-display-name" class="settings-form-label">Display name</label>
-                                    <input type="text" name="display_name" id="profile-display-name" class="settings-input" maxlength="50" value="{{ profile_form.display_name.value|default:'' }}" placeholder="e.g. Dr. Alex Vance">
+                                    <input type="text" name="display_name" id="profile-display-name" class="settings-input" maxlength="50" value="{{ profile_form.display_name.value|default:profile.display_name|default:'' }}" placeholder="e.g. Dr. Alex Vance" {% if profile_form.display_name.errors %}aria-invalid="true" aria-describedby="profile-display-name-error"{% endif %}>
                                     <span class="settings-hint">An optional name up to 50 characters displayed in greetings and sharing chips.</span>
                                     {% if profile_form.display_name.errors %}
-                                        <span class="settings-error" role="alert">{{ profile_form.display_name.errors.0 }}</span>
+                                        <span class="settings-error" id="profile-display-name-error" role="alert">
+                                            <svg class="settings-icon-sm" aria-hidden="true"><use href="{% static 'img/icons/settings-sprite.svg' %}#icon-clock"></use></svg>
+                                            {{ profile_form.display_name.errors.0 }}
+                                        </span>
                                     {% endif %}
                                 </div>
 
@@ -219,7 +246,6 @@
                         <div class="settings-row-value font-mono-data">
                             @{{ user.username }}
                             {% if not cooldown_status.can_change %}
-                                <span class="settings-pill settings-pill-warning settings-pill-spaced">COOLDOWN ACTIVE</span>
                                 <div class="settings-notice-amber settings-notice-cooldown">
                                     <svg class="settings-icon-sm" aria-hidden="true"><use href="{% static 'img/icons/settings-sprite.svg' %}#icon-clock"></use></svg>
                                     <span>You can change your username again on {{ cooldown_status.next_change_date|date:"d M Y" }}</span>
@@ -247,19 +273,25 @@
 
                                 <div class="settings-form-group">
                                     <label for="settings-new-username" class="settings-form-label">New username</label>
-                                    <input type="text" name="new_username" id="settings-new-username" class="settings-input" value="{{ username_form.new_username.value|default:'' }}" placeholder="e.g. alex_vance">
+                                    <input type="text" name="new_username" id="settings-new-username" class="settings-input" value="{{ username_form.new_username.value|default:'' }}" placeholder="e.g. alex_vance" maxlength="30" {% if username_form.new_username.errors %}aria-invalid="true" aria-describedby="new-username-error"{% endif %}>
                                     <span class="settings-hint">3 to 30 characters. Letters, digits, and underscores. Cannot contain '@'.</span>
                                     {% if username_form.new_username.errors %}
-                                        <span class="settings-error" role="alert">{{ username_form.new_username.errors.0 }}</span>
+                                        <span class="settings-error" id="new-username-error" role="alert">
+                                            <svg class="settings-icon-sm" aria-hidden="true"><use href="{% static 'img/icons/settings-sprite.svg' %}#icon-clock"></use></svg>
+                                            {{ username_form.new_username.errors.0 }}
+                                        </span>
                                     {% endif %}
                                 </div>
 
                                 <div class="settings-form-group">
                                     <label for="settings-username-password" class="settings-form-label">Current password</label>
-                                    <input type="password" name="current_password" id="settings-username-password" class="settings-input" autocomplete="current-password" placeholder="Enter current password">
+                                    <input type="password" name="current_password" id="settings-username-password" class="settings-input" autocomplete="current-password" placeholder="Enter current password" {% if username_form.current_password.errors %}aria-invalid="true" aria-describedby="username-password-error"{% endif %}>
                                     <span class="settings-hint">Enter your current password to authorize this sensitive change.</span>
                                     {% if username_form.current_password.errors %}
-                                        <span class="settings-error" role="alert">{{ username_form.current_password.errors.0 }}</span>
+                                        <span class="settings-error" id="username-password-error" role="alert">
+                                            <svg class="settings-icon-sm" aria-hidden="true"><use href="{% static 'img/icons/settings-sprite.svg' %}#icon-clock"></use></svg>
+                                            {{ username_form.current_password.errors.0 }}
+                                        </span>
                                     {% endif %}
                                 </div>
 
@@ -273,12 +305,12 @@
                         </div>
                     </div>
                     {% endif %}
-
-                    <!-- Footnote -->
-                    <div class="settings-card-footnote">
-                        Avatar photos are stored unencrypted on disk and served only to authenticated sessions.
-                    </div>
                 </div>
+
+                <!-- Footnote (Outside Card) -->
+                <p class="settings-card-footnote">
+                    Avatar photos are stored unencrypted on disk and served only to authenticated sessions.
+                </p>
             </section>
 
             <!-- ======================================================= -->
@@ -442,9 +474,9 @@
                                     <span>Password change is locked. Please try again in {{ lockout_minutes }} minute(s).</span>
                                 </div>
                             {% elif is_reset_authorized %}
-                                <span class="settings-pill settings-pill-success settings-pill-spaced">Reset Authorized</span>
+                                <span class="settings-pill settings-pill-success settings-pill-spaced">Reset authorized</span>
                             {% elif reset_otp_pending %}
-                                <span class="settings-pill settings-pill-warning settings-pill-spaced">Code Pending</span>
+                                <span class="settings-pill settings-pill-warning settings-pill-spaced">Code pending</span>
                             {% endif %}
                         </div>
                         <div class="settings-row-action">
