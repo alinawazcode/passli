@@ -615,6 +615,7 @@
   position: relative;
   display: flex;
   align-items: center;
+  width: 100%;
 }
 
 .settings-password-wrapper .settings-input {
@@ -624,21 +625,46 @@
 .settings-password-toggle-btn {
   position: absolute;
   right: var(--s-space-8);
+  top: 50%;
+  transform: translateY(-50%);
   background: transparent;
   border: none;
   color: var(--s-color-muted);
   cursor: pointer;
-  padding: var(--s-space-6);
-  display: flex;
+  padding: 0;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   border-radius: var(--s-radius-sm);
-  min-width: 32px;
-  min-height: 32px;
+  width: 32px;
+  height: 32px;
+  transition: color 0.15s ease, background-color 0.15s ease;
 }
 
 .settings-password-toggle-btn:hover {
   color: var(--s-color-text);
+  background-color: var(--s-color-hover);
+}
+
+.settings-password-toggle-btn:focus-visible {
+  outline: 2px solid var(--s-color-primary);
+  outline-offset: 2px;
+}
+
+.settings-password-toggle-btn .icon-eye {
+  display: block;
+}
+
+.settings-password-toggle-btn .icon-eye-off {
+  display: none;
+}
+
+.settings-password-toggle-btn[aria-pressed="true"] .icon-eye {
+  display: none;
+}
+
+.settings-password-toggle-btn[aria-pressed="true"] .icon-eye-off {
+  display: block;
 }
 
 /* Password Strength Meter */
