@@ -5,6 +5,7 @@
 document.addEventListener('DOMContentLoaded', () => {
     initStitchSimulator();
     initVaultSearchShortcut();
+    initPasswordToggles();
 });
 
 function initVaultSearchShortcut() {
@@ -113,3 +114,25 @@ function initStitchSimulator() {
         });
     }
 }
+
+/**
+ * Show/Hide Password Toggle for Auth Pages
+ */
+function initPasswordToggles() {
+    const buttons = document.querySelectorAll('.password-toggle-btn');
+    buttons.forEach((btn) => {
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            const wrapper = btn.closest('.password-input-wrapper');
+            if (!wrapper) return;
+            const input = wrapper.querySelector('input');
+            if (!input) return;
+
+            const isPassword = input.type === 'password';
+            input.type = isPassword ? 'text' : 'password';
+            btn.setAttribute('aria-pressed', isPassword ? 'true' : 'false');
+            btn.setAttribute('aria-label', isPassword ? 'Hide password' : 'Show password');
+        });
+    });
+}
+

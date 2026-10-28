@@ -285,7 +285,13 @@
 
                                 <div class="settings-form-group">
                                     <label for="settings-username-password" class="settings-form-label">Current password</label>
-                                    <input type="password" name="current_password" id="settings-username-password" class="settings-input" autocomplete="current-password" placeholder="Enter current password" {% if username_form.current_password.errors %}aria-invalid="true" aria-describedby="username-password-error"{% endif %}>
+                                    <div class="settings-password-wrapper">
+                                        <input type="password" name="current_password" id="settings-username-password" class="settings-input" autocomplete="current-password" placeholder="Enter current password" {% if username_form.current_password.errors %}aria-invalid="true" aria-describedby="username-password-error"{% endif %}>
+                                        <button type="button" class="settings-password-toggle-btn" aria-label="Show password" aria-controls="settings-username-password" aria-pressed="false">
+                                            <svg class="settings-icon-sm icon-eye" aria-hidden="true"><use href="{% static 'img/icons/settings-sprite.svg' %}#icon-eye"></use></svg>
+                                            <svg class="settings-icon-sm icon-eye-off" aria-hidden="true"><use href="{% static 'img/icons/settings-sprite.svg' %}#icon-eye-off"></use></svg>
+                                        </button>
+                                    </div>
                                     <span class="settings-hint">Enter your current password to authorize this sensitive change.</span>
                                     {% if username_form.current_password.errors %}
                                         <span class="settings-error" id="username-password-error" role="alert">
@@ -445,7 +451,13 @@
 
                                     <div class="settings-form-group">
                                         <label for="settings-email-password" class="settings-form-label">Current password</label>
-                                        <input type="password" name="current_password" id="settings-email-password" class="settings-input" autocomplete="current-password" placeholder="Enter current password">
+                                        <div class="settings-password-wrapper">
+                                            <input type="password" name="current_password" id="settings-email-password" class="settings-input" autocomplete="current-password" placeholder="Enter current password">
+                                            <button type="button" class="settings-password-toggle-btn" aria-label="Show password" aria-controls="settings-email-password" aria-pressed="false">
+                                                <svg class="settings-icon-sm icon-eye" aria-hidden="true"><use href="{% static 'img/icons/settings-sprite.svg' %}#icon-eye"></use></svg>
+                                                <svg class="settings-icon-sm icon-eye-off" aria-hidden="true"><use href="{% static 'img/icons/settings-sprite.svg' %}#icon-eye-off"></use></svg>
+                                            </button>
+                                        </div>
                                         <span class="settings-hint">Enter your current password to authorize this sensitive change.</span>
                                         {% if email_request_form.current_password.errors %}
                                             <span class="settings-error" role="alert">{{ email_request_form.current_password.errors.0 }}</span>
@@ -514,8 +526,9 @@
                                         <label for="settings-otp-new-password" class="settings-form-label">New password</label>
                                         <div class="settings-password-wrapper">
                                             <input type="password" name="new_password" id="settings-otp-new-password" class="settings-input" autocomplete="new-password" placeholder="Enter new strong password">
-                                            <button type="button" class="settings-password-toggle-btn" aria-label="Toggle password visibility">
-                                                <svg class="settings-icon-sm" aria-hidden="true"><use href="{% static 'img/icons/settings-sprite.svg' %}#icon-lock"></use></svg>
+                                            <button type="button" class="settings-password-toggle-btn" aria-label="Show password" aria-controls="settings-otp-new-password" aria-pressed="false">
+                                                <svg class="settings-icon-sm icon-eye" aria-hidden="true"><use href="{% static 'img/icons/settings-sprite.svg' %}#icon-eye"></use></svg>
+                                                <svg class="settings-icon-sm icon-eye-off" aria-hidden="true"><use href="{% static 'img/icons/settings-sprite.svg' %}#icon-eye-off"></use></svg>
                                             </button>
                                         </div>
                                         <div class="settings-strength-meter" id="strength-meter-otp">
@@ -534,8 +547,9 @@
                                         <label for="settings-otp-confirm-password" class="settings-form-label">Confirm new password</label>
                                         <div class="settings-password-wrapper">
                                             <input type="password" name="confirm_password" id="settings-otp-confirm-password" class="settings-input" autocomplete="new-password" placeholder="Repeat new password">
-                                            <button type="button" class="settings-password-toggle-btn" aria-label="Toggle password visibility">
-                                                <svg class="settings-icon-sm" aria-hidden="true"><use href="{% static 'img/icons/settings-sprite.svg' %}#icon-lock"></use></svg>
+                                            <button type="button" class="settings-password-toggle-btn" aria-label="Show password" aria-controls="settings-otp-confirm-password" aria-pressed="false">
+                                                <svg class="settings-icon-sm icon-eye" aria-hidden="true"><use href="{% static 'img/icons/settings-sprite.svg' %}#icon-eye"></use></svg>
+                                                <svg class="settings-icon-sm icon-eye-off" aria-hidden="true"><use href="{% static 'img/icons/settings-sprite.svg' %}#icon-eye-off"></use></svg>
                                             </button>
                                         </div>
                                         {% if password_set_new_form.confirm_password.errors %}
@@ -626,8 +640,9 @@
                                         <label for="settings-current-password" class="settings-form-label">Current password</label>
                                         <div class="settings-password-wrapper">
                                             <input type="password" name="current_password" id="settings-current-password" class="settings-input" autocomplete="current-password" placeholder="Enter current password">
-                                            <button type="button" class="settings-password-toggle-btn" aria-label="Toggle password visibility">
-                                                <svg class="settings-icon-sm" aria-hidden="true"><use href="{% static 'img/icons/settings-sprite.svg' %}#icon-lock"></use></svg>
+                                            <button type="button" class="settings-password-toggle-btn" aria-label="Show password" aria-controls="settings-current-password" aria-pressed="false">
+                                                <svg class="settings-icon-sm icon-eye" aria-hidden="true"><use href="{% static 'img/icons/settings-sprite.svg' %}#icon-eye"></use></svg>
+                                                <svg class="settings-icon-sm icon-eye-off" aria-hidden="true"><use href="{% static 'img/icons/settings-sprite.svg' %}#icon-eye-off"></use></svg>
                                             </button>
                                         </div>
                                         <span class="settings-hint">Enter your current password to authorize change.</span>
@@ -640,8 +655,9 @@
                                         <label for="settings-new-password" class="settings-form-label">New password</label>
                                         <div class="settings-password-wrapper">
                                             <input type="password" name="new_password" id="settings-new-password" class="settings-input" autocomplete="new-password" placeholder="Enter new secure password">
-                                            <button type="button" class="settings-password-toggle-btn" aria-label="Toggle password visibility">
-                                                <svg class="settings-icon-sm" aria-hidden="true"><use href="{% static 'img/icons/settings-sprite.svg' %}#icon-lock"></use></svg>
+                                            <button type="button" class="settings-password-toggle-btn" aria-label="Show password" aria-controls="settings-new-password" aria-pressed="false">
+                                                <svg class="settings-icon-sm icon-eye" aria-hidden="true"><use href="{% static 'img/icons/settings-sprite.svg' %}#icon-eye"></use></svg>
+                                                <svg class="settings-icon-sm icon-eye-off" aria-hidden="true"><use href="{% static 'img/icons/settings-sprite.svg' %}#icon-eye-off"></use></svg>
                                             </button>
                                         </div>
                                         <div class="settings-strength-meter" id="strength-meter-normal">
@@ -660,8 +676,9 @@
                                         <label for="settings-confirm-password" class="settings-form-label">Confirm new password</label>
                                         <div class="settings-password-wrapper">
                                             <input type="password" name="confirm_password" id="settings-confirm-password" class="settings-input" autocomplete="new-password" placeholder="Repeat new password">
-                                            <button type="button" class="settings-password-toggle-btn" aria-label="Toggle password visibility">
-                                                <svg class="settings-icon-sm" aria-hidden="true"><use href="{% static 'img/icons/settings-sprite.svg' %}#icon-lock"></use></svg>
+                                            <button type="button" class="settings-password-toggle-btn" aria-label="Show password" aria-controls="settings-confirm-password" aria-pressed="false">
+                                                <svg class="settings-icon-sm icon-eye" aria-hidden="true"><use href="{% static 'img/icons/settings-sprite.svg' %}#icon-eye"></use></svg>
+                                                <svg class="settings-icon-sm icon-eye-off" aria-hidden="true"><use href="{% static 'img/icons/settings-sprite.svg' %}#icon-eye-off"></use></svg>
                                             </button>
                                         </div>
                                         {% if password_normal_form.confirm_password.errors %}

@@ -640,6 +640,7 @@ function initPasswordToggles() {
 
             const isPassword = input.type === 'password';
             input.type = isPassword ? 'text' : 'password';
+            btn.setAttribute('aria-pressed', isPassword ? 'true' : 'false');
             btn.setAttribute('aria-label', isPassword ? 'Hide password' : 'Show password');
         });
     });

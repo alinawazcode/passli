@@ -1056,6 +1056,70 @@ a {
   color: var(--text-dim);
 }
 
+/* Password Toggle Wrapper & Action Button (Auth Pages) */
+.password-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.password-input-wrapper .form-input {
+  padding-right: 2.75rem;
+}
+
+.password-toggle-btn {
+  position: absolute;
+  right: 0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-xs);
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: color 0.15s ease, background-color 0.15s ease;
+}
+
+.password-toggle-btn:hover {
+  color: var(--text-primary);
+  background-color: rgba(15, 23, 42, 0.05);
+}
+
+.password-toggle-btn:focus-visible {
+  outline: 2px solid var(--brand-navy);
+  outline-offset: 1px;
+}
+
+.password-toggle-icon {
+  width: 1.125rem;
+  height: 1.125rem;
+  stroke-width: 1.6;
+  pointer-events: none;
+}
+
+.password-toggle-btn .icon-eye {
+  display: block;
+}
+
+.password-toggle-btn .icon-eye-off {
+  display: none;
+}
+
+.password-toggle-btn[aria-pressed="true"] .icon-eye {
+  display: none;
+}
+
+.password-toggle-btn[aria-pressed="true"] .icon-eye-off {
+  display: block;
+}
+
 .alert-danger {
   padding: 0.75rem 1rem;
   border-radius: var(--radius-sm);
