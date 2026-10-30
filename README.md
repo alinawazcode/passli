@@ -1,12 +1,36 @@
-# Passli — Cryptographic Document Vault & Ephemeral Sharing Platform
+<p align="center">
+  <img src=".github/assets/passli-repo-banner.png" alt="Passli — Cryptographic Document Vault & Ephemeral Sharing Platform" width="100%">
+</p>
 
-[![CI](https://github.com/alinawazcode/passli/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/alinawazcode/passli/actions/workflows/ci.yml)
-[![Python Version](https://img.shields.io/badge/python-3.11%20%7C%203.12-blue.svg)](https://www.python.org/)
-[![Django](https://img.shields.io/badge/django-5.1%2B-green.svg)](https://www.djangoproject.com/)
-[![Encryption: AES-256-GCM](https://img.shields.io/badge/encryption-AES--256--GCM%20AEAD-blueviolet.svg)](SECURITY.md)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+<p align="center">
+  <a href="https://github.com/alinawazcode/passli/actions/workflows/ci.yml"><img src="https://github.com/alinawazcode/passli/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI"></a>
+  <a href="https://www.python.org/"><img src="https://img.shields.io/badge/python-3.11%20%7C%203.12-blue.svg" alt="Python Version"></a>
+  <a href="https://www.djangoproject.com/"><img src="https://img.shields.io/badge/django-5.1%2B-green.svg" alt="Django"></a>
+  <a href="SECURITY.md"><img src="https://img.shields.io/badge/encryption-AES--256--GCM%20AEAD-blueviolet.svg" alt="Encryption: AES-256-GCM AEAD"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT"></a>
+</p>
 
-**Passli** is an enterprise-grade, privacy-first personal records vault and ephemeral cryptographic sharing platform. It enables individuals and organizations to securely store sensitive documents with **AES-256-GCM authenticated encryption at rest** and share them with verified recipients via time-gated **Share Passes**—without exposing master cloud credentials, unencrypted email attachments, or cascading folder permissions.
+<p align="center">
+  <strong>Passli</strong> is an enterprise-grade, privacy-first personal records vault and ephemeral cryptographic sharing platform. Store sensitive documents with <strong>AES-256-GCM authenticated encryption at rest</strong> and share them with verified recipients via time-gated <strong>Share Passes</strong>—without exposing master cloud credentials, unencrypted email attachments, or cascading folder permissions.
+</p>
+
+<p align="center">
+  <a href="#-ephemeral-protocol-in-action">Interactive Demo</a> •
+  <a href="#-the-problem-passli-solves">The Problem</a> •
+  <a href="#-core-platform-capabilities">Capabilities</a> •
+  <a href="#-cryptographic-architecture-flow">Architecture</a> •
+  <a href="#-quick-start--installation">Quick Start</a> •
+  <a href="#-automated-testing--coverage">Testing</a> •
+  <a href="docs/DEPLOY_PYTHONANYWHERE.md">Deployment Guide</a>
+</p>
+
+---
+
+## 🎬 Ephemeral Protocol in Action
+
+<p align="center">
+  <img src=".github/assets/passli-ephemeral-workflow.gif" alt="Passli Ephemeral Share Pass Protocol in Action" width="100%">
+</p>
 
 ---
 
@@ -24,6 +48,11 @@ When sharing sensitive records with doctors, employers, financial institutions, 
 ## ✨ Core Platform Capabilities
 
 ### 🗄️ 1. Personal Document Vault
+
+<p align="center">
+  <img src=".github/assets/passli-dashboard-preview.png" alt="Passli Personal Vault Dashboard & Document Manager UI" width="100%">
+</p>
+
 - **Domain Taxonomy**: Organize records into structured categories (`Medical`, `Education`, `Vehicle`, `Personal & Identity`, `Professional`, `Other`).
 - **Storage Migration CLI**: Includes `python manage.py encrypt_vault_storage` for seamless batch migration of legacy storage records.
 
@@ -77,6 +106,10 @@ When sharing sensitive records with doctors, employers, financial institutions, 
 ---
 
 ## 🔐 Cryptographic Architecture Flow
+
+<p align="center">
+  <img src=".github/assets/passli-cryptographic-pipeline.png" alt="Passli Cryptographic Pipeline Architecture: AES-256-GCM AEAD Ingestion & In-Memory Streaming" width="100%">
+</p>
 
 ```mermaid
 flowchart TD
@@ -169,8 +202,14 @@ passli/
 │   ├── driver_factory.py               # Persistent Chrome WebDriver session manager
 │   ├── test_config.py                  # Selectors, timeouts, and credentials configuration
 │   ├── tests/                          # 16 full-lifecycle tests + 3 controlled negative demos
-│   └── reports/                        # Standalone dark-mode HTML reports & screenshots
-├── .github/workflows/ci.yml   # Multi-stage CI pipeline (Ruff, pip-audit, Docker, Postgres, Coverage)
+├── .github/
+│   ├── assets/                # Visual branding, animated demo GIFs & architecture infographics
+│   └── workflows/ci.yml       # Multi-stage CI pipeline (Ruff, pip-audit, Docker, Postgres, Coverage)
+├── docs/                      # Architectural specifications, brand system, and deployment runbooks
+│   ├── ARCHITECTURE.md        # Cryptographic design, wire format, and in-memory streaming
+│   ├── BRANDING.md            # Visual identity catalog, design tokens, and color system
+│   ├── DEPLOY_PYTHONANYWHERE.md # Production deployment guide for PythonAnywhere
+│   └── DEPLOYMENT.md          # Multi-host deployment options (Docker, Render, Fly.io)
 ├── Dockerfile                 # Multi-stage production container image with unprivileged appuser
 └── manage.py                  # Django CLI management entry point
 ```
