@@ -10,7 +10,8 @@ This directory contains the visual branding, architecture infographics, UI previ
 | :--- | :--- | :---: | :---: | :--- |
 | **Hero Banner** | [`passli-repo-banner.png`](passli-repo-banner.png) | Static Image (PNG) | 1376 × 768 (16:9) | Primary README header banner, social card, and project cover |
 | **Ephemeral Flow Demo** | [`passli-ephemeral-workflow.gif`](passli-ephemeral-workflow.gif) | Animated GIF | 1100 × 580 (58 frames) | Interactive demonstration of pass creation, 8-char key hashing, QR protocol, live countdown, and 1-click revocation |
-| **Vault Dashboard Preview** | [`passli-dashboard-preview.png`](passli-dashboard-preview.png) | Static Image (PNG) | 1376 × 768 (16:9) | High-fidelity UI mockup of the authenticated personal vault dashboard, telemetry, and document cards |
+| **Vault Dashboard Preview** | [`passli-dashboard-preview.png`](passli-dashboard-preview.png) | Static Image (PNG) | 1376 × 768 (16:9) | Framed UI preview of the live personal vault dashboard, active pass telemetry, and storage quota |
+| **Encrypted Vault Documents** | [`passli-vault-documents.png`](passli-vault-documents.png) | Static Image (PNG) | 1376 × 768 (16:9) | Framed view of the encrypted document vault with category filter pills and SHA-256 integrity inspection |
 | **Cryptographic Pipeline** | [`passli-cryptographic-pipeline.png`](passli-cryptographic-pipeline.png) | Static Image (PNG) | 1376 × 768 (16:9) | Architecture diagram depicting AES-256-GCM AEAD ingestion and in-memory streaming decryption |
 
 ---

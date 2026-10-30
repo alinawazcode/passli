@@ -69,6 +69,16 @@ class RepoVisualIdentityTests(SimpleTestCase):
             self.assertEqual(im.n_frames, 58, "Workflow GIF must contain exactly 58 distinct frames")
             self.assertEqual(im.size, (1100, 580), "Workflow GIF dimensions must be 1100x580")
 
+    def test_vault_documents_asset(self):
+        """Vault documents preview must exist, be under 2MB, and have 16:9 aspect ratio."""
+        docs_path = self.assets_dir / "passli-vault-documents.png"
+        self.assertTrue(docs_path.exists(), "passli-vault-documents.png must exist")
+        self.assertLess(docs_path.stat().st_size, 2 * 1024 * 1024, "Docs preview must be under 2MB")
+
+        with Image.open(docs_path) as im:
+            self.assertEqual(im.format, "PNG")
+            self.assertEqual(im.size, (1376, 768))
+
     def test_readme_references_assets(self):
         """README.md must reference the visual identity assets via valid relative paths."""
         self.assertTrue(self.readme_path.exists(), "README.md must exist")
@@ -78,6 +88,7 @@ class RepoVisualIdentityTests(SimpleTestCase):
             ".github/assets/passli-repo-banner.png",
             ".github/assets/passli-ephemeral-workflow.gif",
             ".github/assets/passli-dashboard-preview.png",
+            ".github/assets/passli-vault-documents.png",
             ".github/assets/passli-cryptographic-pipeline.png",
         ]
         for asset in required_assets:
