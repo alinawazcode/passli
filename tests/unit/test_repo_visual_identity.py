@@ -80,21 +80,24 @@ class RepoVisualIdentityTests(SimpleTestCase):
             self.assertEqual(im.size, (1376, 768))
 
     def test_readme_references_assets(self):
-        """README.md must reference the visual identity assets via valid relative paths."""
+        """README.md must reference only the primary unique identification banner."""
         self.assertTrue(self.readme_path.exists(), "README.md must exist")
         content = self.readme_path.read_text(encoding="utf-8")
 
-        required_assets = [
-            ".github/assets/passli-repo-banner.png",
+        # Primary unique identification hero banner must be referenced and exist
+        primary_banner = ".github/assets/passli-repo-banner.png"
+        self.assertIn(primary_banner, content, f"README.md must contain relative link to {primary_banner}")
+        self.assertTrue((self.base_dir / primary_banner).exists(), f"Asset {primary_banner} must exist on disk")
+
+        # Secondary visual embeds must not be embedded in README.md
+        secondary_assets = [
             ".github/assets/passli-ephemeral-workflow.gif",
             ".github/assets/passli-dashboard-preview.png",
             ".github/assets/passli-vault-documents.png",
             ".github/assets/passli-cryptographic-pipeline.png",
         ]
-        for asset in required_assets:
-            self.assertIn(asset, content, f"README.md must contain relative link to {asset}")
-            target_file = self.base_dir / asset
-            self.assertTrue(target_file.exists(), f"Asset {asset} referenced in README.md must exist")
+        for asset in secondary_assets:
+            self.assertNotIn(asset, content, f"README.md should not embed secondary asset {asset}")
 
     def test_architecture_doc_references_assets(self):
         """docs/ARCHITECTURE.md must reference architecture and workflow assets."""
