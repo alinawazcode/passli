@@ -81,6 +81,8 @@ class RepoVisualIdentityTests(SimpleTestCase):
 
     def test_readme_references_assets(self):
         """README.md must reference only the primary unique identification banner."""
+        import re
+
         self.assertTrue(self.readme_path.exists(), "README.md must exist")
         content = self.readme_path.read_text(encoding="utf-8")
 
@@ -89,7 +91,20 @@ class RepoVisualIdentityTests(SimpleTestCase):
         self.assertIn(primary_banner, content, f"README.md must contain relative link to {primary_banner}")
         self.assertTrue((self.base_dir / primary_banner).exists(), f"Asset {primary_banner} must exist on disk")
 
-        # Secondary visual embeds must not be embedded in README.md
+        # Extract all image tags (HTML <img src="..."> and Markdown ![...](...))
+        html_imgs = re.findall(r'<img\s+[^>]*src=[\x22\x27]([^\x22\x27]+)[\x22\x27]', content)
+        md_imgs = re.findall(r'!\[[^\]]*\]\(([^)]+)\)', content)
+        all_imgs = html_imgs + md_imgs
+
+        # Local asset images embedded in README must ONLY consist of the primary banner
+        local_asset_imgs = [img for img in all_imgs if ".github/assets" in img or not img.startswith("http")]
+        self.assertEqual(
+            local_asset_imgs,
+            [primary_banner],
+            f"README.md must contain only the primary banner as embedded local asset, found: {local_asset_imgs}",
+        )
+
+        # Secondary visual embeds must not be embedded anywhere in README.md
         secondary_assets = [
             ".github/assets/passli-ephemeral-workflow.gif",
             ".github/assets/passli-dashboard-preview.png",
@@ -117,6 +132,7 @@ class RepoVisualIdentityTests(SimpleTestCase):
         self.assertIn("passli-repo-banner.png", content)
         self.assertIn("passli-ephemeral-workflow.gif", content)
         self.assertIn("passli-dashboard-preview.png", content)
+        self.assertIn("passli-vault-documents.png", content)
         self.assertIn("passli-cryptographic-pipeline.png", content)
 
     def test_asset_catalog_doc_references_all_assets(self):
@@ -128,14 +144,17 @@ class RepoVisualIdentityTests(SimpleTestCase):
             "passli-repo-banner.png",
             "passli-ephemeral-workflow.gif",
             "passli-dashboard-preview.png",
+            "passli-vault-documents.png",
             "passli-cryptographic-pipeline.png",
         ]:
             self.assertIn(asset_filename, content)
             self.assertTrue((self.assets_dir / asset_filename).exists())
 
     def test_generator_scripts_exist(self):
-        """Scripts to generate GIF and dashboard preview must exist and be accessible."""
+        """Scripts to generate GIF, dashboard preview, and official banner must exist and be accessible."""
         gif_script = self.base_dir / "scripts" / "generate_ephemeral_flow_gif.py"
         dash_script = self.base_dir / "scripts" / "generate_dashboard_preview.py"
+        official_script = self.base_dir / "scripts" / "generate_official_repo_assets.py"
         self.assertTrue(gif_script.exists(), "generate_ephemeral_flow_gif.py must exist")
         self.assertTrue(dash_script.exists(), "generate_dashboard_preview.py must exist")
+        self.assertTrue(official_script.exists(), "generate_official_repo_assets.py must exist")
