@@ -15,21 +15,12 @@
 </p>
 
 <p align="center">
-  <a href="#-ephemeral-protocol-in-action">Interactive Demo</a> •
   <a href="#-the-problem-passli-solves">The Problem</a> •
   <a href="#-core-platform-capabilities">Capabilities</a> •
   <a href="#-cryptographic-architecture-flow">Architecture</a> •
   <a href="#-quick-start--installation">Quick Start</a> •
   <a href="#-automated-testing--coverage">Testing</a> •
   <a href="docs/DEPLOY_PYTHONANYWHERE.md">Deployment Guide</a>
-</p>
-
----
-
-## 🎬 Ephemeral Protocol in Action
-
-<p align="center">
-  <img src=".github/assets/passli-ephemeral-workflow.gif" alt="Passli Ephemeral Share Pass Protocol in Action" width="100%">
 </p>
 
 ---
@@ -48,18 +39,8 @@ When sharing sensitive records with doctors, employers, financial institutions, 
 ## ✨ Core Platform Capabilities
 
 ### 🗄️ 1. Personal Document Vault
-
-<p align="center">
-  <img src=".github/assets/passli-dashboard-preview.png" alt="Passli Personal Vault Dashboard & Document Manager UI" width="100%">
-</p>
-
 - **Domain Taxonomy**: Organize records into structured categories (`Medical`, `Education`, `Vehicle`, `Personal & Identity`, `Professional`, `Other`).
 - **Encrypted Document Browser**: Filterable vault with instant search and cryptographic SHA-256 integrity inspection.
-
-<p align="center">
-  <img src=".github/assets/passli-vault-documents.png" alt="Passli Encrypted Document Vault & Category Filter" width="100%">
-</p>
-
 - **Storage Migration CLI**: Includes `python manage.py encrypt_vault_storage` for seamless batch migration of legacy storage records.
 
 ### 🔑 2. Cryptographic Share Passes & Ephemeral QR Protocol
@@ -112,10 +93,6 @@ When sharing sensitive records with doctors, employers, financial institutions, 
 ---
 
 ## 🔐 Cryptographic Architecture Flow
-
-<p align="center">
-  <img src=".github/assets/passli-cryptographic-pipeline.png" alt="Passli Cryptographic Pipeline Architecture: AES-256-GCM AEAD Ingestion & In-Memory Streaming" width="100%">
-</p>
 
 ```mermaid
 flowchart TD
