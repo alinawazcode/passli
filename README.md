@@ -54,6 +54,12 @@ When sharing sensitive records with doctors, employers, financial institutions, 
 </p>
 
 - **Domain Taxonomy**: Organize records into structured categories (`Medical`, `Education`, `Vehicle`, `Personal & Identity`, `Professional`, `Other`).
+- **Encrypted Document Browser**: Filterable vault with instant search and cryptographic SHA-256 integrity inspection.
+
+<p align="center">
+  <img src=".github/assets/passli-vault-documents.png" alt="Passli Encrypted Document Vault & Category Filter" width="100%">
+</p>
+
 - **Storage Migration CLI**: Includes `python manage.py encrypt_vault_storage` for seamless batch migration of legacy storage records.
 
 ### 🔑 2. Cryptographic Share Passes & Ephemeral QR Protocol

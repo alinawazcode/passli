@@ -42,17 +42,22 @@ Passli adheres strictly to **human-crafted, anti-AI-slop design principles** (re
 ### 2. Repository Visual Identity Assets (`.github/assets/`)
 - [`passli-repo-banner.png`](../.github/assets/passli-repo-banner.png): 1376 × 768 (16:9) Repository Hero Banner.
 - [`passli-ephemeral-workflow.gif`](../.github/assets/passli-ephemeral-workflow.gif): 1100 × 580 (58-frame animated demonstration of the Share Pass protocol).
-- [`passli-dashboard-preview.png`](../.github/assets/passli-dashboard-preview.png): 1376 × 768 (16:9) Personal Vault Dashboard UI Preview.
+- [`passli-dashboard-preview.png`](../.github/assets/passli-dashboard-preview.png): 1376 × 768 (16:9) Personal Vault Dashboard UI Preview framed in modern browser window.
+- [`passli-vault-documents.png`](../.github/assets/passli-vault-documents.png): 1376 × 768 (16:9) Encrypted Document Vault browser with filter pills and SHA-256 cards.
 - [`passli-cryptographic-pipeline.png`](../.github/assets/passli-cryptographic-pipeline.png): 1376 × 768 (16:9) Systems architecture diagram of AES-256-GCM AEAD storage and streaming.
 
 ---
 
 ## 📐 Asset Generation Tooling
 
-Passli includes deterministic Python automation to regenerate animated workflow demonstrations:
+Passli includes deterministic Python automation to regenerate visual identity assets and animated workflow demonstrations:
 
 ```powershell
+# Regenerate 58-frame animated ephemeral workflow demonstration GIF
 python scripts/generate_ephemeral_flow_gif.py
+
+# Regenerate pixel-perfect vault dashboard UI preview
+python scripts/generate_dashboard_preview.py
 ```
 
 All static diagrams and banners are engineered in 16:9 widescreen format, optimized under 1 MB to guarantee rapid CDN delivery across GitHub without proxy timeouts.
