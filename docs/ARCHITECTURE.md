@@ -18,6 +18,10 @@ Passli is a privacy-first, zero-credential-exposure personal document vault and 
 
 ## 2. Document Vault Cryptographic Lifecycle
 
+<p align="center">
+  <img src="../.github/assets/passli-cryptographic-pipeline.png" alt="Passli Cryptographic Lifecycle Architecture" width="100%">
+</p>
+
 ### 2.1 File Ingestion & Storage Wire Format
 When a user uploads a document:
 1. **Plaintext Hashing**: Original plaintext bytes are read in-memory; a SHA-256 digest is calculated and stored in `Document.file_hash`.
@@ -53,6 +57,10 @@ Passli supports zero-downtime key rotation:
 ---
 
 ## 3. Ephemeral Share Pass Protocol
+
+<p align="center">
+  <img src="../.github/assets/passli-ephemeral-workflow.gif" alt="Passli Ephemeral Share Pass Protocol in Action" width="100%">
+</p>
 
 ### 3.1 Plaintext Key Isolation
 - Plaintext 8-character keys (`XXXX-XXXX`) use a 31-character unambiguous alphabet (`ABCDEFGHJKMNPQRSTUVWXYZ23456789`, omitting lookalikes `0`, `O`, `1`, `I`, `L`).
