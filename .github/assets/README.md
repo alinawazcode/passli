@@ -17,10 +17,14 @@ This directory contains the visual branding, architecture infographics, UI previ
 
 ## 🛠️ Regeneration & Build Tools
 
-The animated workflow demonstration (`passli-ephemeral-workflow.gif`) can be deterministically generated and optimized using Pillow:
+The animated workflow demonstration (`passli-ephemeral-workflow.gif`) and dashboard UI preview (`passli-dashboard-preview.png`) are deterministically generated via Python Pillow tooling:
 
 ```bash
+# Regenerate 58-frame animated ephemeral workflow demonstration GIF
 python scripts/generate_ephemeral_flow_gif.py
+
+# Regenerate pixel-perfect vault dashboard UI preview
+python scripts/generate_dashboard_preview.py
 ```
 
 ### Design Standards & Palette

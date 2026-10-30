@@ -49,10 +49,14 @@ Passli adheres strictly to **human-crafted, anti-AI-slop design principles** (re
 
 ## 📐 Asset Generation Tooling
 
-Passli includes deterministic Python automation to regenerate animated workflow demonstrations:
+Passli includes deterministic Python automation to regenerate visual identity assets and animated workflow demonstrations:
 
 ```powershell
+# Regenerate 58-frame animated ephemeral workflow demonstration GIF
 python scripts/generate_ephemeral_flow_gif.py
+
+# Regenerate pixel-perfect vault dashboard UI preview
+python scripts/generate_dashboard_preview.py
 ```
 
 All static diagrams and banners are engineered in 16:9 widescreen format, optimized under 1 MB to guarantee rapid CDN delivery across GitHub without proxy timeouts.
