@@ -1,373 +1,347 @@
 """
-Passli — Professional README Banner Generator
-===============================================
-Produces a crisp, open-source-grade identity banner at exactly 1376×768 PNG.
+Passli — Professional Open-Source README Banner Generator
+=========================================================
+Produces a world-class, human-crafted repository identity banner at exactly 1376×768 PNG.
 
-Design philosophy
------------------
-- Dark, precision palette (Deep Obsidian #0B0F17 base)
-- Centered geometric shield mark — drawn with pure Pillow polygons, no raster art
-- Clean typographic hierarchy: wordmark → tagline → feature chips
-- Hairline-border chips, no neon glow traps, no AI slop
-- Anti-aliasing via 2× supersample → downscale
-
-Standalone: no Django server, no Selenium required.
+Design Philosophy (Anti-AI-Slop, High-Craft Engineering)
+-------------------------------------------------------
+- Built with Passli's authentic visual identity and official brand tokens:
+    * Obsidian Void: #080C14
+    * Deep Slate: #0E1526
+    * Emerald Accent: #10B981
+    * Cyan Accent: #06B6D4
+    * Violet Accent: #8B5CF6
+- Incorporates the official Passli vector-rendered cyber-shield mark (`passli-app-icon.png`)
+- Clean typographic hierarchy with geometric alignment
+- Hairline-bordered glassmorphic feature badges with dual-tone dot indicators
+- Subtle technical telemetry (crosshairs, coordinate labels, status bar)
+- 2x supersampled anti-aliased rendering (2752×1536 -> 1376×768 Lanczos)
+- 100% deterministic, zero network/server dependency, pure Pillow
 """
 
 from __future__ import annotations
 
 import math
-import os
 from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFont
 
 # ---------------------------------------------------------------------------
-# Brand tokens
+# Brand Color Tokens
 # ---------------------------------------------------------------------------
-BG_DEEP = (11, 15, 23)          # #0B0F17  Deep Obsidian
-BG_CARD = (17, 24, 39)          # #111827  Dark Slate
-ACCENT_GREEN = (16, 185, 129)   # #10B981  Emerald
-ACCENT_CYAN = (6, 182, 212)     # #06B6D4  Electric Cyan
-ACCENT_PURPLE = (139, 92, 246)  # #8B5CF6  Violet
-TEXT_HEAD = (248, 250, 252)     # #F8FAFC  Heading White
-TEXT_MUTED = (148, 163, 184)    # #94A3B8  Muted Slate
-BORDER = (30, 41, 59)           # Subtle separator
+BG_OBSIDIAN = (8, 12, 20)          # #080C14 Base background
+BG_PANEL = (14, 21, 38)            # #0E1526 Inner frame background
+BG_CHIP = (17, 24, 39)             # #111827 Chip fill
+BORDER_MUTED = (30, 41, 59)        # #1E293B Subtle hairline border
+BORDER_HIGHLIGHT = (51, 65, 85)    # #334155 Frame highlight border
 
-# Output dimensions (test requires exactly this)
+COLOR_EMERALD = (16, 185, 129)     # #10B981 Brand Primary
+COLOR_CYAN = (6, 182, 212)         # #06B6D4 Brand Secondary
+COLOR_VIOLET = (139, 92, 246)      # #8B5CF6 Crypto / AAD
+COLOR_AMBER = (245, 158, 11)       # #F59E0B Ephemeral timer
+COLOR_TEXT_WHITE = (248, 250, 252) # #F8FAFC Heading White
+COLOR_TEXT_MUTED = (148, 163, 184) # #94A3B8 Secondary Text
+COLOR_TEXT_DIM = (100, 116, 139)   # #64748B Dim labels
+
+# Output dimensions enforced by test_repo_visual_identity
 OUT_W, OUT_H = 1376, 768
-
-# Supersample scale (render at 2× then lanczos-down for anti-aliasing)
-SS = 2
-W, H = OUT_W * SS, OUT_H * SS
+SCALE = 2
+CANVAS_W, CANVAS_H = OUT_W * SCALE, OUT_H * SCALE
 
 ASSETS_DIR = Path(".github/assets")
 ASSETS_DIR.mkdir(parents=True, exist_ok=True)
+BRAND_ICON_PATH = Path("static/img/brand/passli-app-icon.png")
 
 
 # ---------------------------------------------------------------------------
-# Font helpers
+# Font Discovery
 # ---------------------------------------------------------------------------
-FONT_CANDIDATES_BOLD = [
-    "C:/Windows/Fonts/segoeuib.ttf",
-    "C:/Windows/Fonts/arialbd.ttf",
-    "C:/Windows/Fonts/calibrib.ttf",
-]
-FONT_CANDIDATES_REGULAR = [
-    "C:/Windows/Fonts/segoeui.ttf",
-    "C:/Windows/Fonts/arial.ttf",
-    "C:/Windows/Fonts/calibri.ttf",
-]
-FONT_CANDIDATES_LIGHT = [
-    "C:/Windows/Fonts/segoeuil.ttf",
-    "C:/Windows/Fonts/segoeui.ttf",
-    "C:/Windows/Fonts/arial.ttf",
-]
-FONT_CANDIDATES_MONO = [
-    "C:/Windows/Fonts/consola.ttf",
-    "C:/Windows/Fonts/cour.ttf",
-    "C:/Windows/Fonts/lucon.ttf",
-]
-
-
-def _first_available(candidates: list[str]) -> str | None:
-    for p in candidates:
-        if Path(p).exists():
-            return p
+def _pick_font(candidates: list[str]) -> str | None:
+    for c in candidates:
+        if Path(c).exists():
+            return c
     return None
 
 
-def load_font(candidates: list[str], size: int) -> ImageFont.FreeTypeFont | ImageFont.ImageFont:
-    path = _first_available(candidates)
-    if path:
-        return ImageFont.truetype(path, size)
+FONT_BOLD = _pick_font([
+    "C:/Windows/Fonts/segoeuib.ttf",
+    "C:/Windows/Fonts/arialbd.ttf",
+    "C:/Windows/Fonts/calibrib.ttf",
+])
+FONT_SEMIBOLD = _pick_font([
+    "C:/Windows/Fonts/seguisb.ttf",
+    "C:/Windows/Fonts/segoeuib.ttf",
+    "C:/Windows/Fonts/arialbd.ttf",
+])
+FONT_REGULAR = _pick_font([
+    "C:/Windows/Fonts/segoeui.ttf",
+    "C:/Windows/Fonts/arial.ttf",
+    "C:/Windows/Fonts/calibri.ttf",
+])
+FONT_MONO = _pick_font([
+    "C:/Windows/Fonts/consola.ttf",
+    "C:/Windows/Fonts/cascadiacode.ttf",
+    "C:/Windows/Fonts/cour.ttf",
+])
+
+
+def get_font(path: str | None, size: int) -> ImageFont.FreeTypeFont | ImageFont.ImageFont:
+    if path and Path(path).exists():
+        try:
+            return ImageFont.truetype(path, size)
+        except Exception:
+            pass
     return ImageFont.load_default()
 
 
 # ---------------------------------------------------------------------------
-# Geometry helpers
+# Drawing Utilities
 # ---------------------------------------------------------------------------
+def draw_radial_ambient_glow(canvas: Image.Image, cx: int, cy: int, max_radius: int) -> None:
+    """Renders a soft, diffuse ambient glow centered behind the main brand mark."""
+    glow_layer = Image.new("RGBA", canvas.size, (0, 0, 0, 0))
+    draw = ImageDraw.Draw(glow_layer)
 
-def hex_points(cx: float, cy: float, r: float, rotation_deg: float = 0.0) -> list[tuple[float, float]]:
-    """Return the 6 vertices of a regular hexagon."""
-    pts = []
-    for i in range(6):
-        angle = math.radians(rotation_deg + 60 * i - 90)
-        pts.append((cx + r * math.cos(angle), cy + r * math.sin(angle)))
-    return pts
+    steps = 45
+    for i in range(steps, 0, -1):
+        ratio = i / steps
+        r = int(max_radius * ratio)
+        alpha = int(22 * (1.0 - math.pow(ratio, 0.7)))
+        if ratio < 0.4:
+            color = (6, 182, 212, alpha)
+        elif ratio < 0.7:
+            color = (99, 102, 241, alpha)
+        else:
+            color = (16, 185, 129, alpha)
+        draw.ellipse([cx - r, cy - r, cx + r, cy + r], fill=color)
 
-
-def shield_points(cx: float, cy: float, w: float, h: float) -> list[tuple[float, float]]:
-    """Heraldic shield outline — flat top, pointed bottom, gentle inward curves at waist."""
-    hw = w / 2
-    # Key control points (approximated with polygon vertices for Pillow)
-    top_left = (cx - hw, cy)
-    top_right = (cx + hw, cy)
-    # Shoulder curve — step in gently
-    sh_l = (cx - hw, cy + h * 0.40)
-    sh_r = (cx + hw, cy + h * 0.40)
-    # Waist narrows
-    wa_l = (cx - hw * 0.75, cy + h * 0.58)
-    wa_r = (cx + hw * 0.75, cy + h * 0.58)
-    # Lower flanks
-    fl_l = (cx - hw * 0.50, cy + h * 0.76)
-    fl_r = (cx + hw * 0.50, cy + h * 0.76)
-    # Tip
-    tip = (cx, cy + h)
-    return [top_left, top_right, sh_r, wa_r, fl_r, tip, fl_l, wa_l, sh_l, top_left]
+    canvas.alpha_composite(glow_layer)
 
 
-def draw_rounded_rect(
+def draw_cyber_grid(draw: ImageDraw.ImageDraw, x0: int, y0: int, x1: int, y1: int, step: int = 48) -> None:
+    """Subtle matrix grid with micro-dots at intersections."""
+    grid_color = (18, 26, 44)
+    dot_color = (30, 42, 68)
+
+    for x in range(x0, x1, step):
+        draw.line([x, y0, x, y1], fill=grid_color, width=1)
+    for y in range(y0, y1, step):
+        draw.line([x0, y, x1, y], fill=grid_color, width=1)
+
+    for x in range(x0, x1, step):
+        for y in range(y0, y1, step):
+            draw.rectangle([x - 1, y - 1, x + 1, y + 1], fill=dot_color)
+
+
+def draw_tech_crosshair(draw: ImageDraw.ImageDraw, cx: int, cy: int, arm: int = 12, color=BORDER_HIGHLIGHT) -> None:
+    """Draws a refined + crosshair marker."""
+    draw.line([cx - arm, cy, cx + arm, cy], fill=color, width=2)
+    draw.line([cx, cy - arm, cx, cy + arm], fill=color, width=2)
+
+
+def draw_pill_badge(
     draw: ImageDraw.ImageDraw,
-    xy: tuple[float, float, float, float],
-    radius: float,
-    fill=None,
-    outline=None,
-    width: int = 1,
-) -> None:
-    draw.rounded_rectangle(xy, radius=radius, fill=fill, outline=outline, width=width)
+    cx: int,
+    cy: int,
+    text: str,
+    font: ImageFont.FreeTypeFont,
+    accent_color: tuple[int, int, int],
+) -> int:
+    """Draws a modern, pill-shaped badge with a glowing active dot and hairline border."""
+    bbox = draw.textbbox((0, 0), text, font=font)
+    text_w = bbox[2] - bbox[0]
+    text_h = bbox[3] - bbox[1]
 
+    dot_radius = 4 * SCALE
+    dot_gap = 10 * SCALE
+    pad_x = 18 * SCALE
+    pad_y = 9 * SCALE
 
-# ---------------------------------------------------------------------------
-# Core drawing
-# ---------------------------------------------------------------------------
+    pill_w = pad_x * 2 + dot_radius * 2 + dot_gap + text_w
+    pill_h = text_h + pad_y * 2
+    x0 = cx - pill_w // 2
+    y0 = cy - pill_h // 2
+    x1 = x0 + pill_w
+    y1 = y0 + pill_h
 
-def draw_subtle_grid(draw: ImageDraw.ImageDraw, step: int = 80) -> None:
-    """Ultra-subtle dot-grid background texture."""
-    dot_color = (18, 24, 36)
-    for y in range(0, H, step):
-        for x in range(0, W, step):
-            draw.ellipse([x - 1, y - 1, x + 1, y + 1], fill=dot_color)
+    draw.rounded_rectangle([x0, y0, x1, y1], radius=pill_h // 2, fill=BG_CHIP, outline=BORDER_MUTED, width=SCALE)
 
-
-def draw_shield(draw: ImageDraw.ImageDraw, cx: float, cy: float, size: float) -> None:
-    """
-    Professional heraldic shield — primary brand mark.
-    Composed of:
-      - Outer shield silhouette in emerald with hairline stroke
-      - Inner shield inset (depth effect)
-      - Keyhole glyph centred inside
-      - Thin decorative horizontal rule at shoulder
-    """
-    # ── Outer shield ──────────────────────────────────────────────────────
-    sw, sh = size, size * 1.18
-    pts_outer = shield_points(cx, cy, sw, sh)
-    draw.polygon(pts_outer, fill=(14, 165, 117, 180), outline=ACCENT_GREEN, width=SS * 2)
-
-    # ── Inner shield (inset) ───────────────────────────────────────────────
-    inset = size * 0.10
-    pts_inner = shield_points(cx, cy + inset * 0.3, sw - inset * 2, sh - inset * 2.2)
-    draw.polygon(pts_inner, fill=None, outline=(16, 185, 129, 100), width=SS)
-
-    # ── Decorative shoulder rule ───────────────────────────────────────────
-    rule_y = cy + sh * 0.38
-    rule_x0 = cx - sw * 0.52
-    rule_x1 = cx + sw * 0.52
-    draw.line([rule_x0, rule_y, rule_x1, rule_y], fill=(16, 185, 129, 120), width=SS)
-
-    # ── Keyhole ───────────────────────────────────────────────────────────
-    # Circle (upper disc of keyhole)
-    kr = size * 0.13
-    kcy = cy + sh * 0.38
+    dot_cx = x0 + pad_x + dot_radius
+    dot_cy = cy
     draw.ellipse(
-        [cx - kr, kcy - kr, cx + kr, kcy + kr],
-        fill=BG_DEEP,
-        outline=ACCENT_GREEN,
-        width=SS * 2,
+        [dot_cx - dot_radius - 2, dot_cy - dot_radius - 2, dot_cx + dot_radius + 2, dot_cy + dot_radius + 2],
+        fill=None,
+        outline=(*accent_color, 90),
+        width=1,
     )
-    # Rectangular stem (lower half)
-    ks_w = kr * 0.65
-    ks_h = size * 0.22
+    draw.ellipse(
+        [dot_cx - dot_radius, dot_cy - dot_radius, dot_cx + dot_radius, dot_cy + dot_radius],
+        fill=accent_color,
+    )
+
+    text_x = dot_cx + dot_radius + dot_gap
+    text_y = cy - text_h // 2 - 1
+    draw.text((text_x, text_y), text, font=font, fill=COLOR_TEXT_WHITE)
+
+    return pill_w
+
+
+# ---------------------------------------------------------------------------
+# Main Banner Generation
+# ---------------------------------------------------------------------------
+def generate_identity_banner() -> Path:
+    print(f"Generating professional open-source banner ({CANVAS_W}x{CANVAS_H} supersampled -> {OUT_W}x{OUT_H})...")
+
+    banner_rgba = Image.new("RGBA", (CANVAS_W, CANVAS_H), (*BG_OBSIDIAN, 255))
+    draw = ImageDraw.Draw(banner_rgba)
+
+    f_kicker = get_font(FONT_MONO, 13 * SCALE)
+    f_title = get_font(FONT_BOLD, 74 * SCALE)
+    f_tagline = get_font(FONT_SEMIBOLD, 22 * SCALE)
+    f_subtext = get_font(FONT_REGULAR, 15 * SCALE)
+    f_badge = get_font(FONT_MONO, 12 * SCALE)
+    f_telemetry = get_font(FONT_MONO, 11 * SCALE)
+
+    pad_outer_x = 44 * SCALE
+    pad_outer_y = 36 * SCALE
+    frame_x0 = pad_outer_x
+    frame_y0 = pad_outer_y
+    frame_x1 = CANVAS_W - pad_outer_x
+    frame_y1 = CANVAS_H - pad_outer_y
+    frame_radius = 20 * SCALE
+
+    # 1. Subtle Cyber Matrix Grid within the main frame
+    draw_cyber_grid(draw, frame_x0 + 16, frame_y0 + 16, frame_x1 - 16, frame_y1 - 16, step=44 * SCALE)
+
+    # 2. Main Framed Card
     draw.rounded_rectangle(
-        [cx - ks_w, kcy, cx + ks_w, kcy + ks_h],
-        radius=SS * 2,
-        fill=BG_DEEP,
-        outline=ACCENT_GREEN,
-        width=SS * 2,
+        [frame_x0, frame_y0, frame_x1, frame_y1],
+        radius=frame_radius,
+        fill=(*BG_PANEL, 210),
+        outline=BORDER_MUTED,
+        width=SCALE,
     )
 
-
-def draw_wordmark(
-    draw: ImageDraw.ImageDraw,
-    x: float,
-    y: float,
-    font_bold: ImageFont.FreeTypeFont,
-) -> None:
-    """'Passli' wordmark with the 'i' dot replaced by the accent green."""
-    draw.text((x, y), "Passli", font=font_bold, fill=TEXT_HEAD)
-
-
-def centered_text(
-    draw: ImageDraw.ImageDraw,
-    cx: float,
-    cy: float,
-    text: str,
-    font: ImageFont.FreeTypeFont,
-    fill: tuple,
-) -> None:
-    bb = draw.textbbox((0, 0), text, font=font)
-    tw = bb[2] - bb[0]
-    th = bb[3] - bb[1]
-    draw.text((cx - tw / 2, cy - th / 2), text, font=font, fill=fill)
-
-
-def draw_chip(
-    draw: ImageDraw.ImageDraw,
-    cx: float,
-    cy: float,
-    text: str,
-    font: ImageFont.FreeTypeFont,
-    accent: tuple,
-) -> float:
-    """Draws a feature chip centred at (cx, cy). Returns chip width."""
-    pad_x = SS * 16
-    pad_y = SS * 7
-    bb = draw.textbbox((0, 0), text, font=font)
-    tw = bb[2] - bb[0]
-    th = bb[3] - bb[1]
-    chip_w = tw + pad_x * 2
-    chip_h = th + pad_y * 2
-    x0 = cx - chip_w / 2
-    y0 = cy - chip_h / 2
-    draw.rounded_rectangle(
-        [x0, y0, x0 + chip_w, y0 + chip_h],
-        radius=chip_h / 2,
-        fill=BG_CARD,
-        outline=accent,
-        width=SS,
-    )
-    draw.text((x0 + pad_x, y0 + pad_y), text, font=font, fill=accent)
-    return chip_w
-
-
-def draw_divider_line(draw: ImageDraw.ImageDraw, y: float, width: float = 240) -> None:
-    x0 = W / 2 - width
-    x1 = W / 2 + width
-    draw.line([x0, y, x1, y], fill=BORDER, width=SS)
-
-
-def draw_bottom_bar(draw: ImageDraw.ImageDraw, font_small: ImageFont.FreeTypeFont) -> None:
-    """Subtle bottom bar — domain + tagline."""
-    bar_h = SS * 38
-    y0 = H - bar_h
-    draw.rectangle([0, y0, W, H], fill=(13, 18, 27))
-    # Left: domain
-    draw.text((SS * 32, y0 + SS * 10), "passli.dev", font=font_small, fill=ACCENT_GREEN)
-    # Right: licence / stack
-    right_text = "Django 5 · Python 3.12 · AES-256-GCM"
-    bb = draw.textbbox((0, 0), right_text, font=font_small)
-    rw = bb[2] - bb[0]
-    draw.text((W - rw - SS * 32, y0 + SS * 10), right_text, font=font_small, fill=TEXT_MUTED)
-
-
-# ---------------------------------------------------------------------------
-# Accent geometry — corner fragments
-# ---------------------------------------------------------------------------
-
-def draw_corner_accents(draw: ImageDraw.ImageDraw) -> None:
-    """Four hairline L-brackets in the corners for a technical feel."""
-    arm = SS * 28
-    t = SS * 2
-    color = (30, 48, 64)
-    margin = SS * 20
-    corners = [
-        # top-left
-        [(margin, margin, margin + arm, margin + t), (margin, margin, margin + t, margin + arm)],
-        # top-right
-        [(W - margin - arm, margin, W - margin, margin + t), (W - margin - t, margin, W - margin, margin + arm)],
-        # bottom-left
-        [(margin, H - margin - t, margin + arm, H - margin), (margin, H - margin - arm, margin + t, H - margin)],
-        # bottom-right
-        [(W - margin - arm, H - margin - t, W - margin, H - margin), (W - margin - t, H - margin - arm, W - margin, H - margin)],
-    ]
-    for pair in corners:
-        for rect in pair:
-            draw.rectangle(rect, fill=color)
-
-
-# ---------------------------------------------------------------------------
-# Main render
-# ---------------------------------------------------------------------------
-
-def render_banner() -> None:
-    print(f"Rendering banner at {W}x{H} (2x supersample -> {OUT_W}x{OUT_H}) ...")
-
-    img = Image.new("RGB", (W, H), BG_DEEP)
-    draw = ImageDraw.Draw(img, "RGBA")
-
-    # ── Background texture ────────────────────────────────────────────────
-    draw_subtle_grid(draw, step=64)
-    draw_corner_accents(draw)
-
-    # Faint horizontal gradient strip behind shield (depth cue)
-    for i in range(200):
-        alpha = int(18 * (1 - i / 200))
-        draw.line([0, H // 2 - 100 + i, W, H // 2 - 100 + i], fill=(*ACCENT_GREEN, alpha), width=1)
-
-    # ── Load fonts ────────────────────────────────────────────────────────
-    f_wordmark = load_font(FONT_CANDIDATES_BOLD, SS * 68)
-    f_tagline = load_font(FONT_CANDIDATES_LIGHT, SS * 22)
-    f_chip = load_font(FONT_CANDIDATES_MONO, SS * 16)
-    f_small = load_font(FONT_CANDIDATES_REGULAR, SS * 17)
-
-    # ── Shield mark ───────────────────────────────────────────────────────
-    shield_cx = W / 2
-    shield_cy = H * 0.34
-    shield_size = SS * 92
-    draw_shield(draw, shield_cx, shield_cy, shield_size)
-
-    # ── Wordmark ──────────────────────────────────────────────────────────
-    wm_y = H * 0.575
-    centered_text(draw, W / 2, wm_y, "Passli", f_wordmark, TEXT_HEAD)
-
-    # Green underline accent beneath wordmark
-    bb = draw.textbbox((0, 0), "Passli", font=f_wordmark)
-    wm_w = bb[2] - bb[0]
-    ul_y = wm_y + (bb[3] - bb[1]) / 2 + SS * 6
+    # Top highlight border accent
     draw.line(
-        [W / 2 - wm_w / 2, ul_y, W / 2 + wm_w / 2, ul_y],
-        fill=ACCENT_GREEN,
-        width=SS * 2,
+        [frame_x0 + frame_radius, frame_y0, frame_x1 - frame_radius, frame_y0],
+        fill=BORDER_HIGHLIGHT,
+        width=SCALE,
     )
 
-    # ── Tagline ───────────────────────────────────────────────────────────
-    tagline = "Cryptographic Document Vault  ·  Ephemeral Sharing"
-    centered_text(draw, W / 2, H * 0.685, tagline, f_tagline, TEXT_MUTED)
+    # 3. Technical Corner Crosshairs
+    crosshair_margin = 18 * SCALE
+    draw_tech_crosshair(draw, frame_x0 + crosshair_margin, frame_y0 + crosshair_margin, arm=7 * SCALE)
+    draw_tech_crosshair(draw, frame_x1 - crosshair_margin, frame_y0 + crosshair_margin, arm=7 * SCALE)
+    draw_tech_crosshair(draw, frame_x0 + crosshair_margin, frame_y1 - crosshair_margin, arm=7 * SCALE)
+    draw_tech_crosshair(draw, frame_x1 - crosshair_margin, frame_y1 - crosshair_margin, arm=7 * SCALE)
 
-    # ── Feature chips ─────────────────────────────────────────────────────
-    chips = [
-        ("AES-256-GCM", ACCENT_GREEN),
-        ("PBKDF2-SHA256", ACCENT_CYAN),
-        ("Zero Disk Decrypt", ACCENT_PURPLE),
-        ("Django 5", TEXT_MUTED),
+    # 4. Top Telemetry Kicker Bar
+    kicker_y = frame_y0 + 38 * SCALE
+    kicker_text = "PASSLI SECURITY PROTOCOL // OPEN-SOURCE DOCUMENT VAULT & EPHEMERAL SHARING"
+    kicker_bbox = draw.textbbox((0, 0), kicker_text, font=f_kicker)
+    kicker_w = kicker_bbox[2] - kicker_bbox[0]
+    draw.text((CANVAS_W // 2 - kicker_w // 2, kicker_y), kicker_text, font=f_kicker, fill=COLOR_CYAN)
+
+    draw.line(
+        [CANVAS_W // 2 - 320 * SCALE, kicker_y + 22 * SCALE, CANVAS_W // 2 + 320 * SCALE, kicker_y + 22 * SCALE],
+        fill=BORDER_MUTED,
+        width=1,
+    )
+
+    # 5. Ambient Glow behind the Official Brand Mark
+    icon_center_x = CANVAS_W // 2
+    icon_center_y = int(frame_y0 + 175 * SCALE)
+    draw_radial_ambient_glow(banner_rgba, icon_center_x, icon_center_y, max_radius=190 * SCALE)
+    draw = ImageDraw.Draw(banner_rgba)
+
+    # 6. Official Passli Cyber-Shield App Icon
+    if BRAND_ICON_PATH.exists():
+        raw_icon = Image.open(BRAND_ICON_PATH).convert("RGBA")
+        target_icon_size = 196 * SCALE
+        icon_resized = raw_icon.resize((target_icon_size, target_icon_size), Image.Resampling.LANCZOS)
+        icon_paste_x = icon_center_x - target_icon_size // 2
+        icon_paste_y = icon_center_y - target_icon_size // 2
+        banner_rgba.alpha_composite(icon_resized, (icon_paste_x, icon_paste_y))
+        draw = ImageDraw.Draw(banner_rgba)
+
+    # 7. Wordmark "Passli"
+    title_text = "Passli"
+    title_bbox = draw.textbbox((0, 0), title_text, font=f_title)
+    title_w = title_bbox[2] - title_bbox[0]
+    title_h = title_bbox[3] - title_bbox[1]
+    title_y = int(icon_center_y + 115 * SCALE)
+    title_x = CANVAS_W // 2 - title_w // 2
+    draw.text((title_x, title_y), title_text, font=f_title, fill=COLOR_TEXT_WHITE)
+
+    # 8. Primary Tagline
+    tagline_text = "Cryptographic Document Vault  *  Ephemeral Sharing Platform"
+    tagline_bbox = draw.textbbox((0, 0), tagline_text, font=f_tagline)
+    tagline_w = tagline_bbox[2] - tagline_bbox[0]
+    tagline_y = title_y + title_h + 16 * SCALE
+    draw.text((CANVAS_W // 2 - tagline_w // 2, tagline_y), tagline_text, font=f_tagline, fill=COLOR_EMERALD)
+
+    # 9. Descriptive Mission Pitch
+    subtext = "Zero-knowledge recipient sharing, AES-256-GCM encryption at rest & time-gated ephemeral passes"
+    subtext_bbox = draw.textbbox((0, 0), subtext, font=f_subtext)
+    subtext_w = subtext_bbox[2] - subtext_bbox[0]
+    subtext_y = tagline_y + 36 * SCALE
+    draw.text((CANVAS_W // 2 - subtext_w // 2, subtext_y), subtext, font=f_subtext, fill=COLOR_TEXT_MUTED)
+
+    # 10. Feature Badges Row (4 Glassmorphic Hairline Chips)
+    badges = [
+        ("AES-256-GCM AEAD", COLOR_EMERALD),
+        ("PBKDF2-HMAC-SHA256", COLOR_CYAN),
+        ("Zero Disk Decryption", COLOR_VIOLET),
+        ("Time-Gated QR Passes", COLOR_AMBER),
     ]
-    total_chip_w = 0
-    gap = SS * 18
-    chip_widths = []
-    for text, _ in chips:
-        bb = draw.textbbox((0, 0), text, font=f_chip)
-        cw = (bb[2] - bb[0]) + SS * 32 + SS * 2  # rough
-        chip_widths.append(cw)
-        total_chip_w += cw + gap
-    total_chip_w -= gap
 
-    cx_cursor = W / 2 - total_chip_w / 2
-    chip_y = H * 0.81
-    for i, (text, accent) in enumerate(chips):
-        draw_chip(draw, cx_cursor + chip_widths[i] / 2, chip_y, text, f_chip, accent)
-        cx_cursor += chip_widths[i] + gap
+    badge_y = subtext_y + 54 * SCALE
+    gap = 14 * SCALE
 
-    # ── Bottom bar ────────────────────────────────────────────────────────
-    draw_bottom_bar(draw, f_small)
+    badge_widths = []
+    for text, _ in badges:
+        bb = draw.textbbox((0, 0), text, font=f_badge)
+        tw = bb[2] - bb[0]
+        pill_w = (18 * SCALE) * 2 + (4 * SCALE) * 2 + (10 * SCALE) + tw
+        badge_widths.append(pill_w)
 
-    # ── Downscale to output dimensions ────────────────────────────────────
-    out_img = img.resize((OUT_W, OUT_H), Image.Resampling.LANCZOS)
+    total_badges_w = sum(badge_widths) + gap * (len(badges) - 1)
+    cur_x = CANVAS_W // 2 - total_badges_w // 2
 
-    out_path = ASSETS_DIR / "passli-repo-banner.png"
-    out_img.save(str(out_path), "PNG", optimize=True)
-    size_kb = os.path.getsize(out_path) / 1024
-    print(f"Saved {out_path}  ({OUT_W}x{OUT_H}, {size_kb:.1f} KB)")
+    for (text, accent), w in zip(badges, badge_widths):
+        badge_cx = cur_x + w // 2
+        draw_pill_badge(draw, badge_cx, badge_y, text, f_badge, accent)
+        cur_x += w + gap
+
+    # 11. Bottom Architectural Status Bar
+    bar_y = frame_y1 - 38 * SCALE
+    draw.line(
+        [frame_x0 + 24 * SCALE, bar_y - 12 * SCALE, frame_x1 - 24 * SCALE, bar_y - 12 * SCALE],
+        fill=BORDER_MUTED,
+        width=1,
+    )
+
+    left_meta = "STATUS: PRODUCTION READY // REPO: GITHUB.COM/ALINAWAZCODE/PASSLI"
+    draw.text((frame_x0 + 28 * SCALE, bar_y), left_meta, font=f_telemetry, fill=COLOR_TEXT_DIM)
+
+    right_meta = "PYTHON 3.12 * DJANGO 5.1 * ZERO PERSISTED PLAINTEXT * MIT LICENSE"
+    rm_bbox = draw.textbbox((0, 0), right_meta, font=f_telemetry)
+    rm_w = rm_bbox[2] - rm_bbox[0]
+    draw.text((frame_x1 - 28 * SCALE - rm_w, bar_y), right_meta, font=f_telemetry, fill=COLOR_TEXT_DIM)
+
+    # ---------------------------------------------------------------------------
+    # Downsample via Lanczos to target 1376x768
+    # ---------------------------------------------------------------------------
+    final_rgb = banner_rgba.convert("RGB")
+    final_output = final_rgb.resize((OUT_W, OUT_H), Image.Resampling.LANCZOS)
+
+    out_file = ASSETS_DIR / "passli-repo-banner.png"
+    final_output.save(str(out_file), "PNG", optimize=True)
+    file_size_kb = out_file.stat().st_size / 1024
+    print(f"SUCCESS: Saved {out_file} ({OUT_W}x{OUT_H}, {file_size_kb:.1f} KB)")
+    return out_file
 
 
 if __name__ == "__main__":
-    render_banner()
+    generate_identity_banner()
