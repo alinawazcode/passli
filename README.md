@@ -1,5 +1,7 @@
+<h1 align="center">Passli</h1>
+
 <p align="center">
-  <img src=".github/assets/passli-repo-banner.png" alt="Passli — Cryptographic Document Vault & Ephemeral Sharing Platform" width="100%">
+  <strong>Cryptographic Document Vault & Ephemeral Sharing Platform</strong>
 </p>
 
 <p align="center">

@@ -80,39 +80,35 @@ class RepoVisualIdentityTests(SimpleTestCase):
             self.assertEqual(im.size, (1376, 768))
 
     def test_readme_references_assets(self):
-        """README.md must reference only the primary unique identification banner."""
+        """README.md must not embed local repository assets directly, keeping the document lightweight."""
         import re
 
         self.assertTrue(self.readme_path.exists(), "README.md must exist")
         content = self.readme_path.read_text(encoding="utf-8")
-
-        # Primary unique identification hero banner must be referenced and exist
-        primary_banner = ".github/assets/passli-repo-banner.png"
-        self.assertIn(primary_banner, content, f"README.md must contain relative link to {primary_banner}")
-        self.assertTrue((self.base_dir / primary_banner).exists(), f"Asset {primary_banner} must exist on disk")
 
         # Extract all image tags (HTML <img src="..."> and Markdown ![...](...))
         html_imgs = re.findall(r'<img\s+[^>]*src=[\x22\x27]([^\x22\x27]+)[\x22\x27]', content)
         md_imgs = re.findall(r'!\[[^\]]*\]\(([^)]+)\)', content)
         all_imgs = html_imgs + md_imgs
 
-        # Local asset images embedded in README must ONLY consist of the primary banner
+        # Local asset images must not be embedded in README.md
         local_asset_imgs = [img for img in all_imgs if ".github/assets" in img or not img.startswith("http")]
         self.assertEqual(
             local_asset_imgs,
-            [primary_banner],
-            f"README.md must contain only the primary banner as embedded local asset, found: {local_asset_imgs}",
+            [],
+            f"README.md must not embed local assets directly, found: {local_asset_imgs}",
         )
 
-        # Secondary visual embeds must not be embedded anywhere in README.md
-        secondary_assets = [
+        # Visual assets must not be embedded anywhere in README.md
+        repo_assets = [
+            ".github/assets/passli-repo-banner.png",
             ".github/assets/passli-ephemeral-workflow.gif",
             ".github/assets/passli-dashboard-preview.png",
             ".github/assets/passli-vault-documents.png",
             ".github/assets/passli-cryptographic-pipeline.png",
         ]
-        for asset in secondary_assets:
-            self.assertNotIn(asset, content, f"README.md should not embed secondary asset {asset}")
+        for asset in repo_assets:
+            self.assertNotIn(asset, content, f"README.md should not embed asset {asset}")
 
     def test_architecture_doc_references_assets(self):
         """docs/ARCHITECTURE.md must reference architecture and workflow assets."""
