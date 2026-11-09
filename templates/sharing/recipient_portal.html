@@ -4,41 +4,41 @@
 {% block title %}Shared Vault Records — Passli Recipient Portal{% endblock %}
 
 {% block content %}
-<div class="vault-container" style="padding-bottom: 3rem;">
-    <div class="container">
+<div class="vault-container pb-12 max-w-7xl mx-auto px-4 sm:px-6">
+    <div class="container mx-auto">
 
         <!-- Top Status Bar & Session Security Header -->
-        <div class="recipient-header-bar" style="background: var(--bg-card); border: 1px solid var(--border-light); border-radius: var(--radius-lg); padding: 1.25rem 1.5rem; margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.04);">
+        <div class="recipient-header-bar bg-bg-surface border border-border-hairline rounded-xl p-4 sm:p-5 mb-6 flex justify-between items-center flex-wrap gap-4 shadow-card">
             
             <div>
-                <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
-                    <span class="status-badge font-mono-data" style="font-size: 0.7rem; background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0;">
-                        <span class="pulse-dot"></span>
+                <div class="flex items-center gap-2 mb-1">
+                    <span class="status-badge font-mono-data text-[11px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded-full inline-flex items-center gap-1.5 font-semibold">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
                         <span>Active Verified Session</span>
                     </span>
-                    <span class="font-mono-data" style="font-size: 0.75rem; color: var(--text-muted);">
+                    <span class="font-mono-data text-xs text-text-muted">
                         PASS #{{ pass.id|stringformat:"s"|slice:":8"|upper }}
                     </span>
                 </div>
-                <h1 style="font-size: 1.25rem; font-weight: 800; color: var(--text-primary); margin: 0;">
+                <h1 class="text-lg sm:text-xl font-bold text-text-primary tracking-tight">
                     {{ pass.title|default:"Decrypted Vault Records" }}
                 </h1>
             </div>
 
             <!-- Expiration Timer & Exit Button -->
-            <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
+            <div class="flex items-center gap-3 flex-wrap">
                 {% if pass.expires_at %}
-                <div class="countdown-badge" style="background: #f8fafc; border: 1px solid var(--border-light); border-radius: var(--radius-md); padding: 0.4rem 0.85rem; display: flex; align-items: center; gap: 0.4rem;" data-testid="recipient-countdown-box">
-                    <span class="material-symbols-outlined" style="font-size: 16px; color: #ea580c;">timer</span>
-                    <span style="font-size: 0.75rem; font-weight: 600; color: var(--text-secondary);">Expires in:</span>
-                    <span class="font-mono-data" id="countdownTimer" style="font-size: 0.8rem; font-weight: 700; color: #ea580c;">Calculating...</span>
+                <div class="countdown-badge bg-bg-card border border-border-hairline rounded-lg px-3 py-1.5 flex items-center gap-2" data-testid="recipient-countdown-box">
+                    <span class="material-symbols-outlined text-[16px] text-amber-400">timer</span>
+                    <span class="text-xs font-medium text-text-muted">Expires in:</span>
+                    <span class="font-mono-data text-xs font-bold text-amber-400" id="countdownTimer">Calculating...</span>
                 </div>
                 {% endif %}
 
-                <form method="post" action="{% url 'recipient_leave' pass.id %}" style="display: inline;">
+                <form method="post" action="{% url 'recipient_leave' pass.id %}" class="inline">
                     {% csrf_token %}
-                    <button type="submit" class="btn btn-secondary btn-sm" style="color: #e11d48; border-color: #fecdd3;" data-testid="exit-session-btn" title="Exit session and wipe decrypted browser memory">
-                        <span class="material-symbols-outlined" style="font-size: 15px;">logout</span>
+                    <button type="submit" class="btn btn-secondary btn-sm text-rose-400 hover:text-rose-300 hover:border-rose-500/40" data-testid="exit-session-btn" title="Exit session and wipe decrypted browser memory">
+                        <span class="material-symbols-outlined text-[15px]">logout</span>
                         <span>Exit Session</span>
                     </button>
                 </form>
@@ -47,14 +47,14 @@
 
         <!-- Mobile Document Switcher (Visible on Mobile/Tablet when pass contains multiple docs) -->
         {% if documents|length > 1 %}
-        <div class="recipient-mobile-doc-nav">
-            <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.4rem; letter-spacing: 0.05em;">
+        <div class="recipient-mobile-doc-nav mb-5">
+            <div class="text-[11px] font-mono font-semibold text-text-muted uppercase tracking-wider mb-2">
                 Select Shared Document ({{ documents|length }})
             </div>
-            <div class="recipient-mobile-chips-wrapper">
+            <div class="recipient-mobile-chips-wrapper flex gap-2 overflow-x-auto pb-2 scrollbar-thin">
                 {% for doc in documents %}
-                <a href="?doc={{ doc.id }}" class="recipient-mobile-doc-chip {% if doc.id == active_doc.id %}active{% endif %}">
-                    <span class="material-symbols-outlined" style="font-size: 16px; color: {% if doc.id == active_doc.id %}#ffffff{% else %}var(--brand-navy){% endif %};">
+                <a href="?doc={{ doc.id }}" class="recipient-mobile-doc-chip inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-medium border border-border-hairline bg-bg-card text-text-secondary whitespace-nowrap transition-colors {% if doc.id == active_doc.id %}active bg-emerald-500/15 text-emerald-400 border-emerald-500/40{% endif %}">
+                    <span class="material-symbols-outlined text-[16px] {% if doc.id == active_doc.id %}text-emerald-400{% else %}text-text-muted{% endif %}">
                         {{ doc.category_icon }}
                     </span>
                     <span>{{ doc.title|truncatechars:22 }}</span>
@@ -65,45 +65,45 @@
         {% endif %}
 
         <!-- Main Recipient Portal Grid -->
-        <div class="recipient-portal-layout">
+        <div class="recipient-portal-layout grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
             
             <!-- Left Sidebar: Document Index (Desktop Only) -->
-            <div class="recipient-doc-list recipient-desktop-sidebar" style="background: var(--bg-surface); border: 1px solid var(--border-light); border-radius: var(--radius-lg); padding: 1.25rem; box-shadow: var(--shadow-sm);">
+            <div class="recipient-doc-list recipient-desktop-sidebar lg:col-span-4 bg-bg-surface border border-border-hairline rounded-xl p-5 shadow-card">
                 
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border-light); flex-wrap: wrap; gap: 0.5rem;">
-                    <span style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;">
+                <div class="flex justify-between items-center mb-4 pb-3 border-b border-border-hairline flex-wrap gap-2">
+                    <span class="text-xs font-mono font-semibold text-text-muted uppercase tracking-wider">
                         Authorized Files ({{ documents|length }})
                     </span>
-                    <span style="font-size: 0.7rem; font-weight: 600; color: {% if can_download %}var(--brand-emerald){% else %}var(--text-muted){% endif %};">
+                    <span class="text-[11px] font-mono font-semibold {% if can_download %}text-emerald-400{% else %}text-text-muted{% endif %}">
                         {% if can_download %}Download Allowed{% else %}View Only{% endif %}
                     </span>
                 </div>
 
-                <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                <div class="flex flex-col gap-2">
                     {% for doc in documents %}
-                    <a href="?doc={{ doc.id }}" class="recipient-doc-item {% if doc.id == active_doc.id %}active{% endif %}" style="display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 0.85rem; border-radius: var(--radius-md); border: 1px solid {% if doc.id == active_doc.id %}var(--brand-navy){% else %}var(--border-light){% endif %}; background: {% if doc.id == active_doc.id %}#f8fafc{% else %}transparent{% endif %}; text-decoration: none; transition: all 0.15s ease;" data-testid="recipient-doc-item-{{ doc.id }}">
-                        <span class="material-symbols-outlined" style="font-size: 20px; color: {% if doc.id == active_doc.id %}var(--brand-navy){% else %}var(--text-muted){% endif %};">
+                    <a href="?doc={{ doc.id }}" class="recipient-doc-item flex items-center gap-3 p-3 rounded-lg border transition-colors {% if doc.id == active_doc.id %}bg-bg-surface-elevated border-brand-emerald text-text-primary{% else %}bg-bg-card border-border-hairline text-text-secondary hover:bg-bg-surface-elevated/50 hover:text-text-primary{% endif %}" data-testid="recipient-doc-item-{{ doc.id }}">
+                        <span class="material-symbols-outlined text-[20px] {% if doc.id == active_doc.id %}text-brand-emerald{% else %}text-text-muted{% endif %}">
                             {{ doc.category_icon }}
                         </span>
-                        <div style="flex: 1; min-width: 0;">
-                            <div style="font-size: 0.85rem; font-weight: 700; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                        <div class="flex-1 min-w-0">
+                            <div class="text-xs font-semibold text-text-primary truncate">
                                 {{ doc.title }}
                             </div>
-                            <div class="font-mono-data" style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.15rem;">
+                            <div class="font-mono-data text-[11px] text-text-muted mt-0.5">
                                 {{ doc.get_category_display }} • {{ doc.formatted_size }}
                             </div>
                         </div>
                         {% if doc.id == active_doc.id %}
-                        <span class="material-symbols-outlined" style="font-size: 16px; color: var(--brand-navy);">chevron_right</span>
+                        <span class="material-symbols-outlined text-[16px] text-brand-emerald">chevron_right</span>
                         {% endif %}
                     </a>
                     {% endfor %}
                 </div>
 
                 <!-- Session Security Notice -->
-                <div style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--border-light); font-size: 0.75rem; color: var(--text-secondary); line-height: 1.5;">
-                    <div style="display: flex; align-items: center; gap: 0.35rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.25rem;">
-                        <span class="material-symbols-outlined" style="font-size: 14px; color: var(--brand-emerald);">lock</span>
+                <div class="mt-6 pt-4 border-t border-border-hairline text-xs text-text-secondary leading-relaxed">
+                    <div class="flex items-center gap-1.5 font-semibold text-text-primary mb-1">
+                        <span class="material-symbols-outlined text-[14px] text-brand-emerald">lock</span>
                         <span>Zero Account Leakage</span>
                     </div>
                     <span>This isolated viewer provides direct access only to the files selected above. No master credentials or other vault partitions are accessible.</span>
@@ -112,27 +112,27 @@
             </div>
 
             <!-- Right Panel: Active Document Viewer & Cryptographic Metadata -->
-            <div class="recipient-preview-panel" style="display: flex; flex-direction: column; gap: 1.25rem; min-width: 0; width: 100%;">
+            <div class="recipient-preview-panel lg:col-span-8 flex flex-col gap-5 min-w-0 w-full">
                 
                 <!-- Main Viewer Box -->
-                <div class="recipient-viewer-container">
+                <div class="recipient-viewer-container bg-bg-surface border border-border-hairline rounded-xl overflow-hidden shadow-card">
                     
                     <!-- Viewer Header -->
-                    <div class="recipient-viewer-header">
-                        <div style="display: flex; align-items: center; gap: 0.5rem; min-width: 0;">
-                            <span class="material-symbols-outlined" style="font-size: 20px; color: var(--brand-navy); flex-shrink: 0;">{{ active_doc.category_icon }}</span>
-                            <span style="font-weight: 700; font-size: 0.95rem; color: var(--text-primary); word-break: break-word;" data-testid="active-doc-title">{{ active_doc.title }}</span>
+                    <div class="recipient-viewer-header p-4 bg-bg-card border-b border-border-hairline flex justify-between items-center flex-wrap gap-3">
+                        <div class="flex items-center gap-2.5 min-w-0">
+                            <span class="material-symbols-outlined text-[20px] text-brand-emerald shrink-0">{{ active_doc.category_icon }}</span>
+                            <span class="font-bold text-sm text-text-primary break-words" data-testid="active-doc-title">{{ active_doc.title }}</span>
                         </div>
                         
-                        <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+                        <div class="flex items-center gap-2 flex-wrap">
                             {% if can_download %}
                             <a href="{% url 'recipient_doc_download' pass.id active_doc.id %}" class="btn btn-primary btn-sm" data-testid="recipient-download-btn">
-                                <span class="material-symbols-outlined" style="font-size: 15px;">download</span>
+                                <span class="material-symbols-outlined text-[15px]">download</span>
                                 <span>Download File ({{ active_doc.formatted_size }})</span>
                             </a>
                             {% else %}
-                            <span class="status-badge" style="font-size: 0.7rem; background: #f1f5f9; color: var(--text-muted); border: 1px solid var(--border-light);">
-                                <span class="material-symbols-outlined" style="font-size: 13px;">visibility</span>
+                            <span class="status-badge text-[11px] bg-bg-surface-elevated text-text-muted border border-border-hairline px-2.5 py-1 rounded inline-flex items-center gap-1 font-mono">
+                                <span class="material-symbols-outlined text-[13px]">visibility</span>
                                 <span>View Only Enforced</span>
                             </span>
                             {% endif %}
@@ -140,12 +140,12 @@
                     </div>
 
                     <!-- Viewer Content with Dynamic Anti-Exfiltration Watermark Layer -->
-                    <div class="recipient-viewer-canvas" id="recipientViewerCanvas" style="position: relative; overflow: hidden; user-select: none; -webkit-user-select: none;">
+                    <div class="recipient-viewer-canvas relative overflow-hidden select-none" id="recipientViewerCanvas">
                         
                         <!-- Dynamic Security Watermark Overlay Layer -->
-                        <div class="watermark-overlay-layer" aria-hidden="true" data-testid="watermark-overlay" style="position: absolute; inset: 0; pointer-events: none; z-index: 10; display: flex; flex-direction: column; justify-content: space-between; overflow: hidden;">
+                        <div class="watermark-overlay-layer absolute inset-0 pointer-events-none z-10 flex flex-col justify-between overflow-hidden" aria-hidden="true" data-testid="watermark-overlay">
                             <!-- Repeating Diagonal Watermark Grid -->
-                            <div class="watermark-repeating-grid" style="position: absolute; inset: -50%; width: 200%; height: 200%; transform: rotate(-25deg); display: flex; flex-wrap: wrap; align-content: space-around; justify-content: space-around; opacity: 0.13; pointer-events: none; user-select: none; font-family: var(--font-mono, monospace); font-weight: 700; font-size: 0.85rem; color: #0f172a; line-height: 2.2;">
+                            <div class="watermark-repeating-grid absolute -inset-1/2 w-[200%] h-[200%] -rotate-[25deg] flex flex-wrap content-around justify-around opacity-[0.08] pointer-events-none select-none font-mono font-bold text-xs sm:text-sm text-slate-100 leading-[2.2]">
                                 <span>{{ watermark_label }}</span>
                                 <span>{{ watermark_label }}</span>
                                 <span>{{ watermark_label }}</span>
@@ -161,34 +161,34 @@
                             </div>
 
                             <!-- Live Security Banner Badge at Top-Right -->
-                            <div style="position: absolute; top: 0.75rem; right: 0.75rem; z-index: 15; background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); color: #f8fafc; padding: 0.25rem 0.6rem; border-radius: var(--radius-sm); font-size: 0.68rem; font-family: var(--font-mono, monospace); display: flex; align-items: center; gap: 0.4rem; border: 1px solid rgba(255, 255, 255, 0.15);">
-                                <span class="material-symbols-outlined" style="font-size: 12px; color: #38bdf8;">verified_user</span>
+                            <div class="absolute top-3 right-3 z-20 bg-bg-app/80 backdrop-blur-sm text-slate-200 px-2.5 py-1 rounded border border-white/10 text-[10px] sm:text-xs font-mono flex items-center gap-1.5 shadow-sm">
+                                <span class="material-symbols-outlined text-[12px] text-sky-400">verified_user</span>
                                 <span>TRACED IP: {{ client_ip }}</span>
                             </div>
 
                             <!-- Live Security Banner Badge at Bottom-Left -->
-                            <div style="position: absolute; bottom: 0.75rem; left: 0.75rem; z-index: 15; background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); color: #94a3b8; padding: 0.25rem 0.6rem; border-radius: var(--radius-sm); font-size: 0.65rem; font-family: var(--font-mono, monospace); display: flex; align-items: center; gap: 0.35rem; border: 1px solid rgba(255, 255, 255, 0.1);">
-                                <span class="material-symbols-outlined" style="font-size: 11px; color: #e11d48;">lock</span>
+                            <div class="absolute bottom-3 left-3 z-20 bg-bg-app/80 backdrop-blur-sm text-text-muted px-2.5 py-1 rounded border border-white/10 text-[10px] font-mono flex items-center gap-1.5 shadow-sm">
+                                <span class="material-symbols-outlined text-[11px] text-rose-400">lock</span>
                                 <span>UNAUTHORIZED CAPTURE PROHIBITED • #{{ pass_short_id }}</span>
                             </div>
                         </div>
 
                         {% if active_doc.is_pdf %}
-                            <iframe src="{% url 'recipient_doc_preview' pass.id active_doc.id %}#toolbar=0" class="recipient-pdf-frame" title="{{ active_doc.title }}" data-testid="recipient-pdf-frame" style="width: 100%; height: 600px; border: none; display: block;"></iframe>
+                            <iframe src="{% url 'recipient_doc_preview' pass.id active_doc.id %}#toolbar=0" class="recipient-pdf-frame w-full h-[600px] border-none block bg-white" title="{{ active_doc.title }}" data-testid="recipient-pdf-frame"></iframe>
                         {% elif active_doc.is_image %}
-                            <div class="recipient-img-container" style="display: flex; justify-content: center; align-items: center; padding: 1.5rem; background: #0b1120; min-height: 400px;">
-                                <img src="{% url 'recipient_doc_preview' pass.id active_doc.id %}" alt="{{ active_doc.title }}" class="recipient-img-preview" data-testid="recipient-img-preview" style="max-width: 100%; max-height: 600px; object-fit: contain; border-radius: var(--radius-sm); box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);">
+                            <div class="recipient-img-container flex justify-center items-center p-6 bg-[#070a0f] min-h-[400px]">
+                                <img src="{% url 'recipient_doc_preview' pass.id active_doc.id %}" alt="{{ active_doc.title }}" class="recipient-img-preview max-w-full max-h-[600px] object-contain rounded shadow-lg" data-testid="recipient-img-preview">
                             </div>
                         {% else %}
-                            <div style="text-align: center; padding: 2.5rem 1.25rem; color: #fff; background: #0b1120;">
-                                <span class="material-symbols-outlined" style="font-size: 48px; color: #94a3b8;">draft</span>
-                                <h3 style="font-size: 1.1rem; margin: 0.75rem 0 0.25rem;">Binary File Payload</h3>
-                                <p style="font-size: 0.85rem; color: #94a3b8; max-width: 400px; margin: 0 auto 1.25rem;">
+                            <div class="text-center p-10 text-white bg-[#070a0f]">
+                                <span class="material-symbols-outlined text-5xl text-text-muted">draft</span>
+                                <h3 class="text-base font-semibold mt-3 mb-1">Binary File Payload</h3>
+                                <p class="text-xs text-text-muted max-w-sm mx-auto mb-5">
                                     Direct in-browser visual stream is unavailable for this MIME format.
                                 </p>
                                 {% if can_download %}
                                 <a href="{% url 'recipient_doc_download' pass.id active_doc.id %}" class="btn btn-primary btn-sm">
-                                    <span class="material-symbols-outlined" style="font-size: 15px;">download</span>
+                                    <span class="material-symbols-outlined text-[15px]">download</span>
                                     <span>Download File</span>
                                 </a>
                                 {% endif %}
@@ -198,43 +198,43 @@
                 </div>
 
                 <!-- Cryptographic Metadata Card -->
-                <div style="background: var(--bg-surface); border: 1px solid var(--border-light); border-radius: var(--radius-lg); padding: 1.25rem 1.5rem; box-shadow: var(--shadow-sm);">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.85rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border-light); flex-wrap: wrap; gap: 0.5rem;">
-                        <span class="font-mono-data" style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;">
+                <div class="card p-5 bg-bg-surface border border-border-hairline rounded-xl shadow-card">
+                    <div class="flex justify-between items-center mb-3 pb-2.5 border-b border-border-hairline flex-wrap gap-2">
+                        <span class="font-mono-data text-xs font-semibold text-text-muted uppercase tracking-wider">
                             Cryptographic Integrity & Metadata
                         </span>
-                        <span class="status-badge font-mono-data" style="font-size: 0.65rem; background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0;">
+                        <span class="status-badge font-mono-data text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded font-semibold">
                             Verified SHA-256
                         </span>
                     </div>
 
-                    <div class="recipient-metadata-grid">
+                    <div class="recipient-metadata-grid grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs font-mono">
                         <div>
-                            <div style="color: var(--text-muted); font-size: 0.7rem; font-weight: 600; text-transform: uppercase;">Original Filename</div>
-                            <div class="font-mono-data" style="font-weight: 600; color: var(--text-primary); margin-top: 0.15rem; word-break: break-all;">
+                            <div class="text-text-muted text-[10px] font-semibold uppercase tracking-wider">Original Filename</div>
+                            <div class="font-mono-data font-semibold text-text-primary mt-1 break-all">
                                 {{ active_doc.original_filename|default:active_doc.title }}
                             </div>
                         </div>
                         <div>
-                            <div style="color: var(--text-muted); font-size: 0.7rem; font-weight: 600; text-transform: uppercase;">MIME Content-Type</div>
-                            <div class="font-mono-data" style="font-weight: 600; color: var(--text-primary); margin-top: 0.15rem;">
+                            <div class="text-text-muted text-[10px] font-semibold uppercase tracking-wider">MIME Content-Type</div>
+                            <div class="font-mono-data font-semibold text-text-primary mt-1">
                                 {{ active_doc.file_type|default:"application/octet-stream" }}
                             </div>
                         </div>
                         <div>
-                            <div style="color: var(--text-muted); font-size: 0.7rem; font-weight: 600; text-transform: uppercase;">Payload Size</div>
-                            <div class="font-mono-data" style="font-weight: 600; color: var(--text-primary); margin-top: 0.15rem;">
+                            <div class="text-text-muted text-[10px] font-semibold uppercase tracking-wider">Payload Size</div>
+                            <div class="font-mono-data font-semibold text-text-primary mt-1">
                                 {{ active_doc.formatted_size }} ({{ active_doc.file_size }} bytes)
                             </div>
                         </div>
                     </div>
 
-                    <div style="margin-top: 1rem; padding: 0.75rem; background: #f8fafc; border: 1px solid var(--border-light); border-radius: var(--radius-md);">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem; flex-wrap: wrap; gap: 0.25rem;">
-                            <span class="font-mono-data" style="font-size: 0.65rem; font-weight: 700; color: var(--text-muted);">DIGEST HASH (SHA-256)</span>
-                            <span class="font-mono-data" style="font-size: 0.65rem; color: var(--brand-emerald); font-weight: 600;">PASSLI IMMUTABLE</span>
+                    <div class="mt-4 p-3 bg-bg-card border border-border-hairline rounded-lg font-mono">
+                        <div class="flex justify-between items-center mb-1 flex-wrap gap-1">
+                            <span class="font-mono-data text-[10px] font-semibold text-text-muted uppercase tracking-wider">DIGEST HASH (SHA-256)</span>
+                            <span class="font-mono-data text-[10px] text-brand-emerald font-semibold">PASSLI IMMUTABLE</span>
                         </div>
-                        <div class="font-mono-data" style="font-size: 0.75rem; color: var(--text-primary); word-break: break-all;" data-testid="recipient-doc-hash">
+                        <div class="font-mono-data text-xs text-text-primary break-all" data-testid="recipient-doc-hash">
                             {{ active_doc.file_hash }}
                         </div>
                     </div>
@@ -263,7 +263,7 @@
 
                 if (diff <= 0) {
                     timerElem.textContent = "Expired";
-                    timerElem.style.color = "#e11d48";
+                    timerElem.style.color = "#ef4444";
                     // Reload page to trigger expired state
                     setTimeout(() => { window.location.reload(); }, 1500);
                     return;

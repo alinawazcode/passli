@@ -4,36 +4,36 @@
 {% block title %}Create Share Pass — Passli Personal Vault{% endblock %}
 
 {% block content %}
-<div class="container" style="padding-top: 2rem; padding-bottom: 4rem; max-width: 860px;">
+<div class="container py-8 max-w-4xl mx-auto">
     <!-- Breadcrumb & Header -->
-    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+    <div class="flex items-center justify-between mb-6 flex-wrap gap-4">
         <div>
-            <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.25rem;">
-                <a href="{% url 'dashboard' %}" style="color: var(--text-muted); text-decoration: none;">Dashboard</a>
+            <div class="flex items-center gap-2 text-xs text-text-muted mb-1.5 font-mono">
+                <a href="{% url 'dashboard' %}" class="text-text-muted hover:text-brand-emerald transition-colors">Dashboard</a>
                 <span>/</span>
-                <a href="{% url 'share_list' %}" style="color: var(--text-muted); text-decoration: none;">Share Passes</a>
+                <a href="{% url 'share_list' %}" class="text-text-muted hover:text-brand-emerald transition-colors">Share Passes</a>
                 <span>/</span>
-                <span style="color: var(--text-primary);">Create Pass</span>
+                <span class="text-text-primary">Create Pass</span>
             </div>
-            <h1 style="font-size: 1.75rem; font-weight: 700; letter-spacing: -0.02em; margin: 0;">Generate Ephemeral Share Pass</h1>
+            <h1 class="text-2xl font-bold tracking-tight text-text-primary">Generate Ephemeral Share Pass</h1>
         </div>
         <a href="{% url 'share_list' %}" class="btn btn-secondary btn-sm" data-testid="back-to-passes">
-            <span class="material-symbols-outlined" style="font-size: 16px;">arrow_back</span> Back to Passes
+            <span class="material-symbols-outlined text-[16px]">arrow_back</span> Back to Passes
         </a>
     </div>
 
     {% if user_docs_count == 0 %}
         <!-- Empty State: No documents uploaded yet -->
-        <div class="card" style="padding: 3rem 2rem; text-align: center; border: 1px dashed var(--border-color); background: var(--bg-surface);" data-testid="no-docs-warning">
-            <div style="width: 56px; height: 56px; border-radius: 12px; background: rgba(99, 102, 241, 0.1); color: var(--color-primary); display: flex; align-items: center; justify-content: center; margin: 0 auto 1.25rem;">
-                <span class="material-symbols-outlined" style="font-size: 32px;">folder_off</span>
+        <div class="card p-12 text-center border border-dashed border-border-hairline bg-bg-surface rounded-xl" data-testid="no-docs-warning">
+            <div class="w-14 h-14 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center mx-auto mb-4 border border-amber-500/20">
+                <span class="material-symbols-outlined text-[28px]">folder_off</span>
             </div>
-            <h3 style="font-size: 1.2rem; font-weight: 600; margin-bottom: 0.5rem;">No Vault Records Available</h3>
-            <p style="color: var(--text-secondary); max-width: 440px; margin: 0 auto 1.5rem; font-size: 0.9rem;">
+            <h3 class="text-lg font-semibold mb-2 text-text-primary">No Vault Records Available</h3>
+            <p class="text-text-secondary max-w-md mx-auto mb-6 text-sm leading-relaxed">
                 You must upload at least one document before you can generate a time-gated Share Pass.
             </p>
             <a href="{% url 'documents_upload' %}?next=share_create" class="btn btn-primary" data-testid="upload-first-doc-btn">
-                <span class="material-symbols-outlined" style="font-size: 18px;">upload_file</span> Upload First Document
+                <span class="material-symbols-outlined text-[18px]">upload_file</span> Upload First Document
             </a>
         </div>
     {% else %}
@@ -42,10 +42,10 @@
             {% csrf_token %}
 
             {% if form.non_field_errors %}
-                <div class="alert alert-danger" style="margin-bottom: 1.5rem;" data-testid="form-errors">
+                <div class="alert alert-danger mb-6 p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-sm" data-testid="form-errors">
                     {% for error in form.non_field_errors %}
-                        <div style="display: flex; align-items: center; gap: 0.5rem;">
-                            <span class="material-symbols-outlined" style="font-size: 18px;">error</span>
+                        <div class="flex items-center gap-2">
+                            <span class="material-symbols-outlined text-[18px]">error</span>
                             <span>{{ error }}</span>
                         </div>
                     {% endfor %}
@@ -53,52 +53,52 @@
             {% endif %}
 
             <!-- Section 1: Document Selection Checklist -->
-            <div class="card" style="padding: 1.5rem; margin-bottom: 1.5rem; background: var(--bg-surface);">
-                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem;">
+            <div class="card p-6 mb-6 bg-bg-surface border border-border-hairline rounded-xl shadow-card">
+                <div class="flex items-center justify-between mb-4">
                     <div>
-                        <h2 style="font-size: 1.1rem; font-weight: 600; margin: 0; display: flex; align-items: center; gap: 0.5rem;">
-                            <span class="material-symbols-outlined" style="color: var(--color-primary); font-size: 20px;">checklist</span>
+                        <h2 class="text-base font-semibold text-text-primary flex items-center gap-2">
+                            <span class="material-symbols-outlined text-brand-emerald text-[20px]">checklist</span>
                             1. Select Documents to Include
                         </h2>
-                        <p style="color: var(--text-muted); font-size: 0.8rem; margin: 0.25rem 0 0;">
+                        <p class="text-xs text-text-muted mt-1">
                             Recipients will only receive access to the records you explicitly check below.
                         </p>
                     </div>
                 </div>
 
                 {% if form.documents.errors %}
-                    <div style="padding: 0.5rem 0.75rem; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 6px; color: #f87171; font-size: 0.825rem; margin-bottom: 1rem;" data-testid="doc-selection-error">
-                        {{ form.documents.errors.0 }}
+                    <div class="p-3 mb-4 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs flex items-center gap-2" data-testid="doc-selection-error">
+                        <span class="material-symbols-outlined text-[16px]">error</span>
+                        <span>{{ form.documents.errors.0 }}</span>
                     </div>
                 {% endif %}
 
-                <div style="display: flex; flex-direction: column; gap: 0.5rem; max-height: 320px; overflow-y: auto; padding-right: 0.25rem;" data-testid="doc-checklist">
+                <div class="flex flex-col gap-2 max-h-80 overflow-y-auto pr-1" data-testid="doc-checklist">
                     {% for doc in form.fields.documents.queryset %}
                         <label for="id_documents_{{ forloop.counter0 }}" 
-                               style="display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1rem; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-card); cursor: pointer; transition: all 0.15s ease;" 
-                               class="doc-select-row">
+                               class="doc-select-row flex items-center gap-3 p-3.5 rounded-lg border border-border-hairline bg-bg-card hover:bg-bg-surface-elevated/50 hover:border-border-medium transition-all cursor-pointer">
                             <input type="checkbox" 
                                    name="documents" 
                                    value="{{ doc.id }}" 
                                    id="id_documents_{{ forloop.counter0 }}"
                                    data-testid="doc-checkbox-{{ doc.id }}"
-                                   style="width: 18px; height: 18px; accent-color: var(--color-primary); cursor: pointer;"
+                                   class="w-4 h-4 rounded border-border-medium text-brand-emerald focus:ring-brand-emerald focus:ring-offset-bg-app accent-[#10b981] cursor-pointer"
                                    {% if doc.id|stringformat:"s" in form.data.documents or doc.id in form.initial.documents %}checked{% endif %}>
                             
-                            <div style="display: flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 6px; background: rgba(99, 102, 241, 0.1); color: var(--color-primary); flex-shrink: 0;">
+                            <div class="w-9 h-9 rounded-lg bg-bg-surface-elevated border border-border-hairline flex items-center justify-center text-text-secondary shrink-0">
                                 {% if doc.is_pdf %}
-                                    <span class="material-symbols-outlined" style="font-size: 20px;">picture_as_pdf</span>
+                                    <span class="material-symbols-outlined text-rose-400 text-[20px]">picture_as_pdf</span>
                                 {% else %}
-                                    <span class="material-symbols-outlined" style="font-size: 20px;">image</span>
+                                    <span class="material-symbols-outlined text-sky-400 text-[20px]">image</span>
                                 {% endif %}
                             </div>
 
-                            <div style="flex: 1; min-width: 0;">
-                                <div style="font-weight: 500; font-size: 0.9rem; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                            <div class="flex-1 min-w-0">
+                                <div class="font-medium text-sm text-text-primary truncate">
                                     {{ doc.title }}
                                 </div>
-                                <div style="font-size: 0.75rem; color: var(--text-muted); display: flex; align-items: center; gap: 0.5rem;">
-                                    <span class="badge" style="font-size: 0.7rem; padding: 0.1rem 0.4rem;">{{ doc.get_category_display }}</span>
+                                <div class="text-xs text-text-muted flex items-center gap-2 mt-0.5 font-mono">
+                                    <span class="badge text-[10px] px-1.5 py-0.5 bg-bg-surface-elevated border border-border-hairline text-text-secondary">{{ doc.get_category_display }}</span>
                                     <span>{{ doc.formatted_size }}</span>
                                     <span>&bull;</span>
                                     <span>{{ doc.created_at|date:"M d, Y" }}</span>
@@ -110,56 +110,56 @@
             </div>
 
             <!-- Section 2: Expiration, Permissions & Context -->
-            <div class="card" style="padding: 1.5rem; margin-bottom: 1.5rem; background: var(--bg-surface);">
-                <h2 style="font-size: 1.1rem; font-weight: 600; margin: 0 0 1.25rem; display: flex; align-items: center; gap: 0.5rem;">
-                    <span class="material-symbols-outlined" style="color: var(--color-primary); font-size: 20px;">tune</span>
+            <div class="card p-6 mb-6 bg-bg-surface border border-border-hairline rounded-xl shadow-card">
+                <h2 class="text-base font-semibold text-text-primary mb-4 flex items-center gap-2">
+                    <span class="material-symbols-outlined text-brand-emerald text-[20px]">tune</span>
                     2. Security Constraints & Expiration
                 </h2>
 
-                <div class="share-create-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1.25rem;">
+                <div class="share-create-grid grid grid-cols-1 md:grid-cols-2 gap-5">
                     <!-- Pass Title / Label -->
-                    <div style="grid-column: 1 / -1;">
-                        <label for="{{ form.title.id_for_label }}" class="form-label" style="font-size: 0.85rem; font-weight: 500; margin-bottom: 0.35rem;">
+                    <div class="md:col-span-2">
+                        <label for="{{ form.title.id_for_label }}" class="form-label block text-xs font-medium text-text-secondary uppercase tracking-wider mb-1.5 font-mono">
                             Pass Label / Recipient (Optional)
                         </label>
                         {{ form.title }}
-                        <span class="form-hint" style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem; display: block;">
+                        <span class="form-hint block text-xs text-text-muted mt-1.5">
                             Helpful tag to identify this pass on your dashboard (e.g., 'City Clinic Dr. Sarah').
                         </span>
                     </div>
 
                     <!-- Expiration Duration -->
                     <div>
-                        <label for="{{ form.expires_in.id_for_label }}" class="form-label" style="font-size: 0.85rem; font-weight: 500; margin-bottom: 0.35rem;">
+                        <label for="{{ form.expires_in.id_for_label }}" class="form-label block text-xs font-medium text-text-secondary uppercase tracking-wider mb-1.5 font-mono">
                             Access Expiration TTL
                         </label>
                         {{ form.expires_in }}
                         {% if form.expires_in.errors %}
-                            <span class="form-error">{{ form.expires_in.errors.0 }}</span>
+                            <span class="form-error text-xs text-rose-400 mt-1 block">{{ form.expires_in.errors.0 }}</span>
                         {% endif %}
                     </div>
 
                     <!-- Permissions Matrix Box -->
                     <div>
-                        <label class="form-label" style="font-size: 0.85rem; font-weight: 500; margin-bottom: 0.35rem;">
+                        <label class="form-label block text-xs font-medium text-text-secondary uppercase tracking-wider mb-1.5 font-mono">
                             Access Permissions
                         </label>
-                        <div style="display: flex; flex-direction: column; gap: 0.6rem; padding: 0.75rem; border-radius: 8px; background: var(--bg-card); border: 1px solid var(--border-color);">
+                        <div class="flex flex-col gap-2.5 p-3.5 rounded-lg bg-bg-card border border-border-hairline">
                             <!-- View Permission (Locked) -->
-                            <div style="display: flex; align-items: center; justify-content: space-between; font-size: 0.85rem;">
-                                <div style="display: flex; align-items: center; gap: 0.4rem;">
-                                    <span class="material-symbols-outlined" style="color: #10b981; font-size: 16px;">visibility</span>
+                            <div class="flex items-center justify-between text-xs">
+                                <div class="flex items-center gap-2 text-text-primary">
+                                    <span class="material-symbols-outlined text-brand-emerald text-[16px]">visibility</span>
                                     <span>In-Browser View</span>
                                 </div>
-                                <span style="font-size: 0.7rem; color: #10b981; font-weight: 600; text-transform: uppercase;">Required</span>
+                                <span class="text-[10px] text-brand-emerald font-mono font-semibold uppercase tracking-wider bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">Required</span>
                             </div>
 
-                            <div style="height: 1px; background: var(--border-color);"></div>
+                            <div class="h-px bg-border-hairline"></div>
 
                             <!-- Download Permission Toggle -->
-                            <label for="{{ form.can_download.id_for_label }}" style="display: flex; align-items: center; justify-content: space-between; font-size: 0.85rem; cursor: pointer; margin: 0;">
-                                <div style="display: flex; align-items: center; gap: 0.4rem;">
-                                    <span class="material-symbols-outlined" style="color: var(--text-secondary); font-size: 16px;">download</span>
+                            <label for="{{ form.can_download.id_for_label }}" class="flex items-center justify-between text-xs cursor-pointer text-text-primary m-0">
+                                <div class="flex items-center gap-2">
+                                    <span class="material-symbols-outlined text-text-muted text-[16px]">download</span>
                                     <span>Allow File Download</span>
                                 </div>
                                 {{ form.can_download }}
@@ -170,10 +170,10 @@
             </div>
 
             <!-- Action Controls -->
-            <div style="display: flex; align-items: center; justify-content: flex-end; gap: 1rem; flex-wrap: wrap;">
+            <div class="flex items-center justify-end gap-3 flex-wrap">
                 <a href="{% url 'share_list' %}" class="btn btn-secondary" data-testid="cancel-pass-btn">Cancel</a>
-                <button type="submit" class="btn btn-primary btn-lg" data-testid="generate-pass-btn">
-                    <span class="material-symbols-outlined" style="font-size: 20px;">qr_code</span> Generate Share Pass
+                <button type="submit" class="btn btn-primary" data-testid="generate-pass-btn">
+                    <span class="material-symbols-outlined text-[18px]">qr_code</span> Generate Share Pass
                 </button>
             </div>
         </form>

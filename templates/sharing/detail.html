@@ -4,48 +4,48 @@
 {% block title %}{{ pass.title|default:"Share Pass Details" }} — Passli{% endblock %}
 
 {% block content %}
-<div class="container" style="padding-top: 2rem; padding-bottom: 4rem; max-width: 960px;">
+<div class="container py-8 max-w-5xl mx-auto">
     <!-- Breadcrumb & Top Bar -->
-    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+    <div class="flex items-center justify-between mb-6 flex-wrap gap-4">
         <div>
-            <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.25rem;">
-                <a href="{% url 'dashboard' %}" style="color: var(--text-muted); text-decoration: none;">Dashboard</a>
+            <div class="flex items-center gap-2 text-xs text-text-muted mb-1.5 font-mono">
+                <a href="{% url 'dashboard' %}" class="text-text-muted hover:text-brand-emerald transition-colors">Dashboard</a>
                 <span>/</span>
-                <a href="{% url 'share_list' %}" style="color: var(--text-muted); text-decoration: none;">Share Passes</a>
+                <a href="{% url 'share_list' %}" class="text-text-muted hover:text-brand-emerald transition-colors">Share Passes</a>
                 <span>/</span>
-                <span style="color: var(--text-primary);">Pass {{ pass.id|stringformat:".8s" }}</span>
+                <span class="text-text-primary">Pass {{ pass.id|stringformat:".8s" }}</span>
             </div>
-            <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
-                <h1 style="font-size: 1.75rem; font-weight: 700; letter-spacing: -0.02em; margin: 0;">
+            <div class="flex items-center gap-3 flex-wrap">
+                <h1 class="text-2xl font-bold tracking-tight text-text-primary">
                     {{ pass.title|default:"Untitled Share Pass" }}
                 </h1>
                 <!-- Status Badge -->
                 {% if pass.is_revoked %}
-                    <span class="badge" style="background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); font-size: 0.75rem; font-weight: 600;" data-testid="pass-status-badge">
+                    <span class="badge bg-rose-500/15 text-rose-400 border border-rose-500/30 text-xs font-mono font-semibold" data-testid="pass-status-badge">
                         REVOKED
                     </span>
                 {% elif pass.is_expired %}
-                    <span class="badge" style="background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); font-size: 0.75rem; font-weight: 600;" data-testid="pass-status-badge">
+                    <span class="badge bg-amber-500/15 text-amber-400 border border-amber-500/30 text-xs font-mono font-semibold" data-testid="pass-status-badge">
                         EXPIRED
                     </span>
                 {% else %}
-                    <span class="badge" style="background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); font-size: 0.75rem; font-weight: 600;" data-testid="pass-status-badge">
+                    <span class="badge bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 text-xs font-mono font-semibold" data-testid="pass-status-badge">
                         ACTIVE
                     </span>
                 {% endif %}
             </div>
         </div>
 
-        <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+        <div class="flex items-center gap-3 flex-wrap">
             <a href="{% url 'share_list' %}" class="btn btn-secondary btn-sm" data-testid="back-to-passes">
-                <span class="material-symbols-outlined" style="font-size: 16px;">list</span> All Passes
+                <span class="material-symbols-outlined text-[16px]">list</span> All Passes
             </a>
             {% if pass.is_active %}
-                <form method="post" action="{% url 'share_revoke' pass.id %}" style="display: inline;" onsubmit="return confirm('Are you sure you want to permanently revoke this Share Pass? All recipient access will be terminated immediately.');">
+                <form method="post" action="{% url 'share_revoke' pass.id %}" class="inline" onsubmit="return confirm('Are you sure you want to permanently revoke this Share Pass? All recipient access will be terminated immediately.');">
                     {% csrf_token %}
                     <input type="hidden" name="next" value="{% url 'share_detail' pass.id %}">
                     <button type="submit" class="btn btn-danger btn-sm" data-testid="revoke-pass-btn">
-                        <span class="material-symbols-outlined" style="font-size: 16px;">block</span> Revoke Pass
+                        <span class="material-symbols-outlined text-[16px]">block</span> Revoke Pass
                     </button>
                 </form>
             {% endif %}
@@ -53,40 +53,41 @@
     </div>
 
     <!-- Main Grid: QR Code + Key Details -->
-    <div class="share-detail-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap: 1.5rem; margin-bottom: 2rem;" data-testid="share-pass-card">
+    <div class="share-detail-grid grid grid-cols-1 md:grid-cols-12 gap-6 mb-8" data-testid="share-pass-card">
         <!-- Column 1: Dynamic QR Code Card -->
-        <div class="card" style="padding: 1.5rem; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; background: var(--bg-surface);">
-            <div style="background: #ffffff; padding: 1rem; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); margin-bottom: 1rem; position: relative; max-width: 100%;">
-                <img src="{{ qr_data_uri }}" alt="Passli Share Pass QR Code" style="max-width: 100%; width: 220px; height: auto; aspect-ratio: 1/1; display: block;" data-testid="qr-code-img">
+        <div class="md:col-span-5 card p-6 text-center flex flex-col items-center justify-center bg-bg-surface border border-border-hairline rounded-xl shadow-card">
+            <!-- QR code requires white quiet zone for smartphone scanners to work reliably -->
+            <div class="bg-white p-3.5 rounded-xl shadow-md mb-4 relative max-w-full">
+                <img src="{{ qr_data_uri }}" alt="Passli Share Pass QR Code" class="max-w-full w-[220px] h-auto aspect-square block rounded" data-testid="qr-code-img">
                 {% if pass.is_revoked or pass.is_expired %}
-                    <div style="position: absolute; inset: 0; background: rgba(9, 13, 22, 0.85); border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #ffffff; padding: 1rem;">
-                        <span class="material-symbols-outlined" style="font-size: 36px; color: #f87171; margin-bottom: 0.25rem;">
+                    <div class="absolute inset-0 bg-bg-app/90 backdrop-blur-sm rounded-xl flex flex-col items-center justify-center text-white p-4">
+                        <span class="material-symbols-outlined text-4xl text-rose-400 mb-2">
                             {% if pass.is_revoked %}lock_clock{% else %}timer_off{% endif %}
                         </span>
-                        <span style="font-weight: 600; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.05em;">
+                        <span class="font-bold text-xs uppercase tracking-wider font-mono text-rose-300">
                             {% if pass.is_revoked %}Pass Revoked{% else %}Pass Expired{% endif %}
                         </span>
                     </div>
                 {% endif %}
             </div>
 
-            <div style="width: 100%; display: flex; flex-direction: column; gap: 0.5rem;">
-                <a href="{% url 'share_qr_download' pass.id %}" class="btn btn-secondary btn-block btn-sm" data-testid="download-qr-btn">
-                    <span class="material-symbols-outlined" style="font-size: 16px;">download</span> Download QR Image
+            <div class="w-full flex flex-col gap-2">
+                <a href="{% url 'share_qr_download' pass.id %}" class="btn btn-secondary w-full btn-sm justify-center" data-testid="download-qr-btn">
+                    <span class="material-symbols-outlined text-[16px]">download</span> Download QR Image
                 </a>
             </div>
         </div>
 
         <!-- Column 2: Share Key, Protocol Parameters & Expiration -->
-        <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+        <div class="md:col-span-7 flex flex-col gap-5">
             <!-- Ephemeral Key Card -->
-            <div class="card" style="padding: 1.5rem; background: var(--bg-surface); border: 1px solid var(--border-color);">
-                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem; flex-wrap: wrap; gap: 0.5rem;">
-                    <span style="font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted);">
+            <div class="card p-6 bg-bg-surface border border-border-hairline rounded-xl shadow-card">
+                <div class="flex items-center justify-between mb-2 flex-wrap gap-2">
+                    <span class="text-xs font-mono font-semibold uppercase tracking-wider text-text-muted">
                         Access Share Key
                     </span>
                     {% if raw_key %}
-                        <span class="badge" style="background: rgba(99, 102, 241, 0.15); color: #818cf8; font-size: 0.7rem;">
+                        <span class="badge bg-indigo-500/15 text-indigo-400 border border-indigo-500/30 text-[10px] font-mono font-semibold">
                             ONE-TIME DISCLOSURE
                         </span>
                     {% endif %}
@@ -94,68 +95,68 @@
 
                 {% if raw_key %}
                     <!-- Plaintext Key Display with Copy Button -->
-                    <div style="display: flex; align-items: center; gap: 0.75rem; background: var(--bg-card); padding: 0.85rem 1.25rem; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 0.75rem; flex-wrap: wrap;">
-                        <span class="material-symbols-outlined" style="color: var(--color-primary); font-size: 24px;">key</span>
-                        <span id="shareKeyText" class="font-mono-data" style="font-size: clamp(1.2rem, 3vw, 1.6rem); font-weight: 700; letter-spacing: 0.15em; color: #38bdf8; flex: 1; min-width: 140px;" data-testid="share-key-display">
+                    <div class="flex items-center gap-3 bg-bg-card p-3.5 rounded-lg border border-border-hairline mb-3 flex-wrap">
+                        <span class="material-symbols-outlined text-brand-emerald text-[22px]">key</span>
+                        <span id="shareKeyText" class="font-mono-data text-xl sm:text-2xl font-bold tracking-widest text-sky-400 flex-1 min-w-[140px]" data-testid="share-key-display">
                             {{ raw_key }}
                         </span>
                         <button type="button" class="btn btn-secondary btn-sm" id="copyKeyBtn" onclick="copyShareKey()" data-testid="copy-share-key">
-                            <span class="material-symbols-outlined" style="font-size: 16px;">content_copy</span>
+                            <span class="material-symbols-outlined text-[16px]">content_copy</span>
                             <span id="copyBtnLabel">Copy</span>
                         </button>
                     </div>
-                    <p style="font-size: 0.775rem; color: #fbbf24; margin: 0; display: flex; align-items: center; gap: 0.35rem;">
-                        <span class="material-symbols-outlined" style="font-size: 15px;">info</span>
+                    <p class="text-xs text-amber-400/90 flex items-center gap-1.5 m-0 leading-normal">
+                        <span class="material-symbols-outlined text-[15px] shrink-0">info</span>
                         <span>Save this key or share it out-of-band with the recipient. Plaintext keys are never stored on disk.</span>
                     </p>
                 {% else %}
                     <!-- Hidden Key Mask -->
-                    <div style="display: flex; align-items: center; gap: 0.75rem; background: var(--bg-card); padding: 0.85rem 1.25rem; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 0.5rem; flex-wrap: wrap;">
-                        <span class="material-symbols-outlined" style="color: var(--text-muted); font-size: 24px;">lock</span>
-                        <span class="font-mono-data" style="font-size: clamp(1.1rem, 2.5vw, 1.3rem); font-weight: 600; letter-spacing: 0.1em; color: var(--text-muted); flex: 1; min-width: 140px;" data-testid="share-key-masked">
+                    <div class="flex items-center gap-3 bg-bg-card p-3.5 rounded-lg border border-border-hairline mb-2 flex-wrap">
+                        <span class="material-symbols-outlined text-text-muted text-[22px]">lock</span>
+                        <span class="font-mono-data text-base sm:text-lg font-semibold tracking-wider text-text-muted flex-1 min-w-[140px]" data-testid="share-key-masked">
                             ••••-•••• (PBKDF2 Hash)
                         </span>
                     </div>
-                    <p style="font-size: 0.75rem; color: var(--text-muted); margin: 0;">
+                    <p class="text-xs text-text-muted m-0 leading-normal">
                         One-Way Key Hash: The plaintext key was hashed upon creation. If forgotten, revoke this pass and generate a new one.
                     </p>
                 {% endif %}
             </div>
 
             <!-- Parameters & Expiration Grid -->
-            <div class="card" style="padding: 1.25rem 1.5rem; background: var(--bg-surface); border: 1px solid var(--border-color);">
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 1rem;">
+            <div class="card p-5 bg-bg-surface border border-border-hairline rounded-xl shadow-card">
+                <div class="grid grid-cols-3 gap-4">
                     <!-- Expiration -->
                     <div>
-                        <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.25rem;">Expiration</div>
-                        <div style="font-size: 0.95rem; font-weight: 600; color: var(--text-primary);">
+                        <div class="text-[11px] text-text-muted font-mono uppercase tracking-wider mb-1">Expiration</div>
+                        <div class="text-xs sm:text-sm font-semibold text-text-primary">
                             {{ pass.expires_at|date:"M d, Y H:i" }}
                         </div>
-                        <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.15rem;">
+                        <div class="text-[11px] text-text-muted font-mono mt-0.5">
                             {% if pass.is_expired %}Expired{% else %}{{ pass.time_remaining_seconds }}s remaining{% endif %}
                         </div>
                     </div>
 
                     <!-- Usage / Access Count -->
                     <div>
-                        <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.25rem;">Accesses</div>
-                        <div style="font-size: 0.95rem; font-weight: 600; color: var(--text-primary);">
+                        <div class="text-[11px] text-text-muted font-mono uppercase tracking-wider mb-1">Accesses</div>
+                        <div class="text-xs sm:text-sm font-semibold text-text-primary font-mono">
                             {{ pass.access_count }} {% if pass.max_uses > 0 %}/ {{ pass.max_uses }} max{% else %}(unlimited){% endif %}
                         </div>
-                        <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.15rem;">
+                        <div class="text-[11px] text-text-muted mt-0.5">
                             Verified unlocks
                         </div>
                     </div>
 
                     <!-- Permissions -->
                     <div>
-                        <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.25rem;">Permissions</div>
-                        <div style="display: flex; gap: 0.35rem; flex-wrap: wrap;">
-                            <span class="badge" style="font-size: 0.7rem; background: rgba(16, 185, 129, 0.1); color: #34d399;">View</span>
+                        <div class="text-[11px] text-text-muted font-mono uppercase tracking-wider mb-1">Permissions</div>
+                        <div class="flex gap-1.5 flex-wrap">
+                            <span class="badge bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px]">View</span>
                             {% if pass.can_download %}
-                                <span class="badge" style="font-size: 0.7rem; background: rgba(56, 189, 248, 0.1); color: #38bdf8;">Download</span>
+                                <span class="badge bg-sky-500/10 text-sky-400 border border-sky-500/20 text-[10px]">Download</span>
                             {% else %}
-                                <span class="badge" style="font-size: 0.7rem; background: rgba(148, 163, 184, 0.1); color: #94a3b8;">No Download</span>
+                                <span class="badge bg-slate-500/10 text-slate-400 border border-slate-500/20 text-[10px]">No Download</span>
                             {% endif %}
                         </div>
                     </div>
@@ -163,15 +164,15 @@
             </div>
 
             <!-- Recipient URL Link Box -->
-            <div class="card" style="padding: 1rem 1.25rem; background: var(--bg-surface); border: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap;">
-                <div style="min-width: 0; flex: 1;">
-                    <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.2rem;">Public Recipient Endpoint URL</div>
-                    <div class="font-mono-data" style="font-size: 0.85rem; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" id="recipientUrlText" data-testid="recipient-url-display">
+            <div class="card p-4 bg-bg-surface border border-border-hairline rounded-xl shadow-card flex items-center justify-between gap-3 flex-wrap">
+                <div class="min-w-0 flex-1">
+                    <div class="text-xs text-text-muted font-mono uppercase tracking-wider mb-1">Public Recipient Endpoint URL</div>
+                    <div class="font-mono-data text-xs text-text-primary truncate" id="recipientUrlText" data-testid="recipient-url-display">
                         {{ recipient_url }}
                     </div>
                 </div>
-                <button type="button" class="btn btn-secondary btn-sm" onclick="copyRecipientUrl()" data-testid="copy-recipient-url">
-                    <span class="material-symbols-outlined" style="font-size: 15px;">link</span>
+                <button type="button" class="btn btn-secondary btn-sm shrink-0" onclick="copyRecipientUrl()" data-testid="copy-recipient-url">
+                    <span class="material-symbols-outlined text-[15px]">link</span>
                     <span id="copyUrlBtnLabel">Copy Link</span>
                 </button>
             </div>
@@ -179,36 +180,36 @@
     </div>
 
     <!-- Attached Documents Table -->
-    <div class="card" style="padding: 1.5rem; background: var(--bg-surface);">
-        <h2 style="font-size: 1.15rem; font-weight: 600; margin: 0 0 1rem; display: flex; align-items: center; gap: 0.5rem;">
-            <span class="material-symbols-outlined" style="color: var(--color-primary); font-size: 22px;">folder_shared</span>
+    <div class="card p-6 bg-bg-surface border border-border-hairline rounded-xl shadow-card">
+        <h2 class="text-base font-semibold text-text-primary mb-4 flex items-center gap-2">
+            <span class="material-symbols-outlined text-brand-emerald text-[20px]">folder_shared</span>
             Bundled Vault Records ({{ documents.count }})
         </h2>
 
-        <div style="display: flex; flex-direction: column; gap: 0.6rem;">
+        <div class="flex flex-col gap-2.5">
             {% for doc in documents %}
-                <div style="display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 1rem; border-radius: 8px; background: var(--bg-card); border: 1px solid var(--border-color); gap: 1rem; flex-wrap: wrap;" data-testid="pass-doc-item-{{ doc.id }}">
-                    <div style="display: flex; align-items: center; gap: 0.75rem; min-width: 0;">
-                        <div style="width: 36px; height: 36px; border-radius: 6px; background: rgba(99, 102, 241, 0.1); color: var(--color-primary); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                <div class="flex items-center justify-between p-3.5 rounded-lg bg-bg-card border border-border-hairline gap-3 flex-wrap" data-testid="pass-doc-item-{{ doc.id }}">
+                    <div class="flex items-center gap-3 min-w-0">
+                        <div class="w-9 h-9 rounded-lg bg-bg-surface-elevated border border-border-hairline flex items-center justify-center text-text-secondary shrink-0">
                             {% if doc.is_pdf %}
-                                <span class="material-symbols-outlined" style="font-size: 20px;">picture_as_pdf</span>
+                                <span class="material-symbols-outlined text-rose-400 text-[20px]">picture_as_pdf</span>
                             {% else %}
-                                <span class="material-symbols-outlined" style="font-size: 20px;">image</span>
+                                <span class="material-symbols-outlined text-sky-400 text-[20px]">image</span>
                             {% endif %}
                         </div>
-                        <div style="min-width: 0;">
-                            <div style="font-weight: 500; font-size: 0.9rem; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                        <div class="min-w-0">
+                            <div class="font-medium text-sm text-text-primary truncate">
                                 {{ doc.title }}
                             </div>
-                            <div style="font-size: 0.75rem; color: var(--text-muted); display: flex; align-items: center; gap: 0.5rem;">
-                                <span class="badge" style="font-size: 0.7rem;">{{ doc.get_category_display }}</span>
+                            <div class="text-xs text-text-muted flex items-center gap-2 font-mono mt-0.5">
+                                <span class="badge text-[10px] px-1.5 py-0.5 bg-bg-surface-elevated border border-border-hairline text-text-secondary">{{ doc.get_category_display }}</span>
                                 <span>{{ doc.formatted_size }}</span>
                             </div>
                         </div>
                     </div>
 
-                    <a href="{% url 'document_detail' doc.id %}" class="btn btn-secondary btn-sm" style="flex-shrink: 0;" data-testid="view-vault-doc-{{ doc.id }}">
-                        <span class="material-symbols-outlined" style="font-size: 15px;">visibility</span> Inspect
+                    <a href="{% url 'document_detail' doc.id %}" class="btn btn-secondary btn-sm shrink-0" data-testid="view-vault-doc-{{ doc.id }}">
+                        <span class="material-symbols-outlined text-[15px]">visibility</span> Inspect
                     </a>
                 </div>
             {% endfor %}

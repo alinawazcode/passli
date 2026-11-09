@@ -4,37 +4,37 @@
 {% block title %}Verify Share Key — Passli Recipient Portal{% endblock %}
 
 {% block content %}
-<div class="recipient-verify-layout">
-    <div class="recipient-verify-card">
+<div class="recipient-verify-layout py-8 px-4 flex items-center justify-center min-h-[calc(100vh-140px)]">
+    <div class="recipient-verify-card w-full max-w-[480px] bg-bg-surface border border-border-hairline rounded-2xl p-6 sm:p-8 shadow-card">
         
         <!-- Recipient Header -->
-        <div style="text-align: center; margin-bottom: 2rem;">
-            <div style="width: 52px; height: 52px; border-radius: 50%; background: #f0fdf4; border: 1px solid #bbf7d0; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 1rem;">
-                <span class="material-symbols-outlined" style="font-size: 26px; color: var(--brand-emerald);">key</span>
+        <div class="text-center mb-6">
+            <div class="w-14 h-14 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 inline-flex items-center justify-center mb-4 text-brand-emerald">
+                <span class="material-symbols-outlined text-[28px]">key</span>
             </div>
-            <h1 style="font-size: clamp(1.2rem, 4vw, 1.4rem); font-weight: 800; color: var(--text-primary); margin: 0 0 0.4rem; letter-spacing: -0.02em;">
+            <h1 class="text-xl sm:text-2xl font-extrabold text-text-primary tracking-tight mb-2">
                 Enter 8-Character Share Key
             </h1>
-            <p style="font-size: 0.85rem; color: var(--text-secondary); margin: 0; line-height: 1.5;">
-                This cryptographic pass contains <strong style="color: var(--text-primary);">{{ documents_count }} shared document record{{ documents_count|pluralize }}</strong>. Enter the access key provided by the vault owner to decrypt and view.
+            <p class="text-xs sm:text-sm text-text-secondary leading-relaxed">
+                This cryptographic pass contains <strong class="text-text-primary font-semibold">{{ documents_count }} shared document record{{ documents_count|pluralize }}</strong>. Enter the access key provided by the vault owner to decrypt and view.
             </p>
         </div>
 
         <!-- Pass Metadata Brief -->
-        <div style="background: #f8fafc; border: 1px solid var(--border-light); border-radius: var(--radius-md); padding: 0.85rem 1rem; margin-bottom: 1.75rem; font-size: 0.8rem;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
-                <span style="color: var(--text-muted); font-size: 0.75rem; font-weight: 600;">PASS REFERENCE:</span>
-                <span class="font-mono-data" style="color: var(--brand-navy); font-weight: 700; font-size: 0.75rem;">{{ pass.id|stringformat:"s"|slice:":8"|upper }}</span>
+        <div class="bg-bg-card border border-border-hairline rounded-xl p-3.5 mb-6 text-xs space-y-2">
+            <div class="flex justify-between items-center font-mono">
+                <span class="text-text-muted font-semibold text-[11px] tracking-wider uppercase">PASS REFERENCE:</span>
+                <span class="font-mono-data text-brand-emerald font-bold text-xs">{{ pass.id|stringformat:"s"|slice:":8"|upper }}</span>
             </div>
             {% if pass.title %}
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
-                <span style="color: var(--text-muted); font-size: 0.75rem; font-weight: 600;">PURPOSE:</span>
-                <span style="color: var(--text-primary); font-weight: 600;">{{ pass.title }}</span>
+            <div class="flex justify-between items-center">
+                <span class="text-text-muted font-semibold text-[11px] font-mono tracking-wider uppercase">PURPOSE:</span>
+                <span class="text-text-primary font-medium truncate max-w-[220px]">{{ pass.title }}</span>
             </div>
             {% endif %}
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <span style="color: var(--text-muted); font-size: 0.75rem; font-weight: 600;">PERMISSIONS:</span>
-                <span style="font-size: 0.75rem; font-weight: 600; color: {% if pass.can_download %}var(--brand-emerald){% else %}var(--text-secondary){% endif %};">
+            <div class="flex justify-between items-center font-mono">
+                <span class="text-text-muted font-semibold text-[11px] tracking-wider uppercase">PERMISSIONS:</span>
+                <span class="font-semibold text-[11px] {% if pass.can_download %}text-emerald-400{% else %}text-text-secondary{% endif %}">
                     {% if pass.can_download %}In-Browser View & Download{% else %}In-Browser View Only{% endif %}
                 </span>
             </div>
@@ -45,49 +45,49 @@
             {% csrf_token %}
 
             {% if form.non_field_errors %}
-                <div class="alert alert-error" style="margin-bottom: 1.25rem; font-size: 0.85rem;">
+                <div class="alert alert-error mb-4 p-3 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs">
                     {% for error in form.non_field_errors %}
                         <div>{{ error }}</div>
                     {% endfor %}
                 </div>
             {% endif %}
 
-            <div class="form-group" style="margin-bottom: 1.5rem;">
-                <label for="id_access_key" style="display: block; font-size: 0.8rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.04em;">
+            <div class="form-group mb-5">
+                <label for="id_access_key" class="block text-xs font-mono font-semibold text-text-muted uppercase tracking-wider mb-2">
                     Share Key
                 </label>
                 
-                <div style="position: relative;">
+                <div class="relative">
                     {{ form.access_key }}
                 </div>
 
                 {% if form.access_key.errors %}
-                    <div style="color: #e11d48; font-size: 0.8rem; margin-top: 0.4rem; font-weight: 600; display: flex; align-items: center; gap: 0.3rem;">
-                        <span class="material-symbols-outlined" style="font-size: 15px;">error</span>
+                    <div class="text-rose-400 text-xs mt-2 font-semibold flex items-center gap-1.5">
+                        <span class="material-symbols-outlined text-[15px]">error</span>
                         <span>{{ form.access_key.errors.0 }}</span>
                     </div>
                 {% endif %}
 
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem;">
-                    <span style="font-size: 0.75rem; color: var(--text-muted);">
-                        Format: <span class="font-mono-data">XXXX-XXXX</span>
+                <div class="flex justify-between items-center mt-2.5 text-xs">
+                    <span class="text-text-muted font-mono text-[11px]">
+                        Format: <span class="font-mono-data text-sky-400">XXXX-XXXX</span>
                     </span>
-                    <span style="font-size: 0.75rem; color: {% if remaining_attempts <= 2 %}#e11d48{% else %}var(--text-muted){% endif %}; font-weight: 600;">
+                    <span class="font-mono font-semibold text-[11px] {% if remaining_attempts <= 2 %}text-rose-400{% else %}text-text-muted{% endif %}">
                         {{ remaining_attempts }} of {{ max_attempts }} attempts remaining
                     </span>
                 </div>
             </div>
 
-            <button type="submit" class="btn btn-primary btn-block btn-lg" style="height: 48px; font-weight: 700;" data-testid="submit-share-key-btn">
-                <span class="material-symbols-outlined" style="font-size: 18px;">lock_open</span>
+            <button type="submit" class="btn btn-primary w-full h-12 justify-center font-bold tracking-wide text-sm" data-testid="submit-share-key-btn">
+                <span class="material-symbols-outlined text-[18px]">lock_open</span>
                 <span>Decrypt & Access Documents</span>
             </button>
         </form>
 
         <!-- Security Guarantee Footer -->
-        <div style="margin-top: 2rem; padding-top: 1.25rem; border-top: 1px solid var(--border-light); text-align: center;">
-            <div style="display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.75rem; color: var(--text-muted);">
-                <span class="material-symbols-outlined" style="font-size: 15px; color: var(--brand-emerald);">verified_user</span>
+        <div class="mt-6 pt-4 border-t border-border-hairline text-center">
+            <div class="inline-flex items-center gap-1.5 text-xs text-text-muted font-mono">
+                <span class="material-symbols-outlined text-[15px] text-brand-emerald">verified_user</span>
                 <span>Zero master credential exposure • Time-gated session</span>
             </div>
         </div>

@@ -4,57 +4,57 @@
 {% block title %}{{ title|default:"Access Terminated" }} — Passli{% endblock %}
 
 {% block content %}
-<div class="recipient-verify-layout">
-    <div class="recipient-verify-card" style="text-align: center;">
+<div class="recipient-verify-layout py-8 px-4 flex items-center justify-center min-h-[calc(100vh-140px)]">
+    <div class="recipient-verify-card w-full max-w-[480px] bg-bg-surface border border-border-hairline rounded-2xl p-6 sm:p-8 shadow-card text-center">
         
         <!-- Status Icon -->
         {% if status == 'revoked' %}
-            <div style="width: 64px; height: 64px; border-radius: 50%; background: #fff1f2; border: 1px solid #fecdd3; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 1.25rem;">
-                <span class="material-symbols-outlined" style="font-size: 32px; color: #e11d48;">shield_locked</span>
+            <div class="w-16 h-16 rounded-2xl bg-rose-500/10 border border-rose-500/20 inline-flex items-center justify-center mb-5 text-rose-400">
+                <span class="material-symbols-outlined text-[32px]">shield_locked</span>
             </div>
         {% elif status == 'expired' %}
-            <div style="width: 64px; height: 64px; border-radius: 50%; background: #fff7ed; border: 1px solid #fed7aa; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 1.25rem;">
-                <span class="material-symbols-outlined" style="font-size: 32px; color: #ea580c;">timer_off</span>
+            <div class="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/20 inline-flex items-center justify-center mb-5 text-amber-400">
+                <span class="material-symbols-outlined text-[32px]">timer_off</span>
             </div>
         {% elif status == 'limit_reached' %}
-            <div style="width: 64px; height: 64px; border-radius: 50%; background: #fff7ed; border: 1px solid #fed7aa; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 1.25rem;">
-                <span class="material-symbols-outlined" style="font-size: 32px; color: #d97706;">event_busy</span>
+            <div class="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/20 inline-flex items-center justify-center mb-5 text-amber-400">
+                <span class="material-symbols-outlined text-[32px]">event_busy</span>
             </div>
         {% elif status == 'locked' %}
-            <div style="width: 64px; height: 64px; border-radius: 50%; background: #fef2f2; border: 1px solid #fecaca; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 1.25rem;">
-                <span class="material-symbols-outlined" style="font-size: 32px; color: #dc2626;">lock</span>
+            <div class="w-16 h-16 rounded-2xl bg-rose-500/10 border border-rose-500/20 inline-flex items-center justify-center mb-5 text-rose-400">
+                <span class="material-symbols-outlined text-[32px]">lock</span>
             </div>
         {% elif status == 'left' %}
-            <div style="width: 64px; height: 64px; border-radius: 50%; background: #f0fdf4; border: 1px solid #bbf7d0; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 1.25rem;">
-                <span class="material-symbols-outlined" style="font-size: 32px; color: var(--brand-emerald);">verified</span>
+            <div class="w-16 h-16 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 inline-flex items-center justify-center mb-5 text-brand-emerald">
+                <span class="material-symbols-outlined text-[32px]">verified</span>
             </div>
         {% else %}
-            <div style="width: 64px; height: 64px; border-radius: 50%; background: #f1f5f9; border: 1px solid var(--border-light); display: inline-flex; align-items: center; justify-content: center; margin-bottom: 1.25rem;">
-                <span class="material-symbols-outlined" style="font-size: 32px; color: var(--text-muted);">error_outline</span>
+            <div class="w-16 h-16 rounded-2xl bg-slate-500/10 border border-slate-500/20 inline-flex items-center justify-center mb-5 text-text-muted">
+                <span class="material-symbols-outlined text-[32px]">error_outline</span>
             </div>
         {% endif %}
 
         <!-- Heading & Message -->
-        <h1 style="font-size: 1.35rem; font-weight: 800; color: var(--text-primary); margin: 0 0 0.5rem; letter-spacing: -0.02em;" data-testid="recipient-error-title">
+        <h1 class="text-xl sm:text-2xl font-extrabold text-text-primary tracking-tight mb-2" data-testid="recipient-error-title">
             {{ title|default:"Access Denied" }}
         </h1>
         
-        <p style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.6; margin: 0 0 1.75rem;" data-testid="recipient-error-message">
+        <p class="text-xs sm:text-sm text-text-secondary leading-relaxed mb-6" data-testid="recipient-error-message">
             {{ error_message|default:"The requested Share Pass is unavailable or has been deactivated." }}
         </p>
 
         <!-- Security Diagnostics Pill -->
-        <div style="background: #f8fafc; border: 1px solid var(--border-light); border-radius: var(--radius-md); padding: 0.85rem 1rem; margin-bottom: 1.75rem; text-align: left; font-size: 0.8rem;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.3rem;">
-                <span style="color: var(--text-muted); font-size: 0.75rem; font-weight: 600;">STATUS CODE:</span>
-                <span class="font-mono-data" style="font-weight: 700; color: {% if status == 'left' %}var(--brand-emerald){% else %}#e11d48{% endif %};">
+        <div class="bg-bg-card border border-border-hairline rounded-xl p-3.5 mb-6 text-left text-xs font-mono space-y-1.5">
+            <div class="flex justify-between items-center">
+                <span class="text-text-muted font-semibold text-[11px] uppercase tracking-wider">STATUS CODE:</span>
+                <span class="font-mono-data font-bold {% if status == 'left' %}text-brand-emerald{% else %}text-rose-400{% endif %}">
                     {{ status|upper|default:"INACTIVE" }}
                 </span>
             </div>
             {% if pass %}
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <span style="color: var(--text-muted); font-size: 0.75rem; font-weight: 600;">PASS REFERENCE:</span>
-                <span class="font-mono-data" style="font-weight: 600; color: var(--text-primary);">
+            <div class="flex justify-between items-center">
+                <span class="text-text-muted font-semibold text-[11px] uppercase tracking-wider">PASS REFERENCE:</span>
+                <span class="font-mono-data font-semibold text-text-primary">
                     {{ pass.id|stringformat:"s"|slice:":8"|upper }}
                 </span>
             </div>
@@ -62,13 +62,13 @@
         </div>
 
         <!-- Actions -->
-        <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+        <div class="flex flex-col gap-3">
             {% if status == 'left' %}
-                <a href="{% url 'landing' %}" class="btn btn-secondary btn-block">
+                <a href="{% url 'landing' %}" class="btn btn-secondary w-full justify-center">
                     <span>Return to Passli Home</span>
                 </a>
             {% else %}
-                <a href="{% url 'landing' %}" class="btn btn-secondary btn-block">
+                <a href="{% url 'landing' %}" class="btn btn-secondary w-full justify-center">
                     <span>Learn About Passli Ephemeral Sharing</span>
                 </a>
             {% endif %}
