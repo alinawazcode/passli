@@ -32,32 +32,32 @@
   --s-font-24: 24px;
   --s-font-28: 28px;
 
-  /* Semantic Colors */
-  --s-color-bg: #f8fafc;
-  --s-color-surface: #ffffff;
-  --s-color-subtle: #f1f5f9;
-  --s-color-text: #0f172a;
-  --s-color-secondary: #334155;
+  /* Semantic Colors - Hallmark Precision Obsidian Vault Palette */
+  --s-color-bg: #0b0f17;
+  --s-color-surface: #111827;
+  --s-color-subtle: #1e293b;
+  --s-color-text: #f8fafc;
+  --s-color-secondary: #94a3b8;
   --s-color-muted: #64748b;
-  --s-color-border: #e2e8f0;
-  --s-color-input-border: #cbd5e1;
-  --s-color-navy: #0f172a;
-  --s-color-navy-hover: #1e293b;
-  --s-color-navy-focus: rgba(15, 23, 42, 0.1);
+  --s-color-border: rgba(255, 255, 255, 0.08);
+  --s-color-input-border: rgba(255, 255, 255, 0.16);
+  --s-color-navy: #10b981;
+  --s-color-navy-hover: #059669;
+  --s-color-navy-focus: rgba(16, 185, 129, 0.25);
   --s-color-white: #ffffff;
 
-  --s-color-emerald: #047857;
-  --s-color-emerald-bg: #f0fdf4;
-  --s-color-emerald-border: #a7f3d0;
+  --s-color-emerald: #10b981;
+  --s-color-emerald-bg: rgba(16, 185, 129, 0.12);
+  --s-color-emerald-border: rgba(16, 185, 129, 0.3);
 
-  --s-color-warning-text: #b45309;
-  --s-color-warning-bg: #fffbeb;
-  --s-color-warning-border: #fde68a;
+  --s-color-warning-text: #fbbf24;
+  --s-color-warning-bg: rgba(245, 158, 11, 0.12);
+  --s-color-warning-border: rgba(245, 158, 11, 0.3);
 
-  --s-color-danger: #b91c1c;
-  --s-color-danger-bg: #fef2f2;
-  --s-color-danger-border: #fecaca;
-  --s-color-backdrop: rgba(15, 23, 42, 0.5);
+  --s-color-danger: #f87171;
+  --s-color-danger-bg: rgba(239, 68, 68, 0.12);
+  --s-color-danger-border: rgba(239, 68, 68, 0.3);
+  --s-color-backdrop: rgba(11, 15, 23, 0.85);
 
   /* Fonts & Weights */
   --s-font-ui: var(--font-sans, 'Geist', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif);
@@ -73,9 +73,9 @@
   --s-radius-card: 16px;
   --s-radius-sheet: 20px;
   --s-radius-pill: 9999px;
-  --s-shadow-card: 0 1px 2px rgba(15, 23, 42, 0.05);
-  --s-shadow-sheet: 0 -4px 24px rgba(15, 23, 42, 0.15);
-  --s-shadow-dialog: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  --s-shadow-card: 0 0 0 1px rgba(255, 255, 255, 0.08), 0 2px 4px rgba(0, 0, 0, 0.4);
+  --s-shadow-sheet: 0 -4px 24px rgba(0, 0, 0, 0.7);
+  --s-shadow-dialog: 0 20px 25px -5px rgba(0, 0, 0, 0.6), 0 10px 10px -5px rgba(0, 0, 0, 0.4);
 
   /* Transitions */
   --s-duration: 150ms;
@@ -243,9 +243,9 @@
 }
 
 .settings-alert-info {
-  background-color: #eff6ff;
-  border: 1px solid #bfdbfe;
-  color: #1e40af;
+  background-color: rgba(56, 189, 248, 0.12);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  color: #38bdf8;
 }
 
 .settings-alert-text {
