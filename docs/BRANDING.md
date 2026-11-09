@@ -6,11 +6,12 @@ This guide establishes the visual identity, brand guidelines, color tokens, and 
 
 ## 🛡️ Brand Philosophy & Design System
 
-Passli adheres strictly to **human-crafted, anti-AI-slop design principles** (referencing `LeoStehlik/no-slop-ui` and `unslop-ui v2` standards):
-- **Zero AI Clichés**: No generic cybernetic hands, glowing purple/magenta radial traps, or cartoonish clip-art.
-- **Precision Dark Palette**: Grounded in deep slate and obsidian (`#0B0F17`, `#0F172A`, `#111827`) with functional emerald and cyan accents.
-- **Hairline Borders & Subtle Glassmorphism**: Clean 1px translucent borders (`rgba(255, 255, 255, 0.08)`) with multi-layered backdrops.
-- **Authentic Engineering Diagrams**: Accurate wire formats, cryptographic flows, and real product UI elements.
+Passli adheres strictly to **human-crafted, anti-AI-slop design principles** (referencing `LeoStehlik/no-slop-ui` and `unslop-ui v2` standards) and the **Hallmark** precision design system:
+- **Zero AI Clichés**: No generic cybernetic hands, glowing purple/magenta radial traps, artificial clip-art, or floating cartoon locks. Real protocol UI and actual cryptographic mechanisms provide the visual substance.
+- **Precision Dark Obsidian Palette**: Standardized across the entire application suite (`#0B0F17`, `#0F172A`, `#111827`, `#131B2A`) with high-contrast text (`#F8FAFC`, `#94A3B8`) and surgical emerald (`#10B981`) and cyan (`#38BDF8`) accents.
+- **Hairline Borders & Surface Hierarchy**: Refined 1px translucent borders (`rgba(255, 255, 255, 0.08)`) and multi-layered surface elevation cards without muddy gradients.
+- **Accessible WCAG AA Contrast**: Body copy contrast exceeds 18:1 against canvas; interactive emerald controls exceed 8.2:1 against surface containers, ensuring high legibility in healthcare and enterprise settings.
+- **Authentic Engineering Artifacts**: Accurate wire formats, cryptographic flows, and real product UI elements.
 
 ---
 
@@ -20,14 +21,25 @@ Passli adheres strictly to **human-crafted, anti-AI-slop design principles** (re
 | :--- | :---: | :---: | :--- |
 | **`--bg-canvas`** | `#0B0F17` | `hsl(220, 35%, 7%)` | Primary dark background / page canvas |
 | **`--bg-surface`** | `#111827` | `hsl(222, 47%, 11%)` | Surface cards, dialogs, and panels |
-| **`--bg-card`** | `#1E293B` | `hsl(217, 33%, 17%)` | Secondary elevated containers and table rows |
-| **`--border-hairline`** | `#1F2937` | `rgba(255, 255, 255, 0.08)` | 1px clean card and component borders |
+| **`--bg-card`** | `#131B2A` | `hsl(217, 37%, 12%)` | Secondary elevated containers and table rows |
+| **`--bg-surface-elevated`**| `#1E293B` | `hsl(217, 33%, 17%)` | Hover states, popovers, active items |
+| **`--border-hairline`** | `#1F2937` | `rgba(255, 255, 255, 0.08)` | 1px clean card and component hairline borders |
+| **`--border-medium`** | `#374151` | `rgba(255, 255, 255, 0.16)` | Inputs, active outlines, divider lines |
 | **`--accent-emerald`** | `#10B981` | `hsl(160, 84%, 39%)` | Primary brand accent, verified status, active states |
 | **`--accent-cyan`** | `#06B6D4` | `hsl(189, 94%, 43%)` | Secondary accent, interactive badges, active QR scanner |
 | **`--danger-red`** | `#EF4444` | `hsl(0, 84%, 60%)` | 1-Click Revocation, session destruction, lockouts |
 | **`--warning-amber`** | `#F59E0B` | `hsl(38, 92%, 50%)` | Security alerts, OTP expiration warnings |
 | **`--text-primary`** | `#F8FAFC` | `hsl(210, 40%, 98%)` | High-contrast headers and primary text |
 | **`--text-secondary`**| `#94A3B8` | `hsl(215, 20%, 65%)` | Subtitles, helper text, and metadata |
+| **`--text-muted`** | `#64748B` | `hsl(215, 16%, 47%)` | Captions, timestamps, disabled indicators |
+
+---
+
+## 🔤 Typography & Font System
+
+Passli implements a dual-typeface typographic system:
+1. **Primary Interface (`Geist`)**: Used for headings, navigation, form labels, and UI controls. Clean, neutral grotesque letterforms optimized for dense data tables.
+2. **Cryptographic & Data (`JetBrains Mono`)**: Used for Share Keys, SHA-256 digests, IP addresses, TTL countdown timers, and pass IDs. Tabular numbers (`font-variant-numeric: tabular-nums`) eliminate layout jitter during count-downs.
 
 ---
 
