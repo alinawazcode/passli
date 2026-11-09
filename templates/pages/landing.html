@@ -65,7 +65,7 @@
 </section>
 
 <!-- Interactive Share Pass Generator Sandbox -->
-<section class="section section-subtle" id="generator-sandbox">
+<section class="section section-subtle reveal-on-scroll" id="generator-sandbox">
     <div class="container">
         <div class="section-header">
             <h2 class="section-title">Interactive Share Pass Generator</h2>
@@ -100,7 +100,7 @@
                             <!-- Document Item 1 -->
                             <label class="doc-item-row selected">
                                 <div class="doc-item-left">
-                                    <input type="checkbox" class="sim-doc-checkbox" checked style="accent-color: var(--brand-navy); width: 16px; height: 16px;">
+                                    <input type="checkbox" class="sim-doc-checkbox" checked style="accent-color: var(--brand-emerald); width: 16px; height: 16px;">
                                     <div class="doc-icon-badge icon-red">
                                         <span class="material-symbols-outlined" style="font-size: 18px;">picture_as_pdf</span>
                                     </div>
@@ -117,7 +117,7 @@
                             <!-- Document Item 2 -->
                             <label class="doc-item-row selected">
                                 <div class="doc-item-left">
-                                    <input type="checkbox" class="sim-doc-checkbox" checked style="accent-color: var(--brand-navy); width: 16px; height: 16px;">
+                                    <input type="checkbox" class="sim-doc-checkbox" checked style="accent-color: var(--brand-emerald); width: 16px; height: 16px;">
                                     <div class="doc-icon-badge icon-blue">
                                         <span class="material-symbols-outlined" style="font-size: 18px;">badge</span>
                                     </div>
@@ -134,7 +134,7 @@
                             <!-- Document Item 3 -->
                             <label class="doc-item-row">
                                 <div class="doc-item-left">
-                                    <input type="checkbox" class="sim-doc-checkbox" style="accent-color: var(--brand-navy); width: 16px; height: 16px;">
+                                    <input type="checkbox" class="sim-doc-checkbox" style="accent-color: var(--brand-emerald); width: 16px; height: 16px;">
                                     <div class="doc-icon-badge icon-amber">
                                         <span class="material-symbols-outlined" style="font-size: 18px;">description</span>
                                     </div>
@@ -163,27 +163,27 @@
                     </div>
 
                     <!-- Access Permissions -->
-                    <div style="padding-top: 1rem; border-top: 1px solid var(--border-light);">
+                    <div style="padding-top: 1rem; border-top: 1px solid var(--border-hairline);">
                         <span class="doc-selection-title" style="display: block; margin-bottom: 0.4rem;">Security Guardrails</span>
                         <div style="display: flex; flex-direction: column; gap: 0.4rem; font-size: 0.8rem;">
                             <div style="display: flex; justify-content: space-between;">
                                 <span>Allow In-Browser Decrypted View</span>
-                                <input type="checkbox" checked disabled style="accent-color: var(--brand-navy);">
+                                <input type="checkbox" checked disabled style="accent-color: var(--brand-emerald);">
                             </div>
                             <div style="display: flex; justify-content: space-between;">
                                 <span>Allow Document File Download</span>
-                                <input type="checkbox" id="sim-perm-download" checked style="accent-color: var(--brand-navy);">
+                                <input type="checkbox" id="sim-perm-download" checked style="accent-color: var(--brand-emerald);">
                             </div>
                         </div>
                     </div>
                 </div>
 
                 <!-- Action Button -->
-                <div style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--border-light); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
+                <div style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--border-hairline); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
                     <button type="button" id="sim-generate-btn" class="btn btn-primary btn-sm">
                         <span class="material-symbols-outlined" style="font-size: 16px;">lock_clock</span> Generate Pass & Encrypt Link
                     </button>
-                    <button type="button" style="background: none; border: none; font-size: 0.75rem; color: #e11d48; cursor: pointer; display: flex; align-items: center; gap: 0.2rem;">
+                    <button type="button" style="background: none; border: none; font-size: 0.75rem; color: #f87171; cursor: pointer; display: flex; align-items: center; gap: 0.2rem;">
                         <span class="material-symbols-outlined" style="font-size: 14px;">delete_forever</span> Revoke
                     </button>
                 </div>
@@ -194,7 +194,7 @@
                 <div>
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
                         <span style="font-size: 0.7rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;" class="font-mono-data">Pass Output Artifact</span>
-                        <span style="font-size: 0.65rem; font-weight: 700; color: var(--brand-emerald); background: var(--bg-emerald-light); padding: 0.15rem 0.45rem; border-radius: 4px; border: 1px solid var(--border-emerald);" class="font-mono-data">LIVE ENCRYPTION</span>
+                        <span style="font-size: 0.65rem; font-weight: 700; color: var(--brand-emerald); background: rgba(16, 185, 129, 0.12); padding: 0.15rem 0.45rem; border-radius: 4px; border: 1px solid rgba(16, 185, 129, 0.25);" class="font-mono-data">LIVE ENCRYPTION</span>
                     </div>
 
                     <!-- Clean Crisp SVG QR Code Presentation -->
@@ -267,7 +267,7 @@
                     <div class="timer-card">
                         <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem;">
                             <span style="display: flex; align-items: center; gap: 0.25rem;">
-                                <span class="material-symbols-outlined" style="font-size: 14px; color: #d97706;">timer</span> Pass validity:
+                                <span class="material-symbols-outlined" style="font-size: 14px; color: #f59e0b;">timer</span> Pass validity:
                             </span>
                             <span id="sim-expiry-text" style="font-weight: 700;" class="font-mono-data">30 mins</span>
                         </div>
@@ -290,7 +290,7 @@
 </section>
 
 <!-- Real-World Use Cases (Featuring Authentic Unsplash Photography) -->
-<section class="section" id="use-cases">
+<section class="section reveal-on-scroll" id="use-cases">
     <div class="container">
         <div class="section-header">
             <h2 class="section-title">Built for the moments when privacy matters most</h2>
@@ -356,36 +356,36 @@
 </section>
 
 <!-- Sharing Protocol Workflow -->
-<section class="section section-subtle" id="how-it-works">
+<section class="section section-subtle reveal-on-scroll" id="how-it-works">
     <div class="container">
         <div class="section-header">
             <h2 class="section-title">How Controlled Sharing Operates</h2>
             <p class="section-subtitle">A straightforward three-stage architecture keeping you in complete ownership.</p>
         </div>
 
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); gap: 1.5rem;">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap: 1.5rem;">
             <!-- Step 1 -->
-            <div class="feature-tile" style="border-top: 3px solid var(--brand-navy);">
-                <div style="font-family: var(--font-mono); font-size: 0.8rem; font-weight: 700; color: var(--brand-navy); margin-bottom: 0.5rem;">STEP 01</div>
-                <h3 style="font-size: 1.05rem; font-weight: 700; color: var(--brand-navy); margin-bottom: 0.4rem;">Select & Generate</h3>
+            <div class="feature-tile protocol-step-card" style="border-top: 3px solid var(--text-primary);">
+                <div style="font-family: var(--font-mono); font-size: 0.8rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem;">STEP 01</div>
+                <h3 style="font-size: 1.05rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.4rem;">Select & Generate</h3>
                 <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.55;">
                     Choose the specific files you want to present from your vault, set expiration (10m - 24h), and generate a Share Pass with a QR code and random Share Key.
                 </p>
             </div>
 
             <!-- Step 2 -->
-            <div class="feature-tile" style="border-top: 3px solid var(--brand-emerald);">
+            <div class="feature-tile protocol-step-card" style="border-top: 3px solid var(--brand-emerald);">
                 <div style="font-family: var(--font-mono); font-size: 0.8rem; font-weight: 700; color: var(--brand-emerald); margin-bottom: 0.5rem;">STEP 02</div>
-                <h3 style="font-size: 1.05rem; font-weight: 700; color: var(--brand-navy); margin-bottom: 0.4rem;">Recipient Scans & Authenticates</h3>
+                <h3 style="font-size: 1.05rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.4rem;">Recipient Scans & Authenticates</h3>
                 <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.55;">
                     The recipient scans the QR code to open the isolated access portal, then supplies the 8-character key. The server verifies the cryptographic hash before releasing files.
                 </p>
             </div>
 
             <!-- Step 3 -->
-            <div class="feature-tile" style="border-top: 3px solid var(--brand-blue);">
-                <div style="font-family: var(--font-mono); font-size: 0.8rem; font-weight: 700; color: var(--brand-blue); margin-bottom: 0.5rem;">STEP 03</div>
-                <h3 style="font-size: 1.05rem; font-weight: 700; color: var(--brand-navy); margin-bottom: 0.4rem;">Automatic Shredding</h3>
+            <div class="feature-tile protocol-step-card" style="border-top: 3px solid var(--brand-cyan);">
+                <div style="font-family: var(--font-mono); font-size: 0.8rem; font-weight: 700; color: var(--brand-cyan); margin-bottom: 0.5rem;">STEP 03</div>
+                <h3 style="font-size: 1.05rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.4rem;">Automatic Shredding</h3>
                 <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.55;">
                     The recipient views or downloads only authorized files. As soon as the pass expires or is revoked, access is immediately blocked on the server.
                 </p>
@@ -395,7 +395,7 @@
 </section>
 
 <!-- Defensive Capabilities Grid -->
-<section class="section" id="features">
+<section class="section reveal-on-scroll" id="features">
     <div class="container">
         <div style="max-width: 600px; margin-bottom: 2.5rem;">
             <h2 class="section-title" data-testid="features-title">Engineered for absolute document sovereignty</h2>
@@ -411,7 +411,7 @@
                 <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.55;">
                     Server-side authenticated encryption ensures your documents are protected at rest.
                 </p>
-                <div style="margin-top: 1rem; padding-top: 0.75rem; border-top: 1px solid var(--border-light); font-size: 0.7rem; color: var(--text-dim);" class="font-mono-data">
+                <div style="margin-top: 1rem; padding-top: 0.75rem; border-top: 1px solid var(--border-hairline); font-size: 0.7rem; color: var(--text-dim);" class="font-mono-data">
                     AES-256-GCM
                 </div>
             </div>
@@ -424,7 +424,7 @@
                 <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.55;">
                     Require separate Share Key entry before the recipient browser is authorized to decrypt the ephemeral bundle.
                 </p>
-                <div style="margin-top: 1rem; padding-top: 0.75rem; border-top: 1px solid var(--border-light); font-size: 0.7rem; color: var(--text-dim);" class="font-mono-data">
+                <div style="margin-top: 1rem; padding-top: 0.75rem; border-top: 1px solid var(--border-hairline); font-size: 0.7rem; color: var(--text-dim);" class="font-mono-data">
                     Dual-Layer Endpoint Auth
                 </div>
             </div>
@@ -437,7 +437,7 @@
                 <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.55;">
                     Cryptographic shredding where access keys are permanently erased once the timer lapses or pass is revoked.
                 </p>
-                <div style="margin-top: 1rem; padding-top: 0.75rem; border-top: 1px solid var(--border-light); font-size: 0.7rem; color: var(--text-dim);" class="font-mono-data">
+                <div style="margin-top: 1rem; padding-top: 0.75rem; border-top: 1px solid var(--border-hairline); font-size: 0.7rem; color: var(--text-dim);" class="font-mono-data">
                     Server-side key sanitization
                 </div>
             </div>
@@ -450,7 +450,7 @@
                 <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.55;">
                     Immutable server logs pinpointing exact view timestamps, IP geolocation, recipient actions, and validation status.
                 </p>
-                <div style="margin-top: 1rem; padding-top: 0.75rem; border-top: 1px solid var(--border-light); font-size: 0.7rem; color: var(--text-dim);" class="font-mono-data">
+                <div style="margin-top: 1rem; padding-top: 0.75rem; border-top: 1px solid var(--border-hairline); font-size: 0.7rem; color: var(--text-dim);" class="font-mono-data">
                     Verifiable Audit Trail
                 </div>
             </div>
@@ -459,7 +459,7 @@
 </section>
 
 <!-- Institutional Security Comparison Table -->
-<section class="section section-subtle" id="security">
+<section class="section section-subtle reveal-on-scroll" id="security">
     <div class="container">
         <div class="section-header">
             <h2 class="section-title">Institutional Security Comparison</h2>
@@ -485,7 +485,7 @@
                         <td style="font-weight: 600; color: var(--text-primary);">Account Credential Exposure</td>
                         <td class="highlight-col">Zero exposure (Ephemeral recipient token)</td>
                         <td>Shared access exposes account / folders</td>
-                        <td style="color: #e11d48;">Replicated permanently on recipient host</td>
+                        <td style="color: #f87171;">Replicated permanently on recipient host</td>
                     </tr>
                     <tr>
                         <td style="font-weight: 600; color: var(--text-primary);">Granular Sub-File Permissions</td>
@@ -500,7 +500,7 @@
 </section>
 
 <!-- Bottom CTA -->
-<section style="padding: 4.5rem 0; background-color: var(--bg-surface); text-align: center; border-top: 1px solid var(--border-light);">
+<section style="padding: 4.5rem 0; background-color: var(--bg-surface); text-align: center; border-top: 1px solid var(--border-hairline);" class="reveal-on-scroll">
     <div class="container">
         <h2 class="section-title">Ready to secure your personal records perimeter?</h2>
         <p class="section-subtitle" style="max-width: 550px; margin: 0.5rem auto 1.5rem;">Launch your vault immediately. Share sensitive files with complete confidence and total control.</p>
@@ -514,4 +514,73 @@
         </div>
     </div>
 </section>
+{% endblock %}
+
+{% block extra_js %}
+<script defer src="{% static 'js/vendor/gsap.min.js' %}"></script>
+<script defer src="{% static 'js/vendor/ScrollTrigger.min.js' %}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    if (typeof gsap === 'undefined') return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+    if (typeof ScrollTrigger !== 'undefined') {
+        gsap.registerPlugin(ScrollTrigger);
+    }
+
+    // 1. Hero entrance sequence
+    const heroTl = gsap.timeline({ defaults: { ease: 'power3.out', duration: 0.6 } });
+    heroTl.from('.hero-title', { opacity: 0, y: 24, duration: 0.7 })
+          .from('.hero-subtitle', { opacity: 0, y: 16 }, '-=0.4')
+          .from('.hero-cta > *', { opacity: 0, y: 12, stagger: 0.1 }, '-=0.3')
+          .from('.hero-trust-list > *', { opacity: 0, y: 10, stagger: 0.08 }, '-=0.2')
+          .from('.hero-visual-frame', { opacity: 0, scale: 0.98, duration: 0.8 }, '-=0.6');
+
+    // 2. Subtle Parallax on Hero Image only
+    if (typeof ScrollTrigger !== 'undefined') {
+        gsap.to('.hero-visual-img', {
+            yPercent: 8,
+            ease: 'none',
+            scrollTrigger: {
+                trigger: '.hero-section',
+                start: 'top top',
+                end: 'bottom top',
+                scrub: true
+            }
+        });
+
+        // 3. Pinned/Scrubbed "How it works" Protocol Timeline
+        const protocolCards = document.querySelectorAll('.protocol-step-card');
+        if (protocolCards.length > 0) {
+            gsap.from(protocolCards, {
+                opacity: 0.35,
+                y: 16,
+                stagger: 0.2,
+                scrollTrigger: {
+                    trigger: '#how-it-works',
+                    start: 'top 75%',
+                    end: 'bottom 85%',
+                    scrub: 0.8
+                }
+            });
+        }
+
+        // 4. Section Reveals with stagger
+        const revealSections = document.querySelectorAll('.reveal-on-scroll');
+        revealSections.forEach(sec => {
+            gsap.from(sec, {
+                opacity: 0,
+                y: 18,
+                duration: 0.5,
+                ease: 'power2.out',
+                scrollTrigger: {
+                    trigger: sec,
+                    start: 'top 85%',
+                    toggleActions: 'play none none none'
+                }
+            });
+        });
+    }
+});
+</script>
 {% endblock %}
