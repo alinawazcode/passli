@@ -4,76 +4,71 @@
 {% block title %}Admin Management Console — Passli{% endblock %}
 
 {% block content %}
-<div class="vault-container" style="padding-bottom: 4rem;">
-    <div class="container">
+<div class="vault-container pb-16 max-w-7xl mx-auto px-4 sm:px-6">
+    <div class="container mx-auto">
 
         <!-- Top Admin Header -->
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem; border-bottom: 1px solid var(--border-light); padding-bottom: 1.25rem;">
+        <div class="flex justify-between items-center mb-6 flex-wrap gap-4 border-b border-border-hairline pb-5">
             <div>
-                <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.25rem;">
-                    <a href="{% url 'dashboard' %}" style="color: var(--text-muted); text-decoration: none;">Vault</a>
+                <div class="flex items-center gap-2 text-xs text-text-muted mb-1.5 font-mono">
+                    <a href="{% url 'dashboard' %}" class="text-text-muted hover:text-brand-emerald transition-colors">Vault</a>
                     <span>/</span>
-                    <span style="color: var(--brand-navy); font-weight: 600;">System Administration</span>
+                    <span class="text-text-primary font-semibold">System Administration</span>
                 </div>
-                <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
-                    <h1 style="font-size: 1.75rem; font-weight: 800; color: var(--brand-navy); letter-spacing: -0.02em; margin: 0;">
+                <div class="flex items-center gap-3 flex-wrap">
+                    <h1 class="text-2xl font-bold tracking-tight text-text-primary">
                         Platform Administration Console
                     </h1>
-                    <span class="status-badge font-mono-data" style="font-size: 0.7rem; background: #e0e7ff; color: #4338ca; border: 1px solid #c7d2fe;">
-                        <span class="pulse-dot" style="background: #4338ca;"></span>
+                    <span class="status-badge font-mono-data text-[10px] bg-indigo-500/15 text-indigo-400 border border-indigo-500/30 px-2 py-0.5 rounded-full inline-flex items-center gap-1.5 font-semibold">
+                        <span class="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse"></span>
                         <span>SUPERADMIN ROOT</span>
                     </span>
                 </div>
             </div>
 
-            <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+            <div class="flex items-center gap-2.5 flex-wrap">
                 <a href="{% url 'account_settings' %}" class="btn btn-secondary btn-sm" data-testid="to-account-settings">
-                    <span class="material-symbols-outlined" style="font-size: 16px;">manage_accounts</span> Account Settings
+                    <span class="material-symbols-outlined text-[16px]">manage_accounts</span> Account Settings
                 </a>
                 <a href="{% url 'admin:index' %}" class="btn btn-secondary btn-sm" target="_blank" data-testid="to-django-admin">
-                    <span class="material-symbols-outlined" style="font-size: 16px;">settings</span> Django Backend Admin
+                    <span class="material-symbols-outlined text-[16px]">settings</span> Django Backend Admin
                 </a>
                 <a href="{% url 'dashboard' %}" class="btn btn-primary btn-sm">
-                    <span class="material-symbols-outlined" style="font-size: 16px;">person</span> My Personal Vault
+                    <span class="material-symbols-outlined text-[16px]">person</span> My Personal Vault
                 </a>
             </div>
         </div>
 
         <!-- Admin Tab Navigation Toolbar -->
-        <div style="background: var(--bg-card); border: 1px solid var(--border-light); border-radius: var(--radius-lg); padding: 0.5rem; margin-bottom: 1.75rem; box-shadow: var(--shadow-sm); overflow-x: auto;">
-            <nav style="display: flex; gap: 0.4rem; min-width: 600px;">
+        <div class="bg-bg-surface border border-border-hairline rounded-xl p-1.5 mb-6 shadow-card overflow-x-auto">
+            <nav class="flex gap-1.5 min-w-[620px]">
                 <a href="{% url 'admin_dashboard_overview' %}" 
-                   class="btn btn-sm {% if active_tab == 'overview' %}btn-primary{% else %}btn-secondary{% endif %}" 
-                   style="display: inline-flex; align-items: center; gap: 0.4rem; font-weight: 600; border-radius: var(--radius-md);">
-                    <span class="material-symbols-outlined" style="font-size: 17px;">monitoring</span>
+                   class="btn btn-sm {% if active_tab == 'overview' %}btn-primary{% else %}btn-secondary{% endif %} inline-flex items-center gap-1.5 font-medium rounded-lg">
+                    <span class="material-symbols-outlined text-[17px]">monitoring</span>
                     <span>Platform Overview</span>
                 </a>
 
                 <a href="{% url 'admin_dashboard_users' %}" 
-                   class="btn btn-sm {% if active_tab == 'users' %}btn-primary{% else %}btn-secondary{% endif %}" 
-                   style="display: inline-flex; align-items: center; gap: 0.4rem; font-weight: 600; border-radius: var(--radius-md);">
-                    <span class="material-symbols-outlined" style="font-size: 17px;">group</span>
+                   class="btn btn-sm {% if active_tab == 'users' %}btn-primary{% else %}btn-secondary{% endif %} inline-flex items-center gap-1.5 font-medium rounded-lg">
+                    <span class="material-symbols-outlined text-[17px]">group</span>
                     <span>User Accounts</span>
                 </a>
 
                 <a href="{% url 'admin_dashboard_documents' %}" 
-                   class="btn btn-sm {% if active_tab == 'documents' %}btn-primary{% else %}btn-secondary{% endif %}" 
-                   style="display: inline-flex; align-items: center; gap: 0.4rem; font-weight: 600; border-radius: var(--radius-md);">
-                    <span class="material-symbols-outlined" style="font-size: 17px;">folder_managed</span>
+                   class="btn btn-sm {% if active_tab == 'documents' %}btn-primary{% else %}btn-secondary{% endif %} inline-flex items-center gap-1.5 font-medium rounded-lg">
+                    <span class="material-symbols-outlined text-[17px]">folder_managed</span>
                     <span>Vault Storage & Files</span>
                 </a>
 
                 <a href="{% url 'admin_dashboard_passes' %}" 
-                   class="btn btn-sm {% if active_tab == 'passes' %}btn-primary{% else %}btn-secondary{% endif %}" 
-                   style="display: inline-flex; align-items: center; gap: 0.4rem; font-weight: 600; border-radius: var(--radius-md);">
-                    <span class="material-symbols-outlined" style="font-size: 17px;">qr_code_2</span>
+                   class="btn btn-sm {% if active_tab == 'passes' %}btn-primary{% else %}btn-secondary{% endif %} inline-flex items-center gap-1.5 font-medium rounded-lg">
+                    <span class="material-symbols-outlined text-[17px]">qr_code_2</span>
                     <span>Share Pass Operations</span>
                 </a>
 
                 <a href="{% url 'admin_dashboard_audit' %}" 
-                   class="btn btn-sm {% if active_tab == 'audit' %}btn-primary{% else %}btn-secondary{% endif %}" 
-                   style="display: inline-flex; align-items: center; gap: 0.4rem; font-weight: 600; border-radius: var(--radius-md);">
-                    <span class="material-symbols-outlined" style="font-size: 17px;">security</span>
+                   class="btn btn-sm {% if active_tab == 'audit' %}btn-primary{% else %}btn-secondary{% endif %} inline-flex items-center gap-1.5 font-medium rounded-lg">
+                    <span class="material-symbols-outlined text-[17px]">security</span>
                     <span>Global Audit & Threats</span>
                 </a>
             </nav>

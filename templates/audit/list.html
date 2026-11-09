@@ -4,99 +4,99 @@
 {% block title %}Cryptographic Access Audit Trail — Passli Vault{% endblock %}
 
 {% block content %}
-<div class="vault-container" style="padding-bottom: 4rem;">
-    <div class="container">
+<div class="vault-container pb-16 max-w-7xl mx-auto px-4 sm:px-6">
+    <div class="container mx-auto">
 
         <!-- Top Header & Breadcrumb -->
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.75rem; flex-wrap: wrap; gap: 1rem;">
+        <div class="flex justify-between items-center mb-6 flex-wrap gap-4">
             <div>
-                <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.25rem;">
-                    <a href="{% url 'dashboard' %}" style="color: var(--text-muted); text-decoration: none;">Dashboard</a>
+                <div class="flex items-center gap-2 text-xs text-text-muted mb-1.5 font-mono">
+                    <a href="{% url 'dashboard' %}" class="text-text-muted hover:text-brand-emerald transition-colors">Dashboard</a>
                     <span>/</span>
-                    <span style="color: var(--text-primary);">Security Audit Logs</span>
+                    <span class="text-text-primary">Security Audit Logs</span>
                 </div>
-                <h1 style="font-size: 1.75rem; font-weight: 700; color: var(--brand-navy); letter-spacing: -0.02em; margin: 0;">
+                <h1 class="text-2xl font-bold tracking-tight text-text-primary">
                     Access & Verification Audit Trail
                 </h1>
             </div>
 
-            <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+            <div class="flex items-center gap-3 flex-wrap">
                 <a href="{% url 'share_list' %}" class="btn btn-secondary btn-sm" data-testid="audit-to-passes">
-                    <span class="material-symbols-outlined" style="font-size: 16px;">qr_code_2</span> Manage Passes
+                    <span class="material-symbols-outlined text-[16px]">qr_code_2</span> Manage Passes
                 </a>
                 <a href="{% url 'share_create' %}" class="btn btn-primary btn-sm" data-testid="audit-new-pass">
-                    <span class="material-symbols-outlined" style="font-size: 16px;">add</span> New Share Pass
+                    <span class="material-symbols-outlined text-[16px]">add</span> New Share Pass
                 </a>
             </div>
         </div>
 
         <!-- Metric Cards Grid -->
-        <div class="stats-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); gap: 1rem; margin-bottom: 2rem;">
+        <div class="stats-grid grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             <!-- Metric 1: Total Events -->
-            <div class="stat-card" style="background: var(--bg-card); border: 1px solid var(--border-light); border-radius: var(--radius-lg); padding: 1.25rem; box-shadow: var(--shadow-sm);">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-                    <span class="font-mono-data" style="font-size: 0.7rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Total Events Logged</span>
-                    <span class="material-symbols-outlined" style="font-size: 18px; color: var(--brand-navy);">receipt_long</span>
+            <div class="stat-card bg-bg-surface border border-border-hairline rounded-xl p-5 shadow-card">
+                <div class="flex justify-between items-center mb-2">
+                    <span class="font-mono-data text-xs font-semibold text-text-muted uppercase tracking-wider">Total Events Logged</span>
+                    <span class="material-symbols-outlined text-[18px] text-text-secondary">receipt_long</span>
                 </div>
-                <div class="font-mono-data" style="font-size: 1.6rem; font-weight: 800; color: var(--brand-navy);" data-testid="metric-total-events">
+                <div class="font-mono-data text-2xl sm:text-3xl font-bold text-text-primary" data-testid="metric-total-events">
                     {{ total_events }}
                 </div>
-                <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem;">
+                <div class="text-xs text-text-muted mt-1 font-mono">
                     Immutable session entries
                 </div>
             </div>
 
             <!-- Metric 2: Verified Key Unlocks -->
-            <div class="stat-card" style="background: var(--bg-card); border: 1px solid var(--border-light); border-radius: var(--radius-lg); padding: 1.25rem; box-shadow: var(--shadow-sm);">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-                    <span class="font-mono-data" style="font-size: 0.7rem; font-weight: 700; color: var(--brand-emerald); text-transform: uppercase;">Verified Unlocks</span>
-                    <span class="material-symbols-outlined" style="font-size: 18px; color: var(--brand-emerald);">verified</span>
+            <div class="stat-card bg-bg-surface border border-border-hairline rounded-xl p-5 shadow-card">
+                <div class="flex justify-between items-center mb-2">
+                    <span class="font-mono-data text-xs font-semibold text-brand-emerald uppercase tracking-wider">Verified Unlocks</span>
+                    <span class="material-symbols-outlined text-[18px] text-brand-emerald">verified</span>
                 </div>
-                <div class="font-mono-data" style="font-size: 1.6rem; font-weight: 800; color: var(--brand-emerald);" data-testid="metric-verified-unlocks">
+                <div class="font-mono-data text-2xl sm:text-3xl font-bold text-brand-emerald" data-testid="metric-verified-unlocks">
                     {{ successful_unlocks }}
                 </div>
-                <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem;">
+                <div class="text-xs text-text-muted mt-1 font-mono">
                     Authorized recipient accesses
                 </div>
             </div>
 
             <!-- Metric 3: Interceptions & Blocked -->
-            <div class="stat-card" style="background: var(--bg-card); border: 1px solid var(--border-light); border-radius: var(--radius-lg); padding: 1.25rem; box-shadow: var(--shadow-sm);">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-                    <span class="font-mono-data" style="font-size: 0.7rem; font-weight: 700; color: #e11d48; text-transform: uppercase;">Blocked / Intercepted</span>
-                    <span class="material-symbols-outlined" style="font-size: 18px; color: #e11d48;">shield_lock</span>
+            <div class="stat-card bg-bg-surface border border-border-hairline rounded-xl p-5 shadow-card">
+                <div class="flex justify-between items-center mb-2">
+                    <span class="font-mono-data text-xs font-semibold text-rose-400 uppercase tracking-wider">Blocked / Intercepted</span>
+                    <span class="material-symbols-outlined text-[18px] text-rose-400">shield_lock</span>
                 </div>
-                <div class="font-mono-data" style="font-size: 1.6rem; font-weight: 800; color: #e11d48;" data-testid="metric-blocked-attempts">
+                <div class="font-mono-data text-2xl sm:text-3xl font-bold text-rose-400" data-testid="metric-blocked-attempts">
                     {{ blocked_attempts }}
                 </div>
-                <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem;">
+                <div class="text-xs text-text-muted mt-1 font-mono">
                     Invalid keys, lockouts & expired
                 </div>
             </div>
 
             <!-- Metric 4: Document Downloads -->
-            <div class="stat-card" style="background: var(--bg-card); border: 1px solid var(--border-light); border-radius: var(--radius-lg); padding: 1.25rem; box-shadow: var(--shadow-sm);">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-                    <span class="font-mono-data" style="font-size: 0.7rem; font-weight: 700; color: var(--brand-blue); text-transform: uppercase;">File Downloads</span>
-                    <span class="material-symbols-outlined" style="font-size: 18px; color: var(--brand-blue);">download</span>
+            <div class="stat-card bg-bg-surface border border-border-hairline rounded-xl p-5 shadow-card">
+                <div class="flex justify-between items-center mb-2">
+                    <span class="font-mono-data text-xs font-semibold text-sky-400 uppercase tracking-wider">File Downloads</span>
+                    <span class="material-symbols-outlined text-[18px] text-sky-400">download</span>
                 </div>
-                <div class="font-mono-data" style="font-size: 1.6rem; font-weight: 800; color: var(--brand-blue);" data-testid="metric-downloads-count">
+                <div class="font-mono-data text-2xl sm:text-3xl font-bold text-sky-400" data-testid="metric-downloads-count">
                     {{ downloads_count }}
                 </div>
-                <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem;">
+                <div class="text-xs text-text-muted mt-1 font-mono">
                     Permitted binary streams
                 </div>
             </div>
         </div>
 
         <!-- Filter & Search Toolbar -->
-        <div style="background: var(--bg-card); border: 1px solid var(--border-light); border-radius: var(--radius-lg); padding: 1rem 1.25rem; margin-bottom: 1.5rem; box-shadow: var(--shadow-sm);">
-            <form method="get" action="{% url 'audit:audit_list' %}" style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;" data-testid="audit-filter-form">
+        <div class="bg-bg-surface border border-border-hairline rounded-xl p-4 mb-6 shadow-card">
+            <form method="get" action="{% url 'audit:audit_list' %}" class="flex gap-4 items-center flex-wrap" data-testid="audit-filter-form">
                 
                 <!-- Filter by Pass -->
-                <div style="flex: 1; min-width: 180px;">
-                    <label for="filter-pass" style="display: block; font-size: 0.7rem; font-weight: 700; color: var(--text-muted); margin-bottom: 0.3rem; text-transform: uppercase;">Share Pass</label>
-                    <select name="pass" id="filter-pass" class="form-input" style="padding: 0.45rem 0.65rem; font-size: 0.85rem;" onchange="this.form.submit()">
+                <div class="flex-1 min-w-[180px]">
+                    <label for="filter-pass" class="block text-xs font-mono font-semibold text-text-muted mb-1.5 uppercase tracking-wider">Share Pass</label>
+                    <select name="pass" id="filter-pass" class="form-input text-xs py-2 px-3 bg-bg-card border border-border-hairline rounded-lg w-full text-text-primary focus:border-brand-emerald focus:outline-none" onchange="this.form.submit()">
                         <option value="">All Share Passes</option>
                         {% for p in owner_passes %}
                             <option value="{{ p.id }}" {% if selected_pass_id == p.id|stringformat:"s" %}selected{% endif %}>
@@ -107,9 +107,9 @@
                 </div>
 
                 <!-- Filter by Event Type -->
-                <div style="flex: 1; min-width: 180px;">
-                    <label for="filter-event" style="display: block; font-size: 0.7rem; font-weight: 700; color: var(--text-muted); margin-bottom: 0.3rem; text-transform: uppercase;">Event Type</label>
-                    <select name="event" id="filter-event" class="form-input" style="padding: 0.45rem 0.65rem; font-size: 0.85rem;" onchange="this.form.submit()">
+                <div class="flex-1 min-w-[180px]">
+                    <label for="filter-event" class="block text-xs font-mono font-semibold text-text-muted mb-1.5 uppercase tracking-wider">Event Type</label>
+                    <select name="event" id="filter-event" class="form-input text-xs py-2 px-3 bg-bg-card border border-border-hairline rounded-lg w-full text-text-primary focus:border-brand-emerald focus:outline-none" onchange="this.form.submit()">
                         <option value="">All Events</option>
                         {% for val, label in event_choices %}
                             <option value="{{ val }}" {% if selected_event == val %}selected{% endif %}>{{ label }}</option>
@@ -118,9 +118,9 @@
                 </div>
 
                 <!-- Filter by Status -->
-                <div style="flex: 1; min-width: 140px;">
-                    <label for="filter-status" style="display: block; font-size: 0.7rem; font-weight: 700; color: var(--text-muted); margin-bottom: 0.3rem; text-transform: uppercase;">Status</label>
-                    <select name="status" id="filter-status" class="form-input" style="padding: 0.45rem 0.65rem; font-size: 0.85rem;" onchange="this.form.submit()">
+                <div class="flex-1 min-w-[140px]">
+                    <label for="filter-status" class="block text-xs font-mono font-semibold text-text-muted mb-1.5 uppercase tracking-wider">Status</label>
+                    <select name="status" id="filter-status" class="form-input text-xs py-2 px-3 bg-bg-card border border-border-hairline rounded-lg w-full text-text-primary focus:border-brand-emerald focus:outline-none" onchange="this.form.submit()">
                         <option value="">All Outcomes</option>
                         {% for val, label in status_choices %}
                             <option value="{{ val }}" {% if selected_status == val %}selected{% endif %}>{{ label }}</option>
@@ -129,20 +129,20 @@
                 </div>
 
                 <!-- Search Input -->
-                <div style="flex: 1.5; min-width: 200px;">
-                    <label for="filter-query" style="display: block; font-size: 0.7rem; font-weight: 700; color: var(--text-muted); margin-bottom: 0.3rem; text-transform: uppercase;">Search Details / IP</label>
-                    <div style="display: flex; gap: 0.4rem;">
-                        <input type="text" name="q" id="filter-query" value="{{ query }}" placeholder="Search IP, document, details..." class="form-input" style="padding: 0.45rem 0.65rem; font-size: 0.85rem;">
-                        <button type="submit" class="btn btn-secondary btn-sm" style="flex-shrink: 0;">
-                            <span class="material-symbols-outlined" style="font-size: 16px;">search</span>
+                <div class="flex-1.5 min-w-[200px]">
+                    <label for="filter-query" class="block text-xs font-mono font-semibold text-text-muted mb-1.5 uppercase tracking-wider">Search Details / IP</label>
+                    <div class="flex gap-2">
+                        <input type="text" name="q" id="filter-query" value="{{ query }}" placeholder="Search IP, document, details..." class="form-input text-xs py-2 px-3 bg-bg-card border border-border-hairline rounded-lg w-full text-text-primary focus:border-brand-emerald focus:outline-none">
+                        <button type="submit" class="btn btn-secondary btn-sm shrink-0">
+                            <span class="material-symbols-outlined text-[16px]">search</span>
                         </button>
                     </div>
                 </div>
 
                 {% if selected_pass_id or selected_event or selected_status or query %}
-                <div style="display: flex; align-items: flex-end; padding-top: 1.25rem;">
-                    <a href="{% url 'audit:audit_list' %}" class="btn btn-sm btn-secondary" style="color: #e11d48;" title="Clear all filters">
-                        <span class="material-symbols-outlined" style="font-size: 15px;">clear</span> Reset
+                <div class="flex items-end pt-5">
+                    <a href="{% url 'audit:audit_list' %}" class="btn btn-sm btn-secondary text-rose-400 hover:text-rose-300" title="Clear all filters">
+                        <span class="material-symbols-outlined text-[15px]">clear</span> Reset
                     </a>
                 </div>
                 {% endif %}
@@ -151,144 +151,138 @@
         </div>
 
         <!-- Audit Log Table Card -->
-        <div class="table-card" style="background: var(--bg-card); border: 1px solid var(--border-light); border-radius: var(--radius-lg); overflow-x: auto; box-shadow: var(--shadow-sm); width: 100%;">
-            <table class="comp-table" style="min-width: 760px; width: 100%;" data-testid="audit-log-table">
-                <thead>
-                    <tr>
-                        <th style="width: 18%;">Timestamp (UTC)</th>
-                        <th style="width: 18%;">Pass Reference</th>
-                        <th style="width: 22%;">Security Event</th>
-                        <th style="width: 12%;">Outcome</th>
-                        <th style="width: 15%;">Target Record</th>
-                        <th style="width: 15%;">IP / Device</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for log in logs %}
-                    <tr data-testid="audit-row-{{ log.id }}">
-                        <!-- Timestamp -->
-                        <td class="font-mono-data" style="font-size: 0.75rem; color: var(--text-primary); font-weight: 600;">
-                            <div>{{ log.timestamp|date:"Y-m-d H:i:s" }}</div>
-                            <div style="font-size: 0.65rem; color: var(--text-muted); font-weight: normal;">{{ log.timestamp|timesince }} ago</div>
-                        </td>
+        <div class="table-card bg-bg-surface border border-border-hairline rounded-xl overflow-hidden shadow-card w-full">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs border-collapse min-w-[760px]" data-testid="audit-log-table">
+                    <thead>
+                        <tr class="border-b border-border-hairline bg-bg-card text-text-muted font-mono uppercase tracking-wider text-[11px]">
+                            <th class="py-3 px-4 w-[18%]">Timestamp (UTC)</th>
+                            <th class="py-3 px-4 w-[18%]">Pass Reference</th>
+                            <th class="py-3 px-4 w-[22%]">Security Event</th>
+                            <th class="py-3 px-4 w-[12%]">Outcome</th>
+                            <th class="py-3 px-4 w-[15%]">Target Record</th>
+                            <th class="py-3 px-4 w-[15%]">IP / Device</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-border-hairline font-mono">
+                        {% for log in logs %}
+                        <tr class="hover:bg-bg-surface-elevated/40 transition-colors" data-testid="audit-row-{{ log.id }}">
+                            <!-- Timestamp -->
+                            <td class="py-3.5 px-4 font-mono-data text-text-primary text-[11px]">
+                                <div class="font-semibold">{{ log.timestamp|date:"Y-m-d H:i:s" }}</div>
+                                <div class="text-[10px] text-text-muted font-normal">{{ log.timestamp|timesince }} ago</div>
+                            </td>
 
-                        <!-- Pass Reference -->
-                        <td>
-                            <a href="{% url 'share_detail' log.share_pass.id %}" style="display: inline-flex; align-items: center; gap: 0.35rem; font-weight: 700; color: var(--brand-navy); text-decoration: none;" title="{{ log.share_pass.title }}">
-                                <span class="font-mono-data" style="font-size: 0.75rem; background: #f1f5f9; padding: 0.15rem 0.4rem; border-radius: 4px; border: 1px solid var(--border-light);">
-                                    #{{ log.share_pass.id|stringformat:"s"|slice:":8"|upper }}
-                                </span>
-                            </a>
-                            {% if log.share_pass.title %}
-                            <div style="font-size: 0.75rem; color: var(--text-muted); max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-top: 0.15rem;">
-                                {{ log.share_pass.title }}
-                            </div>
-                            {% endif %}
-                        </td>
-
-                        <!-- Security Event -->
-                        <td>
-                            <div style="display: flex; align-items: center; gap: 0.4rem;">
-                                <span class="material-symbols-outlined" style="font-size: 16px; color: {% if log.status == 'success' %}var(--brand-emerald){% elif log.status == 'denied' %}#e11d48{% elif log.status == 'locked' %}#dc2626{% else %}var(--text-muted){% endif %};">
-                                    {{ log.event_icon }}
-                                </span>
-                                <span style="font-weight: 700; font-size: 0.85rem; color: var(--text-primary);">
-                                    {{ log.get_event_type_display }}
-                                </span>
-                            </div>
-                            {% if log.details %}
-                            <div style="font-size: 0.725rem; color: var(--text-muted); margin-top: 0.15rem;">
-                                {{ log.details }}
-                            </div>
-                            {% endif %}
-                        </td>
-
-                        <!-- Outcome Status Badge -->
-                        <td>
-                            {% if log.status == 'success' %}
-                                <span class="status-badge font-mono-data" style="font-size: 0.65rem; background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0;">
-                                    <span class="pulse-dot"></span>
-                                    <span>SUCCESS</span>
-                                </span>
-                            {% elif log.status == 'denied' %}
-                                <span class="status-badge font-mono-data" style="font-size: 0.65rem; background: #fff1f2; color: #be123c; border: 1px solid #fecdd3;">
-                                    <span>DENIED</span>
-                                </span>
-                            {% elif log.status == 'locked' %}
-                                <span class="status-badge font-mono-data" style="font-size: 0.65rem; background: #fef2f2; color: #991b1b; border: 1px solid #fecaca;">
-                                    <span>LOCKED</span>
-                                </span>
-                            {% elif log.status == 'expired' %}
-                                <span class="status-badge font-mono-data" style="font-size: 0.65rem; background: #fff7ed; color: #9a3412; border: 1px solid #fed7aa;">
-                                    <span>EXPIRED</span>
-                                </span>
-                            {% elif log.status == 'revoked' %}
-                                <span class="status-badge font-mono-data" style="font-size: 0.65rem; background: #fdf2f8; color: #9d174d; border: 1px solid #fbcfe8;">
-                                    <span>REVOKED</span>
-                                </span>
-                            {% else %}
-                                <span class="font-mono-data" style="font-size: 0.7rem; color: var(--text-muted);">{{ log.status|upper }}</span>
-                            {% endif %}
-                        </td>
-
-                        <!-- Target Document -->
-                        <td>
-                            {% if log.document %}
-                                <div style="display: flex; align-items: center; gap: 0.35rem; font-size: 0.8rem; font-weight: 600; color: var(--text-primary);">
-                                    <span class="material-symbols-outlined" style="font-size: 15px; color: var(--brand-navy);">{{ log.document.category_icon }}</span>
-                                    <span style="max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ log.document.title }}</span>
+                            <!-- Pass Reference -->
+                            <td class="py-3.5 px-4 font-sans">
+                                <a href="{% url 'share_detail' log.share_pass.id %}" class="inline-flex items-center gap-1.5 font-bold text-text-primary hover:text-brand-emerald transition-colors" title="{{ log.share_pass.title }}">
+                                    <span class="font-mono-data text-[10px] bg-bg-card px-1.5 py-0.5 rounded border border-border-hairline text-sky-400">
+                                        #{{ log.share_pass.id|stringformat:"s"|slice:":8"|upper }}
+                                    </span>
+                                </a>
+                                {% if log.share_pass.title %}
+                                <div class="text-[11px] text-text-muted truncate max-w-[160px] mt-0.5" title="{{ log.share_pass.title }}">
+                                    {{ log.share_pass.title }}
                                 </div>
-                            {% else %}
-                                <span style="font-size: 0.75rem; color: var(--text-dim); font-style: italic;">Pass Root</span>
-                            {% endif %}
-                        </td>
-
-                        <!-- IP / User Agent -->
-                        <td>
-                            <div class="font-mono-data" style="font-size: 0.75rem; color: var(--text-primary); font-weight: 600;">
-                                {{ log.ip_address|default:"Unknown IP" }}
-                            </div>
-                            {% if log.user_agent %}
-                            <div style="font-size: 0.65rem; color: var(--text-muted); max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="{{ log.user_agent }}">
-                                {{ log.user_agent }}
-                            </div>
-                            {% endif %}
-                        </td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="6" style="text-align: center; padding: 3rem 1.5rem;">
-                            <div style="display: inline-flex; align-items: center; justify-content: center; width: 48px; height: 48px; border-radius: 50%; background: #f1f5f9; color: var(--text-muted); margin-bottom: 0.75rem;">
-                                <span class="material-symbols-outlined" style="font-size: 24px;">receipt_long</span>
-                            </div>
-                            <h3 style="font-size: 1rem; font-weight: 700; color: var(--brand-navy); margin: 0 0 0.25rem;">No Audit Events Found</h3>
-                            <p style="font-size: 0.8rem; color: var(--text-muted); max-width: 360px; margin: 0 auto;">
-                                {% if query or selected_pass_id or selected_event or selected_status %}
-                                    No logged actions matched your active filter criteria. Try resetting filters.
-                                {% else %}
-                                    When recipients scan QR codes or verify share keys, all cryptographic events will appear here in real time.
                                 {% endif %}
-                            </p>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+                            </td>
+
+                            <!-- Security Event -->
+                            <td class="py-3.5 px-4 font-sans">
+                                <div class="flex items-center gap-2">
+                                    <span class="material-symbols-outlined text-[16px] {% if log.status == 'success' %}text-brand-emerald{% elif log.status == 'denied' %}text-rose-400{% elif log.status == 'locked' %}text-rose-500{% else %}text-text-muted{% endif %}">
+                                        {{ log.event_icon }}
+                                    </span>
+                                    <span class="font-bold text-xs text-text-primary">
+                                        {{ log.get_event_type_display }}
+                                    </span>
+                                </div>
+                                {% if log.details %}
+                                <div class="text-[11px] text-text-muted mt-0.5 truncate max-w-[200px]" title="{{ log.details }}">
+                                    {{ log.details }}
+                                </div>
+                                {% endif %}
+                            </td>
+
+                            <!-- Outcome Status Badge -->
+                            <td class="py-3.5 px-4 whitespace-nowrap">
+                                {% if log.status == 'success' %}
+                                    <span class="badge bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px] font-mono inline-flex items-center gap-1">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                                        <span>SUCCESS</span>
+                                    </span>
+                                {% elif log.status == 'denied' %}
+                                    <span class="badge bg-rose-500/10 text-rose-400 border border-rose-500/20 text-[10px] font-mono">DENIED</span>
+                                {% elif log.status == 'locked' %}
+                                    <span class="badge bg-rose-500/10 text-rose-400 border border-rose-500/20 text-[10px] font-mono">LOCKED</span>
+                                {% elif log.status == 'expired' %}
+                                    <span class="badge bg-amber-500/10 text-amber-400 border border-amber-500/20 text-[10px] font-mono">EXPIRED</span>
+                                {% elif log.status == 'revoked' %}
+                                    <span class="badge bg-purple-500/10 text-purple-400 border border-purple-500/20 text-[10px] font-mono">REVOKED</span>
+                                {% else %}
+                                    <span class="badge bg-slate-500/10 text-slate-400 border border-slate-500/20 text-[10px] font-mono">{{ log.status|upper }}</span>
+                                {% endif %}
+                            </td>
+
+                            <!-- Target Document -->
+                            <td class="py-3.5 px-4 font-sans">
+                                {% if log.document %}
+                                    <div class="flex items-center gap-1.5 text-xs font-semibold text-text-primary">
+                                        <span class="material-symbols-outlined text-[15px] text-text-secondary">{{ log.document.category_icon }}</span>
+                                        <span class="truncate max-w-[140px]" title="{{ log.document.title }}">{{ log.document.title }}</span>
+                                    </div>
+                                {% else %}
+                                    <span class="text-[11px] text-text-muted italic">Pass Root</span>
+                                {% endif %}
+                            </td>
+
+                            <!-- IP / User Agent -->
+                            <td class="py-3.5 px-4">
+                                <div class="font-mono-data text-xs font-semibold text-text-primary">
+                                    {{ log.ip_address|default:"Unknown IP" }}
+                                </div>
+                                {% if log.user_agent %}
+                                <div class="text-[10px] text-text-muted max-w-[140px] truncate font-sans" title="{{ log.user_agent }}">
+                                    {{ log.user_agent }}
+                                </div>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center py-12 px-6">
+                                <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-bg-surface-elevated text-text-muted mb-3 border border-border-hairline">
+                                    <span class="material-symbols-outlined text-2xl">receipt_long</span>
+                                </div>
+                                <h3 class="text-sm font-bold text-text-primary mb-1">No Audit Events Found</h3>
+                                <p class="text-xs text-text-muted max-w-sm mx-auto leading-relaxed">
+                                    {% if query or selected_pass_id or selected_event or selected_status %}
+                                        No logged actions matched your active filter criteria. Try resetting filters.
+                                    {% else %}
+                                        When recipients scan QR codes or verify share keys, all cryptographic events will appear here in real time.
+                                    {% endif %}
+                                </p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         </div>
 
         <!-- Pagination Controls -->
         {% if page_obj.has_other_pages %}
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1.5rem; flex-wrap: wrap; gap: 1rem;">
-            <div style="font-size: 0.8rem; color: var(--text-muted);">
+        <div class="flex justify-between items-center mt-6 flex-wrap gap-4 text-xs">
+            <div class="text-text-muted font-mono">
                 Showing {{ page_obj.start_index }}–{{ page_obj.end_index }} of {{ page_obj.paginator.count }} events
             </div>
-            <div style="display: flex; gap: 0.4rem;">
+            <div class="flex gap-1.5 font-mono">
                 {% if page_obj.has_previous %}
                     <a href="?page={{ page_obj.previous_page_number }}{% if selected_pass_id %}&pass={{ selected_pass_id }}{% endif %}{% if selected_event %}&event={{ selected_event }}{% endif %}{% if selected_status %}&status={{ selected_status }}{% endif %}{% if query %}&q={{ query }}{% endif %}" class="btn btn-secondary btn-sm">
                         Previous
                     </a>
                 {% endif %}
-                <span class="btn btn-secondary btn-sm font-mono-data" style="cursor: default; background: var(--bg-card); font-weight: 700;">
+                <span class="btn btn-secondary btn-sm cursor-default bg-bg-surface border-border-hairline font-bold">
                     Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
                 </span>
                 {% if page_obj.has_next %}

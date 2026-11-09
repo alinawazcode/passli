@@ -3,24 +3,24 @@
 
 {% block admin_content %}
 <!-- Search & Filter Toolbar -->
-<div style="background: var(--bg-card); border: 1px solid var(--border-light); border-radius: var(--radius-lg); padding: 1rem 1.25rem; margin-bottom: 1.5rem; box-shadow: var(--shadow-sm);">
-    <form method="get" action="{% url 'admin_dashboard_users' %}" style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
+<div class="bg-bg-surface border border-border-hairline rounded-xl p-4 mb-6 shadow-card">
+    <form method="get" action="{% url 'admin_dashboard_users' %}" class="flex gap-4 items-center flex-wrap">
         
         <!-- Search Query -->
-        <div style="flex: 2; min-width: 220px;">
-            <label for="admin-user-search" style="display: block; font-size: 0.7rem; font-weight: 700; color: var(--text-muted); margin-bottom: 0.3rem; text-transform: uppercase;">Search Users</label>
-            <div style="display: flex; gap: 0.4rem;">
-                <input type="text" name="q" id="admin-user-search" value="{{ query }}" placeholder="Search username, email, name..." class="form-input" style="padding: 0.45rem 0.65rem; font-size: 0.85rem;">
-                <button type="submit" class="btn btn-secondary btn-sm">
-                    <span class="material-symbols-outlined" style="font-size: 16px;">search</span>
+        <div class="flex-2 min-w-[220px]">
+            <label for="admin-user-search" class="block text-xs font-mono font-semibold text-text-muted mb-1.5 uppercase tracking-wider">Search Users</label>
+            <div class="flex gap-2">
+                <input type="text" name="q" id="admin-user-search" value="{{ query }}" placeholder="Search username, email, name..." class="form-input text-xs py-2 px-3 bg-bg-card border border-border-hairline rounded-lg w-full text-text-primary focus:border-brand-emerald focus:outline-none">
+                <button type="submit" class="btn btn-secondary btn-sm shrink-0">
+                    <span class="material-symbols-outlined text-[16px]">search</span>
                 </button>
             </div>
         </div>
 
         <!-- Role / Status Filter -->
-        <div style="flex: 1; min-width: 160px;">
-            <label for="admin-status-filter" style="display: block; font-size: 0.7rem; font-weight: 700; color: var(--text-muted); margin-bottom: 0.3rem; text-transform: uppercase;">Account Type</label>
-            <select name="status" id="admin-status-filter" class="form-input" style="padding: 0.45rem 0.65rem; font-size: 0.85rem;" onchange="this.form.submit()">
+        <div class="flex-1 min-w-[160px]">
+            <label for="admin-status-filter" class="block text-xs font-mono font-semibold text-text-muted mb-1.5 uppercase tracking-wider">Account Type</label>
+            <select name="status" id="admin-status-filter" class="form-input text-xs py-2 px-3 bg-bg-card border border-border-hairline rounded-lg w-full text-text-primary focus:border-brand-emerald focus:outline-none" onchange="this.form.submit()">
                 <option value="">All Accounts</option>
                 <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Active Users Only</option>
                 <option value="inactive" {% if status_filter == 'inactive' %}selected{% endif %}>Deactivated Users</option>
@@ -29,9 +29,9 @@
         </div>
 
         {% if query or status_filter %}
-        <div style="display: flex; align-items: flex-end; padding-top: 1.25rem;">
-            <a href="{% url 'admin_dashboard_users' %}" class="btn btn-sm btn-secondary" style="color: #e11d48;" title="Clear search">
-                <span class="material-symbols-outlined" style="font-size: 15px;">clear</span> Reset
+        <div class="flex items-end pt-5">
+            <a href="{% url 'admin_dashboard_users' %}" class="btn btn-sm btn-secondary text-rose-400 hover:text-rose-300" title="Clear search">
+                <span class="material-symbols-outlined text-[15px]">clear</span> Reset
             </a>
         </div>
         {% endif %}
@@ -39,140 +39,142 @@
 </div>
 
 <!-- Users Management Table Card -->
-<div class="table-card" style="background: var(--bg-card); border: 1px solid var(--border-light); border-radius: var(--radius-lg); overflow-x: auto; box-shadow: var(--shadow-sm); width: 100%;">
-    <table class="comp-table" style="min-width: 800px; width: 100%;" data-testid="admin-users-table">
-        <thead>
-            <tr>
-                <th style="width: 25%;">User Identity</th>
-                <th style="width: 15%;">Vault Storage</th>
-                <th style="width: 15%;">Documents</th>
-                <th style="width: 15%;">Share Passes</th>
-                <th style="width: 12%;">Role & Status</th>
-                <th style="width: 18%; text-align: right;">Administrative Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for u in users %}
-            <tr data-testid="admin-user-row-{{ u.id }}">
-                <!-- User Identity -->
-                <td>
-                    <div style="display: flex; align-items: center; gap: 0.6rem;">
-                        <div class="user-nav-avatar font-mono-data" style="width: 32px; height: 32px; font-size: 0.8rem;">
-                            {{ u.username|make_list|first|upper }}
-                        </div>
-                        <div>
-                            <div style="font-weight: 700; color: var(--brand-navy); font-size: 0.85rem;">
-                                {{ u.username }}
-                                {% if u.is_superuser %}
-                                    <span style="font-size: 0.65rem; background: #e0e7ff; color: #4338ca; padding: 1px 5px; border-radius: 4px; font-weight: 700;">ROOT</span>
-                                {% endif %}
+<div class="table-card bg-bg-surface border border-border-hairline rounded-xl overflow-hidden shadow-card w-full">
+    <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs border-collapse min-w-[800px]" data-testid="admin-users-table">
+            <thead>
+                <tr class="border-b border-border-hairline bg-bg-card text-text-muted font-mono uppercase tracking-wider text-[11px]">
+                    <th class="py-3 px-4 w-[25%]">User Identity</th>
+                    <th class="py-3 px-4 w-[15%]">Vault Storage</th>
+                    <th class="py-3 px-4 w-[15%]">Documents</th>
+                    <th class="py-3 px-4 w-[15%]">Share Passes</th>
+                    <th class="py-3 px-4 w-[12%]">Role & Status</th>
+                    <th class="py-3 px-4 w-[18%] text-right">Administrative Actions</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-border-hairline">
+                {% for u in users %}
+                <tr class="hover:bg-bg-surface-elevated/40 transition-colors" data-testid="admin-user-row-{{ u.id }}">
+                    <!-- User Identity -->
+                    <td class="py-3.5 px-4">
+                        <div class="flex items-center gap-3">
+                            <div class="user-nav-avatar font-mono-data w-8 h-8 rounded-full bg-bg-surface-elevated border border-border-hairline flex items-center justify-center font-bold text-xs text-text-primary shrink-0">
+                                {{ u.username|make_list|first|upper }}
                             </div>
-                            <div style="font-size: 0.75rem; color: var(--text-muted);">{{ u.email }}</div>
-                            <div class="font-mono-data" style="font-size: 0.65rem; color: var(--text-muted); margin-top: 0.1rem;">Joined {{ u.date_joined|date:"M d, Y" }}</div>
+                            <div class="min-w-0">
+                                <div class="font-bold text-text-primary text-xs flex items-center gap-1.5 truncate">
+                                    <span>{{ u.username }}</span>
+                                    {% if u.is_superuser %}
+                                        <span class="text-[9px] font-mono font-bold bg-indigo-500/15 text-indigo-400 border border-indigo-500/30 px-1.5 py-0.2 rounded">ROOT</span>
+                                    {% endif %}
+                                </div>
+                                <div class="text-[11px] text-text-muted truncate">{{ u.email }}</div>
+                                <div class="font-mono-data text-[10px] text-text-muted mt-0.5">Joined {{ u.date_joined|date:"M d, Y" }}</div>
+                            </div>
                         </div>
-                    </div>
-                </td>
+                    </td>
 
-                <!-- Vault Storage -->
-                <td>
-                    <div class="font-mono-data" style="font-size: 0.85rem; font-weight: 700; color: #6366f1;">
-                        {{ u.storage_mb }} MB
-                    </div>
-                    <div style="font-size: 0.7rem; color: var(--text-muted);">Storage quota used</div>
-                </td>
+                    <!-- Vault Storage -->
+                    <td class="py-3.5 px-4">
+                        <div class="font-mono-data text-xs font-bold text-sky-400">
+                            {{ u.storage_mb }} MB
+                        </div>
+                        <div class="text-[11px] text-text-muted">Storage quota used</div>
+                    </td>
 
-                <!-- Document Records -->
-                <td>
-                    <div style="font-weight: 700; font-size: 0.85rem; color: var(--text-primary);">
-                        {{ u.docs_count }} records
-                    </div>
-                    <div style="font-size: 0.7rem; color: var(--text-muted);">Encrypted files</div>
-                </td>
+                    <!-- Document Records -->
+                    <td class="py-3.5 px-4">
+                        <div class="font-bold text-xs text-text-primary font-mono">
+                            {{ u.docs_count }} records
+                        </div>
+                        <div class="text-[11px] text-text-muted">Encrypted files</div>
+                    </td>
 
-                <!-- Share Passes -->
-                <td>
-                    <div style="font-weight: 700; font-size: 0.85rem; color: var(--brand-emerald);">
-                        {{ u.passes_count }} passes
-                    </div>
-                    <div style="font-size: 0.7rem; color: var(--text-muted);">Generated passes</div>
-                </td>
+                    <!-- Share Passes -->
+                    <td class="py-3.5 px-4">
+                        <div class="font-bold text-xs text-brand-emerald font-mono">
+                            {{ u.passes_count }} passes
+                        </div>
+                        <div class="text-[11px] text-text-muted">Generated passes</div>
+                    </td>
 
-                <!-- Role & Status -->
-                <td>
-                    <div style="display: flex; flex-direction: column; gap: 0.3rem;">
-                        {% if u.is_active %}
-                            <span class="status-badge font-mono-data" style="font-size: 0.65rem; background: #f0fdf4; color: #166534; width: fit-content;">ACTIVE</span>
-                        {% else %}
-                            <span class="status-badge font-mono-data" style="font-size: 0.65rem; background: #fef2f2; color: #991b1b; width: fit-content;">DEACTIVATED</span>
-                        {% endif %}
-
-                        {% if u.is_staff %}
-                            <span class="status-badge font-mono-data" style="font-size: 0.65rem; background: #e0e7ff; color: #4338ca; width: fit-content;">STAFF</span>
-                        {% endif %}
-                    </div>
-                </td>
-
-                <!-- Admin Actions -->
-                <td style="text-align: right;">
-                    {% if u.id != request.user.id %}
-                    <div style="display: flex; gap: 0.4rem; justify-content: flex-end; flex-wrap: wrap;">
-                        <!-- Toggle Active -->
-                        <form method="post" action="{% url 'admin_user_toggle_status' u.id %}" style="display: inline;">
-                            {% csrf_token %}
-                            <input type="hidden" name="action_type" value="toggle_active">
+                    <!-- Role & Status -->
+                    <td class="py-3.5 px-4 whitespace-nowrap">
+                        <div class="flex flex-col gap-1.5">
                             {% if u.is_active %}
-                                <button type="submit" class="btn btn-secondary btn-sm" style="color: #e11d48; font-size: 0.7rem; padding: 0.3rem 0.6rem;" onclick="return confirm('Deactivate user {{ u.username }}? They will not be able to log in.');">
-                                    Deactivate
-                                </button>
+                                <span class="badge bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px] font-mono w-fit">ACTIVE</span>
                             {% else %}
-                                <button type="submit" class="btn btn-secondary btn-sm" style="color: var(--brand-emerald); font-size: 0.7rem; padding: 0.3rem 0.6rem;">
-                                    Activate
-                                </button>
+                                <span class="badge bg-rose-500/10 text-rose-400 border border-rose-500/20 text-[10px] font-mono w-fit">DEACTIVATED</span>
                             {% endif %}
-                        </form>
 
-                        <!-- Toggle Staff -->
-                        <form method="post" action="{% url 'admin_user_toggle_status' u.id %}" style="display: inline;">
-                            {% csrf_token %}
-                            <input type="hidden" name="action_type" value="toggle_staff">
                             {% if u.is_staff %}
-                                <button type="submit" class="btn btn-secondary btn-sm" style="font-size: 0.7rem; padding: 0.3rem 0.6rem;" onclick="return confirm('Revoke staff privileges from {{ u.username }}?');">
-                                    Demote Staff
-                                </button>
-                            {% else %}
-                                <button type="submit" class="btn btn-secondary btn-sm" style="color: #6366f1; font-size: 0.7rem; padding: 0.3rem 0.6rem;" onclick="return confirm('Grant staff administration access to {{ u.username }}?');">
-                                    Promote Staff
-                                </button>
+                                <span class="badge bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 text-[10px] font-mono w-fit">STAFF</span>
                             {% endif %}
-                        </form>
-                    </div>
-                    {% else %}
-                    <span style="font-size: 0.75rem; color: var(--text-muted); font-style: italic;">Current Superadmin</span>
-                    {% endif %}
-                </td>
-            </tr>
-            {% empty %}
-            <tr>
-                <td colspan="6" style="text-align: center; padding: 2.5rem; color: var(--text-muted);">
-                    No user accounts matched your search criteria.
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+                        </div>
+                    </td>
+
+                    <!-- Admin Actions -->
+                    <td class="py-3.5 px-4 text-right whitespace-nowrap">
+                        {% if u.id != request.user.id %}
+                        <div class="flex gap-1.5 justify-end flex-wrap">
+                            <!-- Toggle Active -->
+                            <form method="post" action="{% url 'admin_user_toggle_status' u.id %}" class="inline">
+                                {% csrf_token %}
+                                <input type="hidden" name="action_type" value="toggle_active">
+                                {% if u.is_active %}
+                                    <button type="submit" class="btn btn-secondary btn-sm text-rose-400 hover:text-rose-300 text-[11px] py-1 px-2.5" onclick="return confirm('Deactivate user {{ u.username }}? They will not be able to log in.');">
+                                        Deactivate
+                                    </button>
+                                {% else %}
+                                    <button type="submit" class="btn btn-secondary btn-sm text-brand-emerald hover:text-emerald-300 text-[11px] py-1 px-2.5">
+                                        Activate
+                                    </button>
+                                {% endif %}
+                            </form>
+
+                            <!-- Toggle Staff -->
+                            <form method="post" action="{% url 'admin_user_toggle_status' u.id %}" class="inline">
+                                {% csrf_token %}
+                                <input type="hidden" name="action_type" value="toggle_staff">
+                                {% if u.is_staff %}
+                                    <button type="submit" class="btn btn-secondary btn-sm text-text-secondary hover:text-text-primary text-[11px] py-1 px-2.5" onclick="return confirm('Revoke staff privileges from {{ u.username }}?');">
+                                        Demote Staff
+                                    </button>
+                                {% else %}
+                                    <button type="submit" class="btn btn-secondary btn-sm text-indigo-400 hover:text-indigo-300 text-[11px] py-1 px-2.5" onclick="return confirm('Grant staff administration access to {{ u.username }}?');">
+                                        Promote Staff
+                                    </button>
+                                {% endif %}
+                            </form>
+                        </div>
+                        {% else %}
+                        <span class="text-[11px] text-text-muted italic">Current Superadmin</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="text-center py-8 text-text-muted">
+                        No user accounts found matching your query.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 </div>
 
 <!-- Pagination Controls -->
 {% if page_obj.has_other_pages %}
-<div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1.5rem; flex-wrap: wrap; gap: 1rem;">
-    <div style="font-size: 0.8rem; color: var(--text-muted);">
+<div class="flex justify-between items-center mt-6 flex-wrap gap-4 text-xs">
+    <div class="text-text-muted font-mono">
         Showing {{ page_obj.start_index }}–{{ page_obj.end_index }} of {{ total_count }} users
     </div>
-    <div style="display: flex; gap: 0.4rem;">
+    <div class="flex gap-1.5 font-mono">
         {% if page_obj.has_previous %}
             <a href="?page={{ page_obj.previous_page_number }}{% if query %}&q={{ query }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}" class="btn btn-secondary btn-sm">Previous</a>
         {% endif %}
-        <span class="btn btn-secondary btn-sm font-mono-data" style="cursor: default; background: var(--bg-card); font-weight: 700;">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+        <span class="btn btn-secondary btn-sm cursor-default bg-bg-surface border-border-hairline font-bold">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
         {% if page_obj.has_next %}
             <a href="?page={{ page_obj.next_page_number }}{% if query %}&q={{ query }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}" class="btn btn-secondary btn-sm">Next</a>
         {% endif %}

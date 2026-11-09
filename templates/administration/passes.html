@@ -3,24 +3,24 @@
 
 {% block admin_content %}
 <!-- Search & Filter Toolbar -->
-<div style="background: var(--bg-card); border: 1px solid var(--border-light); border-radius: var(--radius-lg); padding: 1rem 1.25rem; margin-bottom: 1.5rem; box-shadow: var(--shadow-sm);">
-    <form method="get" action="{% url 'admin_dashboard_passes' %}" style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
+<div class="bg-bg-surface border border-border-hairline rounded-xl p-4 mb-6 shadow-card">
+    <form method="get" action="{% url 'admin_dashboard_passes' %}" class="flex gap-4 items-center flex-wrap">
         
         <!-- Search Query -->
-        <div style="flex: 2; min-width: 220px;">
-            <label for="admin-pass-search" style="display: block; font-size: 0.7rem; font-weight: 700; color: var(--text-muted); margin-bottom: 0.3rem; text-transform: uppercase;">Search Passes</label>
-            <div style="display: flex; gap: 0.4rem;">
-                <input type="text" name="q" id="admin-pass-search" value="{{ query }}" placeholder="Pass ID, title, owner username..." class="form-input" style="padding: 0.45rem 0.65rem; font-size: 0.85rem;">
-                <button type="submit" class="btn btn-secondary btn-sm">
-                    <span class="material-symbols-outlined" style="font-size: 16px;">search</span>
+        <div class="flex-2 min-w-[220px]">
+            <label for="admin-pass-search" class="block text-xs font-mono font-semibold text-text-muted mb-1.5 uppercase tracking-wider">Search Passes</label>
+            <div class="flex gap-2">
+                <input type="text" name="q" id="admin-pass-search" value="{{ query }}" placeholder="Pass ID, title, owner username..." class="form-input text-xs py-2 px-3 bg-bg-card border border-border-hairline rounded-lg w-full text-text-primary focus:border-brand-emerald focus:outline-none">
+                <button type="submit" class="btn btn-secondary btn-sm shrink-0">
+                    <span class="material-symbols-outlined text-[16px]">search</span>
                 </button>
             </div>
         </div>
 
         <!-- Status Filter -->
-        <div style="flex: 1; min-width: 160px;">
-            <label for="admin-pass-status" style="display: block; font-size: 0.7rem; font-weight: 700; color: var(--text-muted); margin-bottom: 0.3rem; text-transform: uppercase;">Pass Status</label>
-            <select name="status" id="admin-pass-status" class="form-input" style="padding: 0.45rem 0.65rem; font-size: 0.85rem;" onchange="this.form.submit()">
+        <div class="flex-1 min-w-[160px]">
+            <label for="admin-pass-status" class="block text-xs font-mono font-semibold text-text-muted mb-1.5 uppercase tracking-wider">Pass Status</label>
+            <select name="status" id="admin-pass-status" class="form-input text-xs py-2 px-3 bg-bg-card border border-border-hairline rounded-lg w-full text-text-primary focus:border-brand-emerald focus:outline-none" onchange="this.form.submit()">
                 <option value="">All Statuses</option>
                 <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Active Passes Only</option>
                 <option value="revoked" {% if status_filter == 'revoked' %}selected{% endif %}>Revoked Passes</option>
@@ -29,9 +29,9 @@
         </div>
 
         {% if query or status_filter %}
-        <div style="display: flex; align-items: flex-end; padding-top: 1.25rem;">
-            <a href="{% url 'admin_dashboard_passes' %}" class="btn btn-sm btn-secondary" style="color: #e11d48;" title="Clear search">
-                <span class="material-symbols-outlined" style="font-size: 15px;">clear</span> Reset
+        <div class="flex items-end pt-5">
+            <a href="{% url 'admin_dashboard_passes' %}" class="btn btn-sm btn-secondary text-rose-400 hover:text-rose-300" title="Clear search">
+                <span class="material-symbols-outlined text-[15px]">clear</span> Reset
             </a>
         </div>
         {% endif %}
@@ -39,116 +39,118 @@
 </div>
 
 <!-- Passes Table Card -->
-<div class="table-card" style="background: var(--bg-card); border: 1px solid var(--border-light); border-radius: var(--radius-lg); overflow-x: auto; box-shadow: var(--shadow-sm); width: 100%;">
-    <table class="comp-table" style="min-width: 860px; width: 100%;" data-testid="admin-passes-table">
-        <thead>
-            <tr>
-                <th style="width: 22%;">Pass ID & Purpose</th>
-                <th style="width: 18%;">Vault Owner</th>
-                <th style="width: 12%;">Status</th>
-                <th style="width: 15%;">Access Count</th>
-                <th style="width: 15%;">Expiration TTL</th>
-                <th style="width: 18%; text-align: right;">Emergency Controls</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for p in share_passes %}
-            <tr data-testid="admin-pass-row-{{ p.id }}">
-                <!-- Pass ID & Title -->
-                <td>
-                    <div style="display: flex; align-items: center; gap: 0.5rem;">
-                        <span class="font-mono-data" style="font-size: 0.75rem; background: #f1f5f9; padding: 0.15rem 0.4rem; border-radius: 4px; border: 1px solid var(--border-light); font-weight: 700; color: var(--brand-navy);">
-                            #{{ p.id|stringformat:"s"|slice:":8"|upper }}
-                        </span>
-                        <div>
-                            <div style="font-weight: 700; color: var(--text-primary); font-size: 0.85rem;">
-                                {{ p.title|default:"Untitled Pass" }}
-                            </div>
-                            <div style="font-size: 0.7rem; color: var(--text-muted);">
-                                {{ p.documents.count }} bundled record{{ p.documents.count|pluralize }}
+<div class="table-card bg-bg-surface border border-border-hairline rounded-xl overflow-hidden shadow-card w-full">
+    <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs border-collapse min-w-[860px]" data-testid="admin-passes-table">
+            <thead>
+                <tr class="border-b border-border-hairline bg-bg-card text-text-muted font-mono uppercase tracking-wider text-[11px]">
+                    <th class="py-3 px-4 w-[22%]">Pass ID & Purpose</th>
+                    <th class="py-3 px-4 w-[18%]">Vault Owner</th>
+                    <th class="py-3 px-4 w-[12%]">Status</th>
+                    <th class="py-3 px-4 w-[15%]">Access Count</th>
+                    <th class="py-3 px-4 w-[15%]">Expiration TTL</th>
+                    <th class="py-3 px-4 w-[18%] text-right">Emergency Controls</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-border-hairline">
+                {% for p in share_passes %}
+                <tr class="hover:bg-bg-surface-elevated/40 transition-colors" data-testid="admin-pass-row-{{ p.id }}">
+                    <!-- Pass ID & Title -->
+                    <td class="py-3.5 px-4">
+                        <div class="flex items-center gap-2.5">
+                            <span class="font-mono-data text-xs bg-bg-card px-2 py-0.5 rounded border border-border-hairline font-bold text-sky-400">
+                                #{{ p.id|stringformat:"s"|slice:":8"|upper }}
+                            </span>
+                            <div class="min-w-0">
+                                <div class="font-bold text-text-primary text-xs truncate">
+                                    {{ p.title|default:"Untitled Pass" }}
+                                </div>
+                                <div class="text-[11px] text-text-muted">
+                                    {{ p.documents.count }} bundled record{{ p.documents.count|pluralize }}
+                                </div>
                             </div>
                         </div>
-                    </div>
-                </td>
+                    </td>
 
-                <!-- Owner -->
-                <td>
-                    <div style="font-weight: 600; color: var(--brand-navy); font-size: 0.8rem;">
-                        {{ p.owner.username }}
-                    </div>
-                    <div style="font-size: 0.7rem; color: var(--text-muted);">{{ p.owner.email }}</div>
-                </td>
+                    <!-- Owner -->
+                    <td class="py-3.5 px-4">
+                        <div class="font-semibold text-text-primary text-xs">
+                            {{ p.owner.username }}
+                        </div>
+                        <div class="text-[11px] text-text-muted">{{ p.owner.email }}</div>
+                    </td>
 
-                <!-- Status Badge -->
-                <td>
-                    {% if p.is_revoked %}
-                        <span class="status-badge font-mono-data" style="font-size: 0.65rem; background: #fdf2f8; color: #9d174d; border: 1px solid #fbcfe8;">REVOKED</span>
-                    {% elif p.is_expired %}
-                        <span class="status-badge font-mono-data" style="font-size: 0.65rem; background: #fff7ed; color: #9a3412; border: 1px solid #fed7aa;">EXPIRED</span>
-                    {% else %}
-                        <span class="status-badge font-mono-data" style="font-size: 0.65rem; background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0;">
-                            <span class="pulse-dot"></span>
-                            <span>ACTIVE</span>
-                        </span>
-                    {% endif %}
-                </td>
+                    <!-- Status Badge -->
+                    <td class="py-3.5 px-4 whitespace-nowrap">
+                        {% if p.is_revoked %}
+                            <span class="badge bg-rose-500/10 text-rose-400 border border-rose-500/20 text-[10px] font-mono">REVOKED</span>
+                        {% elif p.is_expired %}
+                            <span class="badge bg-amber-500/10 text-amber-400 border border-amber-500/20 text-[10px] font-mono">EXPIRED</span>
+                        {% else %}
+                            <span class="badge bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px] font-mono inline-flex items-center gap-1">
+                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                                <span>ACTIVE</span>
+                            </span>
+                        {% endif %}
+                    </td>
 
-                <!-- Access Count -->
-                <td>
-                    <div class="font-mono-data" style="font-size: 0.85rem; font-weight: 700; color: var(--text-primary);">
-                        {{ p.access_count }} {% if p.max_uses > 0 %}/ {{ p.max_uses }}{% else %}<span style="font-size: 0.7rem; color: var(--text-muted); font-weight: normal;">(unlimited)</span>{% endif %}
-                    </div>
-                    <div style="font-size: 0.65rem; color: {% if p.can_download %}var(--brand-emerald){% else %}var(--text-muted){% endif %}; font-weight: 600;">
-                        {% if p.can_download %}✓ Raw Download Permitted{% else %}✕ In-Browser View Only{% endif %}
-                    </div>
-                </td>
+                    <!-- Access Count -->
+                    <td class="py-3.5 px-4">
+                        <div class="font-mono-data text-xs font-bold text-text-primary">
+                            {{ p.access_count }} {% if p.max_uses > 0 %}/ {{ p.max_uses }}{% else %}<span class="text-[11px] text-text-muted font-normal">(unlimited)</span>{% endif %}
+                        </div>
+                        <div class="text-[10px] {% if p.can_download %}text-brand-emerald{% else %}text-text-muted{% endif %} font-semibold">
+                            {% if p.can_download %}✓ Raw Download Permitted{% else %}✕ In-Browser View Only{% endif %}
+                        </div>
+                    </td>
 
-                <!-- Expiration -->
-                <td>
-                    <div class="font-mono-data" style="font-size: 0.75rem; color: var(--text-primary);">
-                        {{ p.expires_at|date:"M d, H:i" }}
-                    </div>
-                    <div style="font-size: 0.65rem; color: var(--text-muted);">
-                        {% if p.is_expired %}Expired {{ p.expires_at|timesince }} ago{% else %}Active ({{ p.time_remaining_seconds }}s left){% endif %}
-                    </div>
-                </td>
+                    <!-- Expiration -->
+                    <td class="py-3.5 px-4 font-mono">
+                        <div class="font-mono-data text-xs text-text-primary">
+                            {{ p.expires_at|date:"M d, H:i" }}
+                        </div>
+                        <div class="text-[10px] text-text-muted">
+                            {% if p.is_expired %}Expired {{ p.expires_at|timesince }} ago{% else %}Active ({{ p.time_remaining_seconds }}s left){% endif %}
+                        </div>
+                    </td>
 
-                <!-- Emergency Revocation -->
-                <td style="text-align: right;">
-                    {% if p.is_active %}
-                        <form method="post" action="{% url 'admin_pass_revoke' p.id %}" style="display: inline;">
-                            {% csrf_token %}
-                            <button type="submit" class="btn btn-secondary btn-sm" style="color: #e11d48; border-color: #fecdd3; font-size: 0.7rem; padding: 0.3rem 0.6rem;" onclick="return confirm('Immediately revoke Share Pass #{{ p.id|stringformat:'s'|slice:':8'|upper }}? Recipient will be locked out immediately.');">
-                                <span class="material-symbols-outlined" style="font-size: 14px; vertical-align: middle;">block</span> Revoke Pass
-                            </button>
-                        </form>
-                    {% else %}
-                        <span style="font-size: 0.75rem; color: var(--text-dim); font-style: italic;">No Action Needed</span>
-                    {% endif %}
-                </td>
-            </tr>
-            {% empty %}
-            <tr>
-                <td colspan="6" style="text-align: center; padding: 2.5rem; color: var(--text-muted);">
-                    No Share Passes matched your filter criteria.
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+                    <!-- Emergency Revocation -->
+                    <td class="py-3.5 px-4 text-right whitespace-nowrap">
+                        {% if p.is_active %}
+                            <form method="post" action="{% url 'admin_pass_revoke' p.id %}" class="inline">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-secondary btn-sm text-rose-400 hover:text-rose-300 text-[11px] py-1 px-2.5" onclick="return confirm('Immediately revoke Share Pass #{{ p.id|stringformat:'s'|slice:':8'|upper }}? Recipient will be locked out immediately.');">
+                                    <span class="material-symbols-outlined text-[14px] align-middle">block</span> Revoke Pass
+                                </button>
+                            </form>
+                        {% else %}
+                            <span class="text-[11px] text-text-muted italic">No Action Needed</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="text-center py-8 text-text-muted">
+                        No Share Passes matched your filter criteria.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 </div>
 
 <!-- Pagination Controls -->
 {% if page_obj.has_other_pages %}
-<div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1.5rem; flex-wrap: wrap; gap: 1rem;">
-    <div style="font-size: 0.8rem; color: var(--text-muted);">
+<div class="flex justify-between items-center mt-6 flex-wrap gap-4 text-xs">
+    <div class="text-text-muted font-mono">
         Showing {{ page_obj.start_index }}–{{ page_obj.end_index }} of {{ total_count }} passes
     </div>
-    <div style="display: flex; gap: 0.4rem;">
+    <div class="flex gap-1.5 font-mono">
         {% if page_obj.has_previous %}
             <a href="?page={{ page_obj.previous_page_number }}{% if query %}&q={{ query }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}" class="btn btn-secondary btn-sm">Previous</a>
         {% endif %}
-        <span class="btn btn-secondary btn-sm font-mono-data" style="cursor: default; background: var(--bg-card); font-weight: 700;">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+        <span class="btn btn-secondary btn-sm cursor-default bg-bg-surface border-border-hairline font-bold">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
         {% if page_obj.has_next %}
             <a href="?page={{ page_obj.next_page_number }}{% if query %}&q={{ query }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}" class="btn btn-secondary btn-sm">Next</a>
         {% endif %}

@@ -3,159 +3,161 @@
 
 {% block admin_content %}
 <!-- Overview Metric Cards Grid -->
-<div class="stats-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); gap: 1rem; margin-bottom: 2rem;">
+<div class="stats-grid grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
     <!-- Metric 1: Total Users -->
-    <div class="stat-card" style="background: var(--bg-card); border: 1px solid var(--border-light); border-radius: var(--radius-lg); padding: 1.25rem; box-shadow: var(--shadow-sm);">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-            <span class="font-mono-data" style="font-size: 0.7rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Total Users</span>
-            <span class="material-symbols-outlined" style="font-size: 18px; color: var(--brand-navy);">group</span>
+    <div class="stat-card bg-bg-surface border border-border-hairline rounded-xl p-5 shadow-card">
+        <div class="flex justify-between items-center mb-2">
+            <span class="font-mono-data text-xs font-semibold text-text-muted uppercase tracking-wider">Total Users</span>
+            <span class="material-symbols-outlined text-[18px] text-text-secondary">group</span>
         </div>
-        <div class="font-mono-data" style="font-size: 1.75rem; font-weight: 800; color: var(--brand-navy);" data-testid="admin-metric-users">
+        <div class="font-mono-data text-2xl sm:text-3xl font-bold text-text-primary" data-testid="admin-metric-users">
             {{ total_users }}
         </div>
-        <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem;">
+        <div class="text-xs text-text-muted mt-1 font-mono">
             {{ active_users }} active &bull; {{ staff_users }} staff
         </div>
     </div>
 
     <!-- Metric 2: Storage Used -->
-    <div class="stat-card" style="background: var(--bg-card); border: 1px solid var(--border-light); border-radius: var(--radius-lg); padding: 1.25rem; box-shadow: var(--shadow-sm);">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-            <span class="font-mono-data" style="font-size: 0.7rem; font-weight: 700; color: #6366f1; text-transform: uppercase;">Total Vault Storage</span>
-            <span class="material-symbols-outlined" style="font-size: 18px; color: #6366f1;">hard_drive</span>
+    <div class="stat-card bg-bg-surface border border-border-hairline rounded-xl p-5 shadow-card">
+        <div class="flex justify-between items-center mb-2">
+            <span class="font-mono-data text-xs font-semibold text-sky-400 uppercase tracking-wider">Total Vault Storage</span>
+            <span class="material-symbols-outlined text-[18px] text-sky-400">hard_drive</span>
         </div>
-        <div class="font-mono-data" style="font-size: 1.75rem; font-weight: 800; color: #6366f1;" data-testid="admin-metric-storage">
-            {{ total_mb }} <span style="font-size: 1rem; font-weight: 600;">MB</span>
+        <div class="font-mono-data text-2xl sm:text-3xl font-bold text-sky-400" data-testid="admin-metric-storage">
+            {{ total_mb }} <span class="text-base font-semibold">MB</span>
         </div>
-        <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem;">
+        <div class="text-xs text-text-muted mt-1">
             Across {{ total_docs }} encrypted records
         </div>
     </div>
 
     <!-- Metric 3: Active Share Passes -->
-    <div class="stat-card" style="background: var(--bg-card); border: 1px solid var(--border-light); border-radius: var(--radius-lg); padding: 1.25rem; box-shadow: var(--shadow-sm);">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-            <span class="font-mono-data" style="font-size: 0.7rem; font-weight: 700; color: var(--brand-emerald); text-transform: uppercase;">Active Share Passes</span>
-            <span class="material-symbols-outlined" style="font-size: 18px; color: var(--brand-emerald);">qr_code_2</span>
+    <div class="stat-card bg-bg-surface border border-border-hairline rounded-xl p-5 shadow-card">
+        <div class="flex justify-between items-center mb-2">
+            <span class="font-mono-data text-xs font-semibold text-brand-emerald uppercase tracking-wider">Active Share Passes</span>
+            <span class="material-symbols-outlined text-[18px] text-brand-emerald">qr_code_2</span>
         </div>
-        <div class="font-mono-data" style="font-size: 1.75rem; font-weight: 800; color: var(--brand-emerald);" data-testid="admin-metric-passes">
+        <div class="font-mono-data text-2xl sm:text-3xl font-bold text-brand-emerald" data-testid="admin-metric-passes">
             {{ active_passes }}
         </div>
-        <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem;">
+        <div class="text-xs text-text-muted mt-1 font-mono">
             {{ total_passes }} total &bull; {{ revoked_passes }} revoked
         </div>
     </div>
 
     <!-- Metric 4: Security Events -->
-    <div class="stat-card" style="background: var(--bg-card); border: 1px solid var(--border-light); border-radius: var(--radius-lg); padding: 1.25rem; box-shadow: var(--shadow-sm);">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-            <span class="font-mono-data" style="font-size: 0.7rem; font-weight: 700; color: #e11d48; text-transform: uppercase;">Audit Events / Blocks</span>
-            <span class="material-symbols-outlined" style="font-size: 18px; color: #e11d48;">shield_lock</span>
+    <div class="stat-card bg-bg-surface border border-border-hairline rounded-xl p-5 shadow-card">
+        <div class="flex justify-between items-center mb-2">
+            <span class="font-mono-data text-xs font-semibold text-rose-400 uppercase tracking-wider">Audit Events / Blocks</span>
+            <span class="material-symbols-outlined text-[18px] text-rose-400">shield_lock</span>
         </div>
-        <div class="font-mono-data" style="font-size: 1.75rem; font-weight: 800; color: #e11d48;" data-testid="admin-metric-threats">
+        <div class="font-mono-data text-2xl sm:text-3xl font-bold text-rose-400" data-testid="admin-metric-threats">
             {{ total_audit_events }}
         </div>
-        <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem;">
+        <div class="text-xs text-text-muted mt-1 font-mono">
             {{ total_unlocks }} unlocks &bull; {{ blocked_threats }} blocked
         </div>
     </div>
 </div>
 
 <!-- Storage Breakdown & Telemetry Bento Grid -->
-<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
     <!-- Storage Breakdown by Taxonomy -->
-    <div style="background: var(--bg-card); border: 1px solid var(--border-light); border-radius: var(--radius-lg); padding: 1.5rem; box-shadow: var(--shadow-sm);">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
-            <h2 style="font-size: 1.1rem; font-weight: 700; color: var(--brand-navy); margin: 0; display: flex; align-items: center; gap: 0.5rem;">
-                <span class="material-symbols-outlined" style="font-size: 20px; color: #6366f1;">pie_chart</span>
-                Storage by Domain Taxonomy
-            </h2>
-            <a href="{% url 'admin_dashboard_documents' %}" class="btn btn-secondary btn-sm" style="font-size: 0.75rem;">View Files</a>
-        </div>
-
-        <div style="display: flex; flex-direction: column; gap: 1rem;">
-            {% for cat in category_stats %}
-            <div>
-                <div style="display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 0.3rem;">
-                    <span style="font-weight: 600; color: var(--text-primary);">{{ cat.label }} ({{ cat.count }})</span>
-                    <span class="font-mono-data" style="color: var(--text-muted);">{{ cat.mb }} MB ({{ cat.percentage }}%)</span>
-                </div>
-                <div style="height: 6px; background: #f1f5f9; border-radius: 999px; overflow: hidden;">
-                    <div style="width: {{ cat.percentage }}%; height: 100%; background: {% if cat.code == 'medical' %}#10b981{% elif cat.code == 'education' %}#3b82f6{% elif cat.code == 'vehicle' %}#f59e0b{% elif cat.code == 'personal' %}#8b5cf6{% elif cat.code == 'professional' %}#06b6d4{% else %}#64748b{% endif %}; border-radius: 999px;"></div>
-                </div>
+    <div class="bg-bg-surface border border-border-hairline rounded-xl p-6 shadow-card flex flex-col justify-between">
+        <div>
+            <div class="flex justify-between items-center mb-5">
+                <h2 class="text-base font-semibold text-text-primary flex items-center gap-2">
+                    <span class="material-symbols-outlined text-[20px] text-sky-400">pie_chart</span>
+                    Storage by Domain Taxonomy
+                </h2>
+                <a href="{% url 'admin_dashboard_documents' %}" class="btn btn-secondary btn-sm text-xs">View Files</a>
             </div>
-            {% endfor %}
+
+            <div class="flex flex-col gap-3.5">
+                {% for cat in category_stats %}
+                <div>
+                    <div class="flex justify-between text-xs mb-1.5">
+                        <span class="font-medium text-text-primary">{{ cat.label }} ({{ cat.count }})</span>
+                        <span class="font-mono-data text-text-muted">{{ cat.mb }} MB ({{ cat.percentage }}%)</span>
+                    </div>
+                    <div class="h-2 bg-bg-card rounded-full overflow-hidden border border-border-hairline">
+                        <div class="h-full rounded-full transition-all duration-300 {% if cat.code == 'medical' %}bg-emerald-500{% elif cat.code == 'education' %}bg-sky-500{% elif cat.code == 'vehicle' %}bg-amber-500{% elif cat.code == 'personal' %}bg-indigo-500{% elif cat.code == 'professional' %}bg-cyan-500{% else %}bg-slate-500{% endif %}" style="width: {{ cat.percentage }}%;"></div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
         </div>
     </div>
 
     <!-- Quick Navigation & Administrative Controls -->
-    <div style="background: var(--bg-card); border: 1px solid var(--border-light); border-radius: var(--radius-lg); padding: 1.5rem; box-shadow: var(--shadow-sm); display: flex; flex-direction: column; justify-content: space-between;">
+    <div class="bg-bg-surface border border-border-hairline rounded-xl p-6 shadow-card flex flex-col justify-between">
         <div>
-            <h2 style="font-size: 1.1rem; font-weight: 700; color: var(--brand-navy); margin: 0 0 1rem; display: flex; align-items: center; gap: 0.5rem;">
-                <span class="material-symbols-outlined" style="font-size: 20px; color: var(--brand-emerald);">bolt</span>
+            <h2 class="text-base font-semibold text-text-primary mb-4 flex items-center gap-2">
+                <span class="material-symbols-outlined text-[20px] text-brand-emerald">bolt</span>
                 Administrative Shortcuts
             </h2>
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 1.5rem;">
-                <a href="{% url 'admin_dashboard_users' %}" class="btn btn-secondary" style="padding: 0.75rem; display: flex; flex-direction: column; align-items: flex-start; gap: 0.25rem;">
-                    <span class="material-symbols-outlined" style="font-size: 20px; color: #6366f1;">group</span>
-                    <span style="font-weight: 700; font-size: 0.85rem;">Manage Users</span>
-                    <span style="font-size: 0.7rem; color: var(--text-muted);">View quotas & roles</span>
+            <div class="grid grid-cols-2 gap-3 mb-5">
+                <a href="{% url 'admin_dashboard_users' %}" class="btn btn-secondary p-3.5 flex flex-col items-start gap-1 text-left rounded-lg hover:border-border-medium transition-all">
+                    <span class="material-symbols-outlined text-[20px] text-indigo-400">group</span>
+                    <span class="font-bold text-xs text-text-primary">Manage Users</span>
+                    <span class="text-[11px] text-text-muted">View quotas & roles</span>
                 </a>
 
-                <a href="{% url 'admin_dashboard_documents' %}" class="btn btn-secondary" style="padding: 0.75rem; display: flex; flex-direction: column; align-items: flex-start; gap: 0.25rem;">
-                    <span class="material-symbols-outlined" style="font-size: 20px; color: #06b6d4;">folder_managed</span>
-                    <span style="font-weight: 700; font-size: 0.85rem;">Vault Files</span>
-                    <span style="font-size: 0.7rem; color: var(--text-muted);">Inspect hashes & sizes</span>
+                <a href="{% url 'admin_dashboard_documents' %}" class="btn btn-secondary p-3.5 flex flex-col items-start gap-1 text-left rounded-lg hover:border-border-medium transition-all">
+                    <span class="material-symbols-outlined text-[20px] text-sky-400">folder_managed</span>
+                    <span class="font-bold text-xs text-text-primary">Vault Files</span>
+                    <span class="text-[11px] text-text-muted">Inspect hashes & sizes</span>
                 </a>
 
-                <a href="{% url 'admin_dashboard_passes' %}" class="btn btn-secondary" style="padding: 0.75rem; display: flex; flex-direction: column; align-items: flex-start; gap: 0.25rem;">
-                    <span class="material-symbols-outlined" style="font-size: 20px; color: var(--brand-emerald);">qr_code_2</span>
-                    <span style="font-weight: 700; font-size: 0.85rem;">Share Passes</span>
-                    <span style="font-size: 0.7rem; color: var(--text-muted);">Emergency revocation</span>
+                <a href="{% url 'admin_dashboard_passes' %}" class="btn btn-secondary p-3.5 flex flex-col items-start gap-1 text-left rounded-lg hover:border-border-medium transition-all">
+                    <span class="material-symbols-outlined text-[20px] text-brand-emerald">qr_code_2</span>
+                    <span class="font-bold text-xs text-text-primary">Share Passes</span>
+                    <span class="text-[11px] text-text-muted">Emergency revocation</span>
                 </a>
 
-                <a href="{% url 'admin_dashboard_audit' %}" class="btn btn-secondary" style="padding: 0.75rem; display: flex; flex-direction: column; align-items: flex-start; gap: 0.25rem;">
-                    <span class="material-symbols-outlined" style="font-size: 20px; color: #e11d48;">security</span>
-                    <span style="font-weight: 700; font-size: 0.85rem;">Threat Logs</span>
-                    <span style="font-size: 0.7rem; color: var(--text-muted);">Brute-force lockouts</span>
+                <a href="{% url 'admin_dashboard_audit' %}" class="btn btn-secondary p-3.5 flex flex-col items-start gap-1 text-left rounded-lg hover:border-border-medium transition-all">
+                    <span class="material-symbols-outlined text-[20px] text-rose-400">security</span>
+                    <span class="font-bold text-xs text-text-primary">Threat Logs</span>
+                    <span class="text-[11px] text-text-muted">Brute-force lockouts</span>
                 </a>
             </div>
         </div>
 
-        <div style="background: #f8fafc; border: 1px solid var(--border-light); border-radius: var(--radius-md); padding: 0.75rem 1rem; font-size: 0.75rem; color: var(--text-secondary); display: flex; align-items: center; gap: 0.5rem;">
-            <span class="material-symbols-outlined" style="font-size: 16px; color: var(--brand-emerald);">verified</span>
+        <div class="bg-bg-card border border-border-hairline rounded-lg p-3 text-xs text-text-secondary flex items-center gap-2 font-mono">
+            <span class="material-symbols-outlined text-[16px] text-brand-emerald shrink-0">verified</span>
             <span>Security Controls: SHA-256 binary validation & PBKDF2 key hashing active across entire instance.</span>
         </div>
     </div>
 </div>
 
 <!-- Two-Column Recent Activity Tables -->
-<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 480px), 1fr)); gap: 1.5rem;">
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
     <!-- Recent Users -->
-    <div style="background: var(--bg-card); border: 1px solid var(--border-light); border-radius: var(--radius-lg); padding: 1.25rem 1.5rem; box-shadow: var(--shadow-sm);">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-            <h3 style="font-size: 0.95rem; font-weight: 700; color: var(--brand-navy); margin: 0;">Recent Registered Users</h3>
-            <a href="{% url 'admin_dashboard_users' %}" class="btn btn-secondary btn-sm" style="font-size: 0.75rem;">All Users</a>
+    <div class="bg-bg-surface border border-border-hairline rounded-xl p-5 shadow-card">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-sm font-bold text-text-primary">Recent Registered Users</h3>
+            <a href="{% url 'admin_dashboard_users' %}" class="btn btn-secondary btn-sm text-xs">All Users</a>
         </div>
-        <div style="overflow-x: auto;">
-            <table class="comp-table" style="width: 100%; font-size: 0.8rem;">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs border-collapse">
                 <thead>
-                    <tr>
-                        <th>Username</th>
-                        <th>Email</th>
-                        <th>Joined</th>
+                    <tr class="border-b border-border-hairline text-text-muted font-mono uppercase tracking-wider text-[11px]">
+                        <th class="py-2.5 px-3">Username</th>
+                        <th class="py-2.5 px-3">Email</th>
+                        <th class="py-2.5 px-3">Joined</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody class="divide-y divide-border-hairline font-mono">
                     {% for u in recent_users %}
-                    <tr>
-                        <td style="font-weight: 600;">{{ u.username }}</td>
-                        <td style="color: var(--text-muted);">{{ u.email }}</td>
-                        <td class="font-mono-data" style="font-size: 0.7rem;">{{ u.date_joined|date:"M d, H:i" }}</td>
+                    <tr class="hover:bg-bg-card transition-colors">
+                        <td class="py-2.5 px-3 font-semibold text-text-primary">{{ u.username }}</td>
+                        <td class="py-2.5 px-3 text-text-muted">{{ u.email }}</td>
+                        <td class="py-2.5 px-3 font-mono-data text-text-muted text-[11px]">{{ u.date_joined|date:"M d, H:i" }}</td>
                     </tr>
                     {% empty %}
-                    <tr><td colspan="3" style="text-align: center; color: var(--text-muted); padding: 1rem;">No users yet.</td></tr>
+                    <tr><td colspan="3" class="text-center text-text-muted py-4">No users yet.</td></tr>
                     {% endfor %}
                 </tbody>
             </table>
@@ -163,44 +165,44 @@
     </div>
 
     <!-- Recent Security Threat & Audit Entries -->
-    <div style="background: var(--bg-card); border: 1px solid var(--border-light); border-radius: var(--radius-lg); padding: 1.25rem 1.5rem; box-shadow: var(--shadow-sm);">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-            <h3 style="font-size: 0.95rem; font-weight: 700; color: var(--brand-navy); margin: 0;">Global Security Audit Feed</h3>
-            <a href="{% url 'admin_dashboard_audit' %}" class="btn btn-secondary btn-sm" style="font-size: 0.75rem;">Full Feed</a>
+    <div class="bg-bg-surface border border-border-hairline rounded-xl p-5 shadow-card">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-sm font-bold text-text-primary">Global Security Audit Feed</h3>
+            <a href="{% url 'admin_dashboard_audit' %}" class="btn btn-secondary btn-sm text-xs">Full Feed</a>
         </div>
-        <div style="overflow-x: auto;">
-            <table class="comp-table" style="width: 100%; font-size: 0.8rem;">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs border-collapse">
                 <thead>
-                    <tr>
-                        <th>Event</th>
-                        <th>Status</th>
-                        <th>IP Address</th>
-                        <th>Timestamp</th>
+                    <tr class="border-b border-border-hairline text-text-muted font-mono uppercase tracking-wider text-[11px]">
+                        <th class="py-2.5 px-3">Event</th>
+                        <th class="py-2.5 px-3">Status</th>
+                        <th class="py-2.5 px-3">IP Address</th>
+                        <th class="py-2.5 px-3">Timestamp</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody class="divide-y divide-border-hairline">
                     {% for l in recent_audit_logs %}
-                    <tr>
-                        <td style="font-weight: 600;">
-                            <span class="material-symbols-outlined" style="font-size: 14px; vertical-align: middle;">{{ l.event_icon }}</span>
+                    <tr class="hover:bg-bg-card transition-colors">
+                        <td class="py-2.5 px-3 font-semibold text-text-primary">
+                            <span class="material-symbols-outlined text-[14px] align-middle mr-1 text-text-secondary">{{ l.event_icon }}</span>
                             <span>{{ l.get_event_type_display }}</span>
                         </td>
-                        <td>
+                        <td class="py-2.5 px-3 whitespace-nowrap">
                             {% if l.status == 'success' %}
-                                <span class="status-badge font-mono-data" style="font-size: 0.6rem; background: #f0fdf4; color: #166534;">SUCCESS</span>
+                                <span class="badge bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px] font-mono">SUCCESS</span>
                             {% elif l.status == 'denied' %}
-                                <span class="status-badge font-mono-data" style="font-size: 0.6rem; background: #fff1f2; color: #be123c;">DENIED</span>
+                                <span class="badge bg-rose-500/10 text-rose-400 border border-rose-500/20 text-[10px] font-mono">DENIED</span>
                             {% elif l.status == 'locked' %}
-                                <span class="status-badge font-mono-data" style="font-size: 0.6rem; background: #fef2f2; color: #991b1b;">LOCKED</span>
+                                <span class="badge bg-rose-500/10 text-rose-400 border border-rose-500/20 text-[10px] font-mono">LOCKED</span>
                             {% else %}
-                                <span class="font-mono-data" style="font-size: 0.65rem;">{{ l.status|upper }}</span>
+                                <span class="badge bg-slate-500/10 text-slate-400 border border-slate-500/20 text-[10px] font-mono">{{ l.status|upper }}</span>
                             {% endif %}
                         </td>
-                        <td class="font-mono-data" style="font-size: 0.7rem;">{{ l.ip_address|default:"-" }}</td>
-                        <td class="font-mono-data" style="font-size: 0.7rem;">{{ l.timestamp|timesince }} ago</td>
+                        <td class="py-2.5 px-3 font-mono-data text-text-muted text-[11px]">{{ l.ip_address|default:"-" }}</td>
+                        <td class="py-2.5 px-3 font-mono-data text-text-muted text-[11px] whitespace-nowrap">{{ l.timestamp|timesince }} ago</td>
                     </tr>
                     {% empty %}
-                    <tr><td colspan="4" style="text-align: center; color: var(--text-muted); padding: 1rem;">No security events yet.</td></tr>
+                    <tr><td colspan="4" class="text-center text-text-muted py-4">No security events yet.</td></tr>
                     {% endfor %}
                 </tbody>
             </table>

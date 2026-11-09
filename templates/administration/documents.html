@@ -3,19 +3,19 @@
 
 {% block admin_content %}
 <!-- Search & Filter Toolbar -->
-<div style="background: var(--bg-card); border: 1px solid var(--border-light); border-radius: var(--radius-lg); padding: 1rem 1.25rem; margin-bottom: 1.5rem; box-shadow: var(--shadow-sm);">
-    <form method="get" action="{% url 'admin_dashboard_documents' %}" style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
+<div class="bg-bg-surface border border-border-hairline rounded-xl p-4 mb-6 shadow-card">
+    <form method="get" action="{% url 'admin_dashboard_documents' %}" class="flex gap-4 items-center flex-wrap">
         
         <!-- Search Document Query -->
-        <div style="flex: 2; min-width: 200px;">
-            <label for="admin-doc-search" style="display: block; font-size: 0.7rem; font-weight: 700; color: var(--text-muted); margin-bottom: 0.3rem; text-transform: uppercase;">Search Records / Hash</label>
-            <input type="text" name="q" id="admin-doc-search" value="{{ query }}" placeholder="Title, filename, SHA-256 hash..." class="form-input" style="padding: 0.45rem 0.65rem; font-size: 0.85rem;">
+        <div class="flex-2 min-w-[200px]">
+            <label for="admin-doc-search" class="block text-xs font-mono font-semibold text-text-muted mb-1.5 uppercase tracking-wider">Search Records / Hash</label>
+            <input type="text" name="q" id="admin-doc-search" value="{{ query }}" placeholder="Title, filename, SHA-256 hash..." class="form-input text-xs py-2 px-3 bg-bg-card border border-border-hairline rounded-lg w-full text-text-primary focus:border-brand-emerald focus:outline-none">
         </div>
 
         <!-- Filter by Category -->
-        <div style="flex: 1; min-width: 160px;">
-            <label for="admin-cat-filter" style="display: block; font-size: 0.7rem; font-weight: 700; color: var(--text-muted); margin-bottom: 0.3rem; text-transform: uppercase;">Category</label>
-            <select name="category" id="admin-cat-filter" class="form-input" style="padding: 0.45rem 0.65rem; font-size: 0.85rem;" onchange="this.form.submit()">
+        <div class="flex-1 min-w-[160px]">
+            <label for="admin-cat-filter" class="block text-xs font-mono font-semibold text-text-muted mb-1.5 uppercase tracking-wider">Category</label>
+            <select name="category" id="admin-cat-filter" class="form-input text-xs py-2 px-3 bg-bg-card border border-border-hairline rounded-lg w-full text-text-primary focus:border-brand-emerald focus:outline-none" onchange="this.form.submit()">
                 <option value="">All Categories</option>
                 {% for val, label in category_choices %}
                     <option value="{{ val }}" {% if category_filter == val %}selected{% endif %}>{{ label }}</option>
@@ -24,18 +24,18 @@
         </div>
 
         <!-- Filter by Owner -->
-        <div style="flex: 1; min-width: 160px;">
-            <label for="admin-owner-search" style="display: block; font-size: 0.7rem; font-weight: 700; color: var(--text-muted); margin-bottom: 0.3rem; text-transform: uppercase;">Filter by Owner</label>
-            <input type="text" name="owner" id="admin-owner-search" value="{{ owner_query }}" placeholder="Username..." class="form-input" style="padding: 0.45rem 0.65rem; font-size: 0.85rem;">
+        <div class="flex-1 min-w-[160px]">
+            <label for="admin-owner-search" class="block text-xs font-mono font-semibold text-text-muted mb-1.5 uppercase tracking-wider">Filter by Owner</label>
+            <input type="text" name="owner" id="admin-owner-search" value="{{ owner_query }}" placeholder="Username..." class="form-input text-xs py-2 px-3 bg-bg-card border border-border-hairline rounded-lg w-full text-text-primary focus:border-brand-emerald focus:outline-none">
         </div>
 
-        <div style="display: flex; align-items: flex-end; padding-top: 1.25rem;">
+        <div class="flex items-end pt-5 gap-2">
             <button type="submit" class="btn btn-primary btn-sm">
-                <span class="material-symbols-outlined" style="font-size: 16px;">search</span> Filter
+                <span class="material-symbols-outlined text-[16px]">search</span> Filter
             </button>
             {% if query or category_filter or owner_query %}
-            <a href="{% url 'admin_dashboard_documents' %}" class="btn btn-sm btn-secondary" style="color: #e11d48; margin-left: 0.4rem;" title="Reset filters">
-                <span class="material-symbols-outlined" style="font-size: 15px;">clear</span>
+            <a href="{% url 'admin_dashboard_documents' %}" class="btn btn-sm btn-secondary text-rose-400 hover:text-rose-300" title="Reset filters">
+                <span class="material-symbols-outlined text-[15px]">clear</span>
             </a>
             {% endif %}
         </div>
@@ -43,111 +43,113 @@
 </div>
 
 <!-- Storage Summary Banner -->
-<div style="background: #f8fafc; border: 1px solid var(--border-light); border-radius: var(--radius-md); padding: 0.75rem 1.25rem; margin-bottom: 1.25rem; display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; flex-wrap: wrap; gap: 0.5rem;">
-    <div style="color: var(--text-secondary);">
-        Total Filtered Volume: <strong style="color: var(--brand-navy);">{{ total_count }} records</strong> across <strong style="color: #6366f1;">{{ total_size_mb }} MB</strong>
+<div class="bg-bg-card border border-border-hairline rounded-lg p-3 px-4 mb-5 flex justify-between items-center text-xs flex-wrap gap-2">
+    <div class="text-text-secondary">
+        Total Filtered Volume: <strong class="text-text-primary font-semibold">{{ total_count }} records</strong> across <strong class="text-sky-400 font-mono">{{ total_size_mb }} MB</strong>
     </div>
-    <div class="font-mono-data" style="font-size: 0.7rem; color: var(--brand-emerald);">
+    <div class="font-mono-data text-[11px] text-brand-emerald font-semibold">
         AES-256-GCM • SHA-256 Verified
     </div>
 </div>
 
 <!-- Documents Table Card -->
-<div class="table-card" style="background: var(--bg-card); border: 1px solid var(--border-light); border-radius: var(--radius-lg); overflow-x: auto; box-shadow: var(--shadow-sm); width: 100%;">
-    <table class="comp-table" style="min-width: 860px; width: 100%;" data-testid="admin-docs-table">
-        <thead>
-            <tr>
-                <th style="width: 25%;">Record Title & File</th>
-                <th style="width: 18%;">Vault Owner</th>
-                <th style="width: 15%;">Category</th>
-                <th style="width: 12%;">Size & MIME</th>
-                <th style="width: 18%;">SHA-256 Digest</th>
-                <th style="width: 12%; text-align: right;">Action</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for doc in documents %}
-            <tr data-testid="admin-doc-row-{{ doc.id }}">
-                <!-- Title & File -->
-                <td>
-                    <div style="display: flex; align-items: center; gap: 0.5rem;">
-                        <span class="material-symbols-outlined" style="font-size: 20px; color: var(--brand-navy);">
-                            {% if doc.is_pdf %}picture_as_pdf{% else %}image{% endif %}
-                        </span>
-                        <div>
-                            <div style="font-weight: 700; color: var(--text-primary); font-size: 0.85rem;">
-                                {{ doc.title }}
-                            </div>
-                            <div class="font-mono-data" style="font-size: 0.65rem; color: var(--text-muted); margin-top: 0.1rem;">
-                                {{ doc.original_filename|default:"Uploaded File" }}
+<div class="table-card bg-bg-surface border border-border-hairline rounded-xl overflow-hidden shadow-card w-full">
+    <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs border-collapse min-w-[860px]" data-testid="admin-docs-table">
+            <thead>
+                <tr class="border-b border-border-hairline bg-bg-card text-text-muted font-mono uppercase tracking-wider text-[11px]">
+                    <th class="py-3 px-4 w-[25%]">Record Title & File</th>
+                    <th class="py-3 px-4 w-[18%]">Vault Owner</th>
+                    <th class="py-3 px-4 w-[15%]">Category</th>
+                    <th class="py-3 px-4 w-[12%]">Size & MIME</th>
+                    <th class="py-3 px-4 w-[18%]">SHA-256 Digest</th>
+                    <th class="py-3 px-4 w-[12%] text-right">Action</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-border-hairline">
+                {% for doc in documents %}
+                <tr class="hover:bg-bg-surface-elevated/40 transition-colors" data-testid="admin-doc-row-{{ doc.id }}">
+                    <!-- Title & File -->
+                    <td class="py-3.5 px-4">
+                        <div class="flex items-center gap-3">
+                            <span class="material-symbols-outlined text-[20px] text-text-secondary shrink-0">
+                                {% if doc.is_pdf %}picture_as_pdf{% else %}image{% endif %}
+                            </span>
+                            <div class="min-w-0">
+                                <div class="font-bold text-text-primary text-xs truncate">
+                                    {{ doc.title }}
+                                </div>
+                                <div class="font-mono-data text-[10px] text-text-muted mt-0.5 truncate">
+                                    {{ doc.original_filename|default:"Uploaded File" }}
+                                </div>
                             </div>
                         </div>
-                    </div>
-                </td>
+                    </td>
 
-                <!-- Owner -->
-                <td>
-                    <div style="font-weight: 600; color: var(--brand-navy); font-size: 0.8rem;">
-                        {{ doc.user.username }}
-                    </div>
-                    <div style="font-size: 0.7rem; color: var(--text-muted);">{{ doc.user.email }}</div>
-                </td>
+                    <!-- Owner -->
+                    <td class="py-3.5 px-4">
+                        <div class="font-semibold text-text-primary text-xs">
+                            {{ doc.user.username }}
+                        </div>
+                        <div class="text-[11px] text-text-muted">{{ doc.user.email }}</div>
+                    </td>
 
-                <!-- Category -->
-                <td>
-                    <span class="badge" style="font-size: 0.7rem; background: {% if doc.category == 'medical' %}#f0fdf4; color: #166534; border: 1px solid #bbf7d0;{% elif doc.category == 'education' %}#eff6ff; color: #1e40af; border: 1px solid #bfdbfe;{% elif doc.category == 'vehicle' %}#fffbeb; color: #92400e; border: 1px solid #fde68a;{% else %}#f8fafc; color: #475569; border: 1px solid #e2e8f0;{% endif %}">
-                        {{ doc.get_category_display }}
-                    </span>
-                </td>
+                    <!-- Category -->
+                    <td class="py-3.5 px-4 whitespace-nowrap">
+                        <span class="badge bg-bg-surface-elevated border border-border-hairline text-text-secondary text-[10px] font-mono">
+                            {{ doc.get_category_display }}
+                        </span>
+                    </td>
 
-                <!-- Size & MIME -->
-                <td>
-                    <div class="font-mono-data" style="font-size: 0.8rem; font-weight: 700; color: var(--text-primary);">
-                        {{ doc.formatted_size }}
-                    </div>
-                    <div style="font-size: 0.65rem; color: var(--text-muted);">{{ doc.file_type|default:"application/octet-stream" }}</div>
-                </td>
+                    <!-- Size & MIME -->
+                    <td class="py-3.5 px-4 font-mono">
+                        <div class="font-bold text-xs text-text-primary">
+                            {{ doc.formatted_size }}
+                        </div>
+                        <div class="text-[10px] text-text-muted truncate max-w-[120px]">{{ doc.file_type|default:"application/octet-stream" }}</div>
+                    </td>
 
-                <!-- SHA-256 Digest -->
-                <td>
-                    <div class="font-mono-data" style="font-size: 0.7rem; color: var(--brand-navy); background: #f8fafc; padding: 0.2rem 0.4rem; border-radius: 4px; border: 1px solid var(--border-light); width: fit-content;" title="{{ doc.file_hash }}">
-                        {{ doc.file_hash|slice:":16" }}…
-                    </div>
-                    <div style="font-size: 0.65rem; color: var(--text-muted); margin-top: 0.15rem;">{{ doc.created_at|date:"M d, Y" }}</div>
-                </td>
+                    <!-- SHA-256 Digest -->
+                    <td class="py-3.5 px-4">
+                        <div class="font-mono-data text-[11px] text-sky-400 bg-bg-card px-2 py-0.5 rounded border border-border-hairline w-fit font-mono" title="{{ doc.file_hash }}">
+                            {{ doc.file_hash|slice:":16" }}…
+                        </div>
+                        <div class="text-[10px] text-text-muted mt-1 font-mono">{{ doc.created_at|date:"M d, Y" }}</div>
+                    </td>
 
-                <!-- Action -->
-                <td style="text-align: right;">
-                    <form method="post" action="{% url 'admin_document_delete' doc.id %}" style="display: inline;">
-                        {% csrf_token %}
-                        <button type="submit" class="btn btn-secondary btn-sm" style="color: #e11d48; font-size: 0.7rem; padding: 0.3rem 0.6rem;" onclick="return confirm('Permanently delete document {{ doc.title }} and purge physical storage file?');">
-                            <span class="material-symbols-outlined" style="font-size: 14px; vertical-align: middle;">delete</span> Delete
-                        </button>
-                    </form>
-                </td>
-            </tr>
-            {% empty %}
-            <tr>
-                <td colspan="6" style="text-align: center; padding: 2.5rem; color: var(--text-muted);">
-                    No vault documents found matching the filter criteria.
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+                    <!-- Action -->
+                    <td class="py-3.5 px-4 text-right whitespace-nowrap">
+                        <form method="post" action="{% url 'admin_document_delete' doc.id %}" class="inline">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-secondary btn-sm text-rose-400 hover:text-rose-300 text-[11px] py-1 px-2.5" onclick="return confirm('Permanently delete document {{ doc.title }} and purge physical storage file?');">
+                                <span class="material-symbols-outlined text-[14px] align-middle">delete</span> Delete
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="text-center py-8 text-text-muted">
+                        No vault documents found matching the filter criteria.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 </div>
 
 <!-- Pagination Controls -->
 {% if page_obj.has_other_pages %}
-<div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1.5rem; flex-wrap: wrap; gap: 1rem;">
-    <div style="font-size: 0.8rem; color: var(--text-muted);">
+<div class="flex justify-between items-center mt-6 flex-wrap gap-4 text-xs">
+    <div class="text-text-muted font-mono">
         Showing {{ page_obj.start_index }}–{{ page_obj.end_index }} of {{ total_count }} documents
     </div>
-    <div style="display: flex; gap: 0.4rem;">
+    <div class="flex gap-1.5 font-mono">
         {% if page_obj.has_previous %}
             <a href="?page={{ page_obj.previous_page_number }}{% if query %}&q={{ query }}{% endif %}{% if category_filter %}&category={{ category_filter }}{% endif %}{% if owner_query %}&owner={{ owner_query }}{% endif %}" class="btn btn-secondary btn-sm">Previous</a>
         {% endif %}
-        <span class="btn btn-secondary btn-sm font-mono-data" style="cursor: default; background: var(--bg-card); font-weight: 700;">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+        <span class="btn btn-secondary btn-sm cursor-default bg-bg-surface border-border-hairline font-bold">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
         {% if page_obj.has_next %}
             <a href="?page={{ page_obj.next_page_number }}{% if query %}&q={{ query }}{% endif %}{% if category_filter %}&category={{ category_filter }}{% endif %}{% if owner_query %}&owner={{ owner_query }}{% endif %}" class="btn btn-secondary btn-sm">Next</a>
         {% endif %}
