@@ -119,7 +119,7 @@
                         {% if p.is_active %}
                             <form method="post" action="{% url 'admin_pass_revoke' p.id %}" class="inline">
                                 {% csrf_token %}
-                                <button type="submit" class="btn btn-secondary btn-sm text-rose-400 hover:text-rose-300 text-[11px] py-1 px-2.5" onclick="return confirm('Immediately revoke Share Pass #{{ p.id|stringformat:'s'|slice:':8'|upper }}? Recipient will be locked out immediately.');">
+                                <button type="submit" class="btn btn-secondary btn-sm text-rose-400 hover:text-rose-300 text-[11px] py-1 px-2.5" onclick="return confirm('Immediately revoke this Share Pass? Recipient will be locked out immediately.');">
                                     <span class="material-symbols-outlined text-[14px] align-middle">block</span> Revoke Pass
                                 </button>
                             </form>

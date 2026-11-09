@@ -108,3 +108,4 @@ All 295 unit and Selenium automated tests enforce strict DOM contracts:
 - **All 139 `data-testid` attributes** must be preserved across redesigns.
 - **Character-for-Character String Parity**: Never modify asserted strings (e.g., `"Enter 8-Character Share Key"`, `"Invalid Share Key"`, `"Access Temporarily Locked"`, `"Usage Limit Reached"`, `"Session Securely Closed"`, `"Interactive Share Pass Generator"`).
 - **Template Tag Integrity**: Preserving all `{% csrf_token %}`, form field names/IDs, and action endpoints.
+

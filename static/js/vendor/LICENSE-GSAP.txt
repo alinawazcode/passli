@@ -6,3 +6,4 @@ Alpine.js
 License: MIT License
 Website: https://alpinejs.dev/
 Included for declarative, lightweight client-side interactions with progressive enhancement.
+

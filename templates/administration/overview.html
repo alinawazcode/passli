@@ -82,7 +82,7 @@
                         <span class="font-mono-data text-text-muted">{{ cat.mb }} MB ({{ cat.percentage }}%)</span>
                     </div>
                     <div class="h-2 bg-bg-card rounded-full overflow-hidden border border-border-hairline">
-                        <div class="h-full rounded-full transition-all duration-300 {% if cat.code == 'medical' %}bg-emerald-500{% elif cat.code == 'education' %}bg-sky-500{% elif cat.code == 'vehicle' %}bg-amber-500{% elif cat.code == 'personal' %}bg-indigo-500{% elif cat.code == 'professional' %}bg-cyan-500{% else %}bg-slate-500{% endif %}" style="width: {{ cat.percentage }}%;"></div>
+                        <div class="h-full rounded-full transition-all duration-300 taxonomy-bar-fill {% if cat.code == 'medical' %}bg-emerald-500{% elif cat.code == 'education' %}bg-sky-500{% elif cat.code == 'vehicle' %}bg-amber-500{% elif cat.code == 'personal' %}bg-indigo-500{% elif cat.code == 'professional' %}bg-cyan-500{% else %}bg-slate-500{% endif %}" data-percentage="{{ cat.percentage }}" style="width: 0%;"></div>
                     </div>
                 </div>
                 {% endfor %}
@@ -209,4 +209,13 @@
         </div>
     </div>
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('.taxonomy-bar-fill').forEach(function(el) {
+            var pct = parseFloat(el.getAttribute('data-percentage')) || 0;
+            el.style.width = Math.min(Math.max(pct, 0), 100) + '%';
+        });
+    });
+</script>
 {% endblock %}
