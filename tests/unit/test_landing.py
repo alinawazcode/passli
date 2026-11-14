@@ -83,6 +83,10 @@ class LandingPageTests(TestCase):
         self.assertIn('expiry-buttons-grid', content)
         self.assertIn('8K7P-42XM', content)
         self.assertIn('sim-generate-btn', content)
+        self.assertIn('id="hudQrContainer"', content)
+        self.assertIn('id="hudQrCanvas"', content)
+        self.assertIn('id="hudQrRevokedOverlay"', content)
+        self.assertIn('qrcode.min.js', content)
 
     def test_real_world_use_cases(self):
         """Verify real-world scenario showcase with verified photography."""

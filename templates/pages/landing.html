@@ -177,6 +177,21 @@
                                 </div>
                             </div>
 
+                            <!-- Dynamic Interactive QR Code Showcase -->
+                            <div class="hud-qr-container" id="hudQrContainer">
+                                <div class="hud-qr-frame" id="hudQrFrame">
+                                    <div id="hudQrCanvas" class="hud-qr-canvas" aria-label="Dynamic Ephemeral Share Pass QR Code"></div>
+                                    <div class="hud-qr-revoked-overlay" id="hudQrRevokedOverlay" aria-hidden="true">
+                                        <span class="revoked-badge">Revoked (410 gone)</span>
+                                    </div>
+                                </div>
+                                <div class="hud-qr-info">
+                                    <div><code class="hud-qr-status font-mono-data" id="hudQrStatus">token_status: active</code></div>
+                                    <div class="hud-qr-title">Instant Scannable Pass</div>
+                                    <div class="hud-qr-hint">Scan with mobile camera to test recipient viewer access in RAM.</div>
+                                </div>
+                            </div>
+
                             <div class="hud-metrics-grid">
                                 <div class="hud-metric-cell">
                                     <span class="metric-label">Assigned expiry</span>
@@ -422,5 +437,6 @@
 {% endblock %}
 
 {% block extra_js %}
+<script src="{% static 'js/vendor/qrcode.min.js' %}" defer></script>
 <script src="{% static 'js/landing-interactive.js' %}" defer></script>
 {% endblock %}
