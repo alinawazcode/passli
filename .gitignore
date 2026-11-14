@@ -45,5 +45,7 @@ selenium_testing/
 # AI Agent configuration & local customizations
 .agents/
 AGENTS.md
+.hallmark/
+
 
 

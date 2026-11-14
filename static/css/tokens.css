@@ -1,0 +1,110 @@
+/* ==========================================================================
+   Passli — Hallmark Design Tokens (Brand System: Cobalt & Obsidian Paper)
+   ========================================================================== */
+
+:root {
+  /* Spacing Scale (4px harmonic rhythm) */
+  --space-3xs: 2px;
+  --space-2xs: 4px;
+  --space-xs: 8px;
+  --space-sm: 12px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 40px;
+  --space-2xl: 64px;
+  --space-3xl: 96px;
+  --space-4xl: 144px;
+
+  /* Typography Scale */
+  --text-xs: 0.8125rem;
+  --text-sm: 0.875rem;
+  --text-md: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.35rem;
+  --text-2xl: 1.75rem;
+  --text-3xl: 2.25rem;
+  --text-display: clamp(2.4rem, 4vw, 3.5rem);
+  --text-section: clamp(1.85rem, 2.8vw, 2.75rem);
+  --text-title: clamp(1.15rem, 1.4vw, 1.35rem);
+  --text-lead: clamp(1.05rem, 1.2vw, 1.2rem);
+
+  /* Motion Tokens */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in: cubic-bezier(0.7, 0, 0.84, 0);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --dur-micro: 120ms;
+  --dur-short: 200ms;
+  --dur-long: 380ms;
+
+  /* Surfaces & Paper (Unified porcelain slate palette) */
+  --color-paper: oklch(98.2% 0.008 255);
+  --color-paper-2: oklch(99.6% 0.003 255);
+  --color-paper-3: oklch(96.2% 0.012 255);
+  --color-paper-tint: oklch(94.5% 0.016 255);
+  --color-glass: oklch(99.6% 0.003 255 / 0.85);
+
+  /* Inks & Contrast (High-contrast, compliant with APCA & WCAG AAA) */
+  --color-ink: oklch(18.5% 0.035 265);
+  --color-ink-2: oklch(24% 0.030 262);
+  --color-muted: oklch(38% 0.025 258);
+  --color-dim: oklch(38% 0.025 258);
+
+  /* Hairlines & Borders */
+  --color-rule: oklch(89% 0.016 255);
+  --color-rule-strong: oklch(80% 0.024 255);
+
+  /* Primary Brand Accent (Electric Cobalt) */
+  --color-accent: oklch(52% 0.23 260);
+  --color-accent-hover: oklch(45% 0.24 260);
+  --color-accent-active: oklch(39% 0.22 260);
+  --color-accent-soft: oklch(94% 0.04 260);
+  --color-accent-wash: oklch(94% 0.04 260 / 0.4);
+  --color-accent-ink: oklch(99% 0.005 260);
+  --color-focus: oklch(52% 0.23 260);
+
+  /* Security Status Signals */
+  --color-emerald: oklch(38% 0.16 155);
+  --color-emerald-soft: oklch(94% 0.04 155);
+  --color-emerald-ink: oklch(99% 0.005 155);
+  --color-danger: oklch(42% 0.22 24);
+  --color-danger-soft: oklch(94% 0.04 24);
+  --color-danger-ink: oklch(99% 0.005 24);
+  --color-amber: oklch(50% 0.16 75);
+  --color-amber-soft: oklch(95% 0.04 75);
+
+  /* Font Families */
+  --font-display: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  --font-body: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+  /* Layout Container */
+  --container: 1280px;
+  --gutter: clamp(1.25rem, 3.5vw, 2.5rem);
+  --gap-columns: var(--space-xl);
+  --section-gap: clamp(4.5rem, 8vw, 7rem);
+
+  /* Geometry & Radii */
+  --radius-xs: 4px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+  --radius-pill: 999px;
+  --rule-hair: 1px;
+
+  /* Shadows (Tonal, no harsh neon or slop) */
+  --color-shadow-sm: oklch(18.5% 0.035 265 / 0.04);
+  --color-shadow-card: oklch(18.5% 0.035 265 / 0.06);
+  --color-shadow-card-subtle: oklch(18.5% 0.035 265 / 0.02);
+  --color-shadow-float: oklch(18.5% 0.035 265 / 0.10);
+  --color-accent-shadow: oklch(52% 0.23 260 / 0.25);
+
+  --shadow-sm: 0 1px 2px var(--color-shadow-sm);
+  --shadow-card: 0 4px 12px -2px var(--color-shadow-card), 0 1px 3px var(--color-shadow-card-subtle);
+  --shadow-float: 0 12px 28px -6px var(--color-shadow-float);
+
+  /* Z-Index Ladder */
+  --z-base: 1;
+  --z-raised: 10;
+  --z-sticky: 100;
+  --z-sticky-nav: 200;
+}

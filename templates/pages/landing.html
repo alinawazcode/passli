@@ -1,517 +1,426 @@
-{% extends "base.html" %}
+{% extends 'base.html' %}
 {% load static %}
 
 {% block title %}Passli — Controlled Document Sharing & Ephemeral Vault{% endblock %}
 
+{% block extra_css %}
+<link rel="stylesheet" href="../../static/css/landing.css">
+<link rel="stylesheet" href="{% static 'css/landing.css' %}">
+{% endblock %}
+
 {% block content %}
-<!-- Split-Hero Section with Authentic Photography -->
-<section class="hero-section">
-    <div class="container">
-        <div class="hero-grid">
-            <!-- Left Hero Content -->
-            <div>
-                <h1 class="hero-title" data-testid="hero-title">
-                    Share only the records you choose.<br>
-                    <span class="hero-title-sub">Never your account credentials.</span>
-                </h1>
+<div class="landing-page-root">
+    <!-- Hero Stage: Split-Hero Architecture with Authentic Imagery & Live Pass Card -->
+    <section class="landing-hero" id="overview">
+        <div class="container">
+            <div class="hero-stage-grid">
+                <!-- Hero Primary Text Block -->
+                <div class="hero-text-col">
+                    <h1 class="hero-title" data-testid="hero-title">
+                        Share only the records you choose.<br>
+                        <span class="hero-title-sub">Never your account credentials.</span>
+                    </h1>
 
-                <p class="hero-subtitle" data-testid="hero-subtitle">
-                    Passli lets you generate time-gated, cryptographic Share Passes for sensitive documents—without handing over master logins, permanent drive links, or unencrypted email attachments.
+                    <p class="hero-subtitle lead" data-testid="hero-subtitle">
+                        Passli lets you generate time-gated, cryptographic Share Passes for sensitive documents, without handing over master logins, permanent drive links, or unencrypted email attachments.
+                    </p>
+
+                    <div class="hero-actions-row">
+                        <a href="{% url 'register' %}" class="btn btn-primary" data-testid="hero-get-started-btn">
+                            <svg class="btn-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/></svg>
+                            <span>Launch Personal Vault</span>
+                        </a>
+                        <a href="{% url 'login' %}" class="btn btn-secondary" data-testid="hero-login-btn">
+                            <span>Sign In</span>
+                        </a>
+                    </div>
+
+                    <div class="hero-security-strip">
+                        <div class="security-strip-item">
+                            <svg class="strip-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
+                            <span>Server-side AES-256-GCM encryption at rest</span>
+                        </div>
+                        <div class="security-strip-item">
+                            <svg class="strip-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
+                            <span>Server-enforced expiration and 1-click revocation</span>
+                        </div>
+                        <div class="security-strip-item">
+                            <svg class="strip-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
+                            <span>Zero master credential leakage to recipients</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Hero Visual Artifact: Authentic Photography & Live Telemetry -->
+                <div class="hero-visual-col" data-testid="hero-image-container">
+                    <div class="hero-visual-container">
+                        <img
+                            src="https://images.unsplash.com/photo-1563986768609-322da13575f3?auto=format&fit=crop&w=1200&q=80"
+                            alt="Passli encrypted cryptographic vault architecture"
+                            class="hero-visual-img"
+                            width="600"
+                            height="400"
+                            loading="eager"
+                        >
+                        <div class="live-pass-card hero-overlay-card">
+                            <div class="card-status-bar">
+                                <div class="status-indicator">
+                                    <span class="status-beacon" aria-hidden="true"></span>
+                                    <span class="status-name">Active Share Pass</span>
+                                </div>
+                                <code class="cipher-tag font-mono-data">AES-256-GCM</code>
+                            </div>
+
+                            <div class="card-payload-summary">
+                                <div class="payload-title">Clinic Specialist Bundle</div>
+                                <div class="payload-meta font-mono-data">Token: pass_9f81a4e2c8</div>
+                            </div>
+
+                            <div class="card-details-list">
+                                <div class="detail-row">
+                                    <span class="detail-label">Attached records</span>
+                                    <span class="detail-value">3 items (blood_work.pdf, scan.dcm)</span>
+                                </div>
+                                <div class="detail-row">
+                                    <span class="detail-label">Time to live</span>
+                                    <span class="detail-value font-mono-data">23 hours 58 minutes</span>
+                                </div>
+                                <div class="detail-row">
+                                    <span class="detail-label">Passcode gating</span>
+                                    <span class="detail-value font-mono-data">Required (8K7P-42XM)</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Interactive Generator Sandbox Section -->
+    <section class="landing-section section-sandbox" id="generator-sandbox">
+        <div class="container">
+            <div class="section-heading-block">
+                <h2 class="section-title">Interactive Share Pass Generator</h2>
+                <p class="section-desc">
+                    Configure and test an ephemeral Share Pass directly inside your browser.
                 </p>
+            </div>
 
-                <div class="hero-cta">
-                    <a href="{% url 'register' %}" class="btn btn-primary btn-lg" data-testid="hero-get-started-btn">
-                        <span class="material-symbols-outlined">shield</span> Launch Personal Vault
+            <div class="sandbox-workbench-card">
+                <!-- Sandbox Controls -->
+                <div class="sandbox-controls-col">
+                    <div class="control-group">
+                        <label class="control-label" id="expiry-group-label">Expiration window</label>
+                        <div class="expiry-buttons-grid time-presets-grid" role="group" aria-labelledby="expiry-group-label">
+                            <button type="button" class="preset-pill" data-hours="1">1 Hour</button>
+                            <button type="button" class="preset-pill is-active" data-hours="24">24 Hours</button>
+                            <button type="button" class="preset-pill" data-hours="168">7 Days</button>
+                            <button type="button" class="preset-pill" data-hours="720">30 Days</button>
+                        </div>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">Attached records</label>
+                        <div class="doc-checklist">
+                            <label class="check-item">
+                                <input type="checkbox" class="doc-toggle sim-doc-checkbox" checked data-file="Blood_Test_Panel_2026.pdf">
+                                <span class="check-name">Blood_Test_Panel_2026.pdf</span>
+                            </label>
+                            <label class="check-item">
+                                <input type="checkbox" class="doc-toggle sim-doc-checkbox" checked data-file="National_ID_Card.png">
+                                <span class="check-name">National_ID_Card.png</span>
+                            </label>
+                            <label class="check-item">
+                                <input type="checkbox" class="doc-toggle sim-doc-checkbox" data-file="Vehicle_Registration_Cert.pdf">
+                                <span class="check-name">Vehicle_Registration_Cert.pdf</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">Access restrictions</label>
+                        <label class="check-item">
+                            <input type="checkbox" id="passcodeToggle" checked>
+                            <span class="check-name">Enforce separate 8-character passcode: <strong class="font-mono-data">8K7P-42XM</strong></span>
+                        </label>
+                    </div>
+
+                    <div class="sandbox-action-buttons">
+                        <button type="button" id="sandboxGenerateBtn" class="btn btn-primary btn-block sim-generate-btn">
+                            <svg class="btn-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg>
+                            <span>Generate Pass</span>
+                        </button>
+                        <button type="button" id="sandboxRevokeBtn" class="btn btn-secondary btn-block">
+                            <svg class="btn-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg>
+                            <span>Revoke Ephemeral Pass</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Sandbox Live Output Preview -->
+                <div class="sandbox-preview-col">
+                    <div class="output-hud" id="sandboxHud">
+                        <div class="hud-top">
+                            <div class="hud-status" id="hudStatusBadge">
+                                <span class="hud-dot" aria-hidden="true"></span>
+                                <span id="hudStatusText">Ready: Valid Token</span>
+                            </div>
+                            <code class="hud-cipher font-mono-data">SHA-256 HMAC</code>
+                        </div>
+
+                        <div class="hud-body">
+                            <div class="hud-token-box">
+                                <span class="hud-field-label">Simulated Share Link</span>
+                                <div class="hud-token-val font-mono-data" id="hudLinkValue">
+                                    https://passli.dev/p/8a3f910b2ce4
+                                </div>
+                            </div>
+
+                            <div class="hud-metrics-grid">
+                                <div class="hud-metric-cell">
+                                    <span class="metric-label">Assigned expiry</span>
+                                    <span class="metric-val font-mono-data" id="hudExpiryVal">24 Hours</span>
+                                </div>
+                                <div class="hud-metric-cell">
+                                    <span class="metric-label">Bundle files</span>
+                                    <span class="metric-val font-mono-data" id="hudFilesVal">2 Attached</span>
+                                </div>
+                                <div class="hud-metric-cell">
+                                    <span class="metric-label">Passcode required</span>
+                                    <span class="metric-val font-mono-data" id="hudPinVal">8K7P-42XM</span>
+                                </div>
+                                <div class="hud-metric-cell">
+                                    <span class="metric-label">Recipient permission</span>
+                                    <span class="metric-val font-mono-data">Read Only (In-RAM)</span>
+                                </div>
+                            </div>
+
+                            <div class="hud-log-feed">
+                                <span class="log-label font-mono-data">Telemetry Log</span>
+                                <div class="log-entry font-mono-data" id="hudLogMessage">
+                                    [SERVER] Token issued with client bundle hash 0x7c4e…
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Real Scenarios Section -->
+    <section class="landing-section section-scenarios" id="use-cases">
+        <div class="container">
+            <div class="section-heading-block">
+                <h2 class="section-title">Engineered for high-trust workflows.</h2>
+                <p class="section-desc">
+                    Share records without granting unbounded cloud drive permissions.
+                </p>
+            </div>
+
+            <div class="scenarios-triad-grid">
+                <!-- Case 1 -->
+                <div class="scenario-panel">
+                    <h3 class="panel-title">
+                        <svg class="panel-inline-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+                        Clinic & Doctor Consultations
+                    </h3>
+                    <p class="panel-body">
+                        Grant external healthcare specialists time-gated access to diagnostic files without sharing portal logins.
+                    </p>
+                    <div class="panel-meta-tag font-mono-data">Scope: Diagnostic Records</div>
+                </div>
+
+                <!-- Case 2 -->
+                <div class="scenario-panel">
+                    <h3 class="panel-title">
+                        <svg class="panel-inline-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
+                        Job Verification & Certifications
+                    </h3>
+                    <p class="panel-body">
+                        Deliver government identification and employment records to hiring managers with automatic expiration.
+                    </p>
+                    <div class="panel-meta-tag font-mono-data">Scope: Verified KYC Bundle</div>
+                </div>
+
+                <!-- Case 3 -->
+                <div class="scenario-panel">
+                    <h3 class="panel-title">
+                        <svg class="panel-inline-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                        Vehicle Registration & Inspections
+                    </h3>
+                    <p class="panel-body">
+                        Provide vehicle registration proofs and maintenance records. Revoke access the moment inspections finish.
+                    </p>
+                    <div class="panel-meta-tag font-mono-data">Scope: Isolated Inspections</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Defensive Capabilities Bento Grid Section -->
+    <section class="landing-section section-features" id="features">
+        <div class="container">
+            <div class="section-heading-block">
+                <h2 class="section-title">Defensive capabilities built into the core.</h2>
+                <p class="section-desc">
+                    Robust cryptographic boundaries protecting every shared asset.
+                </p>
+            </div>
+
+            <div class="features-quad-grid">
+                <div class="feature-card">
+                    <h3 class="feature-title">Encrypted Vault</h3>
+                    <p class="feature-body">
+                        All sensitive records reside in individual AES-256-GCM ciphertexts with client-associated encryption keys.
+                    </p>
+                </div>
+                <div class="feature-card">
+                    <h3 class="feature-title">Two-Factor Share Access</h3>
+                    <p class="feature-body">
+                        Recipients must present both the unique URL token and the out-of-band 8-character passcode.
+                    </p>
+                </div>
+                <div class="feature-card">
+                    <h3 class="feature-title">Enforced Expiration</h3>
+                    <p class="feature-body">
+                        Server-side TTL clocks immediately close download access once the time limit is reached.
+                    </p>
+                </div>
+                <div class="feature-card">
+                    <h3 class="feature-title">Detailed Access Audit</h3>
+                    <p class="feature-body">
+                        Immutable server event logs tracking view timestamps, IP hashes, and recipient interactions.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Cryptographic Protocol Architecture Section -->
+    <section class="landing-section section-protocol" id="how-it-works">
+        <div class="container">
+            <div class="section-heading-block">
+                <h2 class="section-title">Three layers of recipient isolation.</h2>
+                <p class="section-desc">
+                    How Passli protects your account credentials from third parties.
+                </p>
+            </div>
+
+            <div class="protocol-steps-grid">
+                <!-- Step 1 -->
+                <div class="protocol-card">
+                    <div class="step-num font-mono-data">STEP 01</div>
+                    <h3 class="protocol-card-title">Select & Generate</h3>
+                    <p class="protocol-card-copy">
+                        Select specific files for sharing. Each document is encrypted individually with AES-256-GCM.
+                    </p>
+                </div>
+
+                <!-- Step 2 -->
+                <div class="protocol-card">
+                    <div class="step-num font-mono-data">STEP 02</div>
+                    <h3 class="protocol-card-title">Recipient Scans & Authenticates</h3>
+                    <p class="protocol-card-copy">
+                        Passli generates a single-use UUID portal link and a separate eight-character secret.
+                    </p>
+                </div>
+
+                <!-- Step 3 -->
+                <div class="protocol-card">
+                    <div class="step-num font-mono-data">STEP 03</div>
+                    <h3 class="protocol-card-title">Automatic Shredding</h3>
+                    <p class="protocol-card-copy">
+                        When the timer expires or you click revoke, authorization is severed instantly across all sessions.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Security Comparison Specification Table Section -->
+    <section class="landing-section section-comparison" id="security">
+        <div class="container">
+            <div class="section-heading-block">
+                <h2 class="section-title">Institutional Security Comparison</h2>
+                <p class="section-desc">
+                    Compare Passli cryptographic passes with legacy sharing methods.
+                </p>
+            </div>
+
+            <div class="comparison-table-wrapper">
+                <table class="comp-table">
+                    <thead>
+                        <tr>
+                            <th scope="col" class="th-spec">Specification</th>
+                            <th scope="col" class="th-passli">Passli Secure Pass</th>
+                            <th scope="col" class="th-alt">Cloud Storage Folders</th>
+                            <th scope="col" class="th-alt">Email Attachments</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <th scope="row" class="td-row-head">Account Credential Exposure</th>
+                            <td class="td-passli">Zero: Ephemeral token only</td>
+                            <td class="td-alt">Exposes account profile and folder structure</td>
+                            <td class="td-alt">Unencrypted inbox delivery</td>
+                        </tr>
+                        <tr>
+                            <th scope="row" class="td-row-head">Sub-File Permissions</th>
+                            <td class="td-passli">Itemized bundle selection</td>
+                            <td class="td-alt">Broad directory cascades</td>
+                            <td class="td-alt">Static detached files</td>
+                        </tr>
+                        <tr>
+                            <th scope="row" class="td-row-head">Automatic Expiry</th>
+                            <td class="td-passli">Strict server-side enforcement</td>
+                            <td class="td-alt">Manual link auditing required</td>
+                            <td class="td-alt">Permanent on recipient disk</td>
+                        </tr>
+                        <tr>
+                            <th scope="row" class="td-row-head">Revocation Capability</th>
+                            <td class="td-passli">Instant one-click sever</td>
+                            <td class="td-alt">Complex account permission reset</td>
+                            <td class="td-alt">Impossible once sent</td>
+                        </tr>
+                        <tr>
+                            <th scope="row" class="td-row-head">Access Audit Trail</th>
+                            <td class="td-passli">Immutable timestamped logs</td>
+                            <td class="td-alt">Coarse or missing logs</td>
+                            <td class="td-alt">No access visibility</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <!-- Closing Call To Action -->
+    <section class="landing-closing-cta">
+        <div class="container">
+            <div class="closing-card">
+                <div class="closing-text">
+                    <h2 class="closing-title">Take control of your records perimeter.</h2>
+                    <p class="closing-desc">
+                        Launch your personal vault and share sensitive files with total peace of mind.
+                    </p>
+                </div>
+                <div class="closing-actions">
+                    <a href="{% url 'register' %}" class="btn btn-primary">
+                        <svg class="btn-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/></svg>
+                        <span>Launch Personal Vault</span>
                     </a>
-                    <a href="{% url 'login' %}" class="btn btn-secondary btn-lg" data-testid="hero-login-btn">
-                        Sign In
+                    <a href="{% url 'login' %}" class="btn btn-secondary">
+                        <span>Sign In</span>
                     </a>
                 </div>
-
-                <div class="hero-trust-list">
-                    <div class="trust-row-item">
-                        <span class="material-symbols-outlined">check_circle</span>
-                        <span>Server-side AES-256-GCM encryption at rest</span>
-                    </div>
-                    <div class="trust-row-item">
-                        <span class="material-symbols-outlined">check_circle</span>
-                        <span>Server-enforced expiration & 1-click revocation</span>
-                    </div>
-                    <div class="trust-row-item">
-                        <span class="material-symbols-outlined">check_circle</span>
-                        <span>Zero master credential leakage to recipients</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Right Hero Visual: Authentic Security Operations Photography -->
-            <div class="hero-visual-frame" data-testid="hero-image-container">
-                <img 
-                    src="https://images.unsplash.com/photo-1555421689-491a97ff2040?auto=format&fit=crop&w=1000&q=80" 
-                    alt="Cryptographic key validation and secure document access verification"
-                    class="hero-visual-img"
-                    loading="eager"
-                >
-                <div class="hero-floating-chip font-mono-data">
-                    <div style="display: flex; align-items: center; gap: 0.4rem;">
-                        <span class="pulse-dot"></span>
-                        <span>ACTIVE SECURE PASS</span>
-                    </div>
-                    <span style="color: var(--brand-emerald); font-weight: 600;">AES-256-GCM</span>
-                </div>
             </div>
         </div>
-    </div>
-</section>
+    </section>
+</div>
+{% endblock %}
 
-<!-- Interactive Share Pass Generator Sandbox -->
-<section class="section section-subtle" id="generator-sandbox">
-    <div class="container">
-        <div class="section-header">
-            <h2 class="section-title">Interactive Share Pass Generator</h2>
-            <p class="section-subtitle">Experience how cryptographic constraints and real-time key derivation protect your documents.</p>
-        </div>
-
-        <!-- Main Generator Component Card -->
-        <div class="generator-card" data-testid="interactive-simulator">
-            <!-- Left Column: Controls & Document Selection -->
-            <div class="generator-left">
-                <div>
-                    <!-- Header with Live Status Indicator -->
-                    <div class="generator-card-header">
-                        <div>
-                            <div class="card-title-main">Create Controlled Share Pass</div>
-                            <div class="card-subtitle-main">Define access rules and file boundary</div>
-                        </div>
-                        <div class="status-badge font-mono-data">
-                            <span class="pulse-dot"></span>
-                            <span>Token Ready</span>
-                        </div>
-                    </div>
-
-                    <!-- Document Selector -->
-                    <div>
-                        <div class="doc-selection-header">
-                            <span class="doc-selection-title">Select Vault Records</span>
-                            <span id="sim-selected-count" class="doc-count-badge font-mono-data">2 selected (3.5 MB)</span>
-                        </div>
-
-                        <div class="doc-list">
-                            <!-- Document Item 1 -->
-                            <label class="doc-item-row selected">
-                                <div class="doc-item-left">
-                                    <input type="checkbox" class="sim-doc-checkbox" checked style="accent-color: var(--brand-navy); width: 16px; height: 16px;">
-                                    <div class="doc-icon-badge icon-red">
-                                        <span class="material-symbols-outlined" style="font-size: 18px;">picture_as_pdf</span>
-                                    </div>
-                                    <div>
-                                        <div class="doc-item-name">Blood_Test_Panel_2026.pdf</div>
-                                        <div class="doc-item-meta">
-                                            <span>2.4 MB</span> &bull; <span style="color: var(--brand-emerald);">Encrypted Medical</span>
-                                        </div>
-                                    </div>
-                                </div>
-                                <span class="doc-hash-tag font-mono-data">sha256:4a8e...91b0</span>
-                            </label>
-
-                            <!-- Document Item 2 -->
-                            <label class="doc-item-row selected">
-                                <div class="doc-item-left">
-                                    <input type="checkbox" class="sim-doc-checkbox" checked style="accent-color: var(--brand-navy); width: 16px; height: 16px;">
-                                    <div class="doc-icon-badge icon-blue">
-                                        <span class="material-symbols-outlined" style="font-size: 18px;">badge</span>
-                                    </div>
-                                    <div>
-                                        <div class="doc-item-name">National_ID_Card.png</div>
-                                        <div class="doc-item-meta">
-                                            <span>1.1 MB</span> &bull; <span style="color: var(--brand-emerald);">Verified KYC</span>
-                                        </div>
-                                    </div>
-                                </div>
-                                <span class="doc-hash-tag font-mono-data">sha256:7c22...88aa</span>
-                            </label>
-
-                            <!-- Document Item 3 -->
-                            <label class="doc-item-row">
-                                <div class="doc-item-left">
-                                    <input type="checkbox" class="sim-doc-checkbox" style="accent-color: var(--brand-navy); width: 16px; height: 16px;">
-                                    <div class="doc-icon-badge icon-amber">
-                                        <span class="material-symbols-outlined" style="font-size: 18px;">description</span>
-                                    </div>
-                                    <div>
-                                        <div class="doc-item-name">Vehicle_Registration_Cert.pdf</div>
-                                        <div class="doc-item-meta">
-                                            <span>3.8 MB</span> &bull; <span>Notarized Legal</span>
-                                        </div>
-                                    </div>
-                                </div>
-                                <span class="doc-hash-tag font-mono-data">sha256:d130...ef49</span>
-                            </label>
-                        </div>
-                    </div>
-
-                    <!-- Expiration Selector -->
-                    <div class="expiry-control-group">
-                        <span class="doc-selection-title" style="display: block; margin-bottom: 0.4rem;">Cryptographic Expiration Timer</span>
-                        <div class="expiry-buttons-grid font-mono-data">
-                            <button type="button" class="expiry-btn" data-val="15 mins">15 mins</button>
-                            <button type="button" class="expiry-btn active" data-val="30 mins">30 mins</button>
-                            <button type="button" class="expiry-btn" data-val="2 hours">2 hours</button>
-                            <button type="button" class="expiry-btn" data-val="24 hours">24 hours</button>
-                            <button type="button" class="expiry-btn" data-val="1-time">1-time</button>
-                        </div>
-                    </div>
-
-                    <!-- Access Permissions -->
-                    <div style="padding-top: 1rem; border-top: 1px solid var(--border-light);">
-                        <span class="doc-selection-title" style="display: block; margin-bottom: 0.4rem;">Security Guardrails</span>
-                        <div style="display: flex; flex-direction: column; gap: 0.4rem; font-size: 0.8rem;">
-                            <div style="display: flex; justify-content: space-between;">
-                                <span>Allow In-Browser Decrypted View</span>
-                                <input type="checkbox" checked disabled style="accent-color: var(--brand-navy);">
-                            </div>
-                            <div style="display: flex; justify-content: space-between;">
-                                <span>Allow Document File Download</span>
-                                <input type="checkbox" id="sim-perm-download" checked style="accent-color: var(--brand-navy);">
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Action Button -->
-                <div style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--border-light); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
-                    <button type="button" id="sim-generate-btn" class="btn btn-primary btn-sm">
-                        <span class="material-symbols-outlined" style="font-size: 16px;">lock_clock</span> Generate Pass & Encrypt Link
-                    </button>
-                    <button type="button" style="background: none; border: none; font-size: 0.75rem; color: #e11d48; cursor: pointer; display: flex; align-items: center; gap: 0.2rem;">
-                        <span class="material-symbols-outlined" style="font-size: 14px;">delete_forever</span> Revoke
-                    </button>
-                </div>
-            </div>
-
-            <!-- Right Column: Generated Output Panel -->
-            <div class="generator-right">
-                <div>
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
-                        <span style="font-size: 0.7rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;" class="font-mono-data">Pass Output Artifact</span>
-                        <span style="font-size: 0.65rem; font-weight: 700; color: var(--brand-emerald); background: var(--bg-emerald-light); padding: 0.15rem 0.45rem; border-radius: 4px; border: 1px solid var(--border-emerald);" class="font-mono-data">LIVE ENCRYPTION</span>
-                    </div>
-
-                    <!-- Clean Crisp SVG QR Code Presentation -->
-                    <div class="qr-box-container">
-                        <div class="qr-svg-wrapper">
-                            <svg class="shape-rendering-crispEdges" height="120" viewBox="0 0 140 140" width="120">
-                                <rect fill="#ffffff" height="140" width="140"></rect>
-                                <rect fill="#0b1c30" height="30" width="30" x="10" y="10"></rect>
-                                <rect fill="#ffffff" height="20" width="20" x="15" y="15"></rect>
-                                <rect fill="#0b1c30" height="10" width="10" x="20" y="20"></rect>
-                                <rect fill="#0b1c30" height="30" width="30" x="100" y="10"></rect>
-                                <rect fill="#ffffff" height="20" width="20" x="105" y="15"></rect>
-                                <rect fill="#0b1c30" height="10" width="10" x="110" y="20"></rect>
-                                <rect fill="#0b1c30" height="30" width="30" x="10" y="100"></rect>
-                                <rect fill="#ffffff" height="20" width="20" x="15" y="105"></rect>
-                                <rect fill="#0b1c30" height="10" width="10" x="20" y="110"></rect>
-                                <rect fill="#0b1c30" height="15" width="5" x="45" y="15"></rect>
-                                <rect fill="#0b1c30" height="5" width="10" x="55" y="10"></rect>
-                                <rect fill="#0b1c30" height="5" width="15" x="70" y="15"></rect>
-                                <rect fill="#0b1c30" height="10" width="5" x="50" y="25"></rect>
-                                <rect fill="#0b1c30" height="10" width="10" x="65" y="25"></rect>
-                                <rect fill="#0b1c30" height="5" width="5" x="85" y="25"></rect>
-                                <rect fill="#0b1c30" height="5" width="10" x="15" y="50"></rect>
-                                <rect fill="#0b1c30" height="15" width="5" x="30" y="45"></rect>
-                                <rect fill="#0b1c30" height="10" width="10" x="45" y="45"></rect>
-                                <rect fill="#0b1c30" height="5" width="20" x="60" y="45"></rect>
-                                <rect fill="#0b1c30" height="10" width="10" x="85" y="45"></rect>
-                                <rect fill="#0b1c30" height="5" width="15" x="105" y="50"></rect>
-                                <rect fill="#0b1c30" height="10" width="5" x="125" y="45"></rect>
-                                <rect fill="#0b1c30" height="5" width="15" x="20" y="70"></rect>
-                                <rect fill="#0b1c30" height="10" width="10" x="40" y="65"></rect>
-                                <rect fill="#0b1c30" height="15" width="15" x="55" y="60"></rect>
-                                <rect fill="#0b1c30" height="5" width="10" x="75" y="65"></rect>
-                                <rect fill="#0b1c30" height="5" width="20" x="95" y="70"></rect>
-                                <rect fill="#0b1c30" height="15" width="10" x="120" y="65"></rect>
-                                <rect fill="#0b1c30" height="20" width="5" x="45" y="85"></rect>
-                                <rect fill="#0b1c30" height="5" width="10" x="55" y="90"></rect>
-                                <rect fill="#0b1c30" height="10" width="15" x="70" y="85"></rect>
-                                <rect fill="#0b1c30" height="5" width="10" x="90" y="95"></rect>
-                                <rect fill="#0b1c30" height="5" width="25" x="105" y="85"></rect>
-                                <rect fill="#0b1c30" height="5" width="20" x="45" y="115"></rect>
-                                <rect fill="#0b1c30" height="15" width="10" x="70" y="110"></rect>
-                                <rect fill="#0b1c30" height="10" width="5" x="90" y="110"></rect>
-                                <rect fill="#0b1c30" height="10" width="25" x="105" y="115"></rect>
-                                <rect fill="#0b1c30" height="5" width="5" x="125" y="105"></rect>
-                            </svg>
-                        </div>
-                        <div style="font-size: 0.75rem; font-weight: 600; color: var(--text-primary);">Scan with mobile or reader</div>
-                        <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.1rem;">Zero payload stored without pass key</div>
-                    </div>
-
-                    <!-- Temporary Share Key Card -->
-                    <div class="key-display-card">
-                        <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <span style="font-size: 0.7rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;" class="font-mono-data">Required Access Key</span>
-                            <button type="button" id="copy-key-btn" style="background: none; border: none; font-size: 0.75rem; color: var(--brand-emerald); cursor: pointer; display: flex; align-items: center; gap: 0.2rem;" class="font-mono-data">
-                                <span class="material-symbols-outlined" style="font-size: 13px;">content_copy</span> Copy
-                            </button>
-                        </div>
-                        <div class="key-code-box" id="sim-key-text">
-                            8K7P-42XM
-                        </div>
-                        <div style="display: flex; justify-content: space-between; font-size: 0.7rem; color: var(--text-dim);" class="font-mono-data">
-                            <span>Fingerprint:</span>
-                            <span style="color: var(--text-secondary); font-weight: 500;">sha256: 9f8a...3b21</span>
-                        </div>
-                    </div>
-
-                    <!-- Countdown Timer Card -->
-                    <div class="timer-card">
-                        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem;">
-                            <span style="display: flex; align-items: center; gap: 0.25rem;">
-                                <span class="material-symbols-outlined" style="font-size: 14px; color: #d97706;">timer</span> Pass validity:
-                            </span>
-                            <span id="sim-expiry-text" style="font-weight: 700;" class="font-mono-data">30 mins</span>
-                        </div>
-                        <div class="progress-bar-track">
-                            <div class="progress-bar-fill"></div>
-                        </div>
-                        <div style="display: flex; justify-content: space-between; font-size: 0.7rem; color: var(--text-dim);" class="font-mono-data">
-                            <span>Auto-Shredding</span>
-                            <span>Server Enforced</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div style="text-align: center; margin-top: 1rem; font-size: 0.7rem; color: var(--text-dim);" class="font-mono-data">
-                    Keys generated strictly in client memory. Never transmitted raw.
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
-
-<!-- Real-World Use Cases (Featuring Authentic Unsplash Photography) -->
-<section class="section" id="use-cases">
-    <div class="container">
-        <div class="section-header">
-            <h2 class="section-title">Built for the moments when privacy matters most</h2>
-            <p class="section-subtitle">Real-world scenarios where email attachments or full drive shares create permanent security exposures.</p>
-        </div>
-
-        <div class="scenarios-grid">
-            <!-- Scenario 1: Clinic & Medical -->
-            <div class="scenario-card">
-                <div class="scenario-img-wrapper">
-                    <img src="https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&w=800&q=80" alt="Doctor reviewing medical records on tablet">
-                    <div class="scenario-tag-badge">Medical Visits</div>
-                </div>
-                <div class="scenario-body">
-                    <h3 class="scenario-title">Clinic & Doctor Consultations</h3>
-                    <p class="scenario-text">
-                        Share blood panels, imaging scans, and prescriptions with a specialist for 30 minutes without exposing insurance numbers, IDs, or financial history.
-                    </p>
-                    <div class="scenario-footer">
-                        <span style="color: var(--brand-emerald); font-weight: 600;">✓ View-Only or Download</span>
-                        <span>Auto-shreds after visit</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Scenario 2: Identity & KYC -->
-            <div class="scenario-card">
-                <div class="scenario-img-wrapper">
-                    <img src="https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=800&q=80" alt="Professional credential and degree verification">
-                    <div class="scenario-tag-badge">Credentials & KYC</div>
-                </div>
-                <div class="scenario-body">
-                    <h3 class="scenario-title">Job Verification & Certifications</h3>
-                    <p class="scenario-text">
-                        Provide temporary authenticated access to diplomas and transcripts during hiring checks without sending unencrypted attachments over email.
-                    </p>
-                    <div class="scenario-footer">
-                        <span style="color: var(--brand-emerald); font-weight: 600;">✓ Cryptographic Hash</span>
-                        <span>Single-use view limit</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Scenario 3: Vehicle & Asset Registration -->
-            <div class="scenario-card">
-                <div class="scenario-img-wrapper">
-                    <img src="https://images.unsplash.com/photo-1563720223185-11003d516935?auto=format&fit=crop&w=800&q=80" alt="Vehicle inspection and registration verification">
-                    <div class="scenario-tag-badge">Vehicle & Legal</div>
-                </div>
-                <div class="scenario-body">
-                    <h3 class="scenario-title">Vehicle Registration & Inspections</h3>
-                    <p class="scenario-text">
-                        Present proof of insurance and registration certificates to inspectors via instant QR scan on your phone screen without handing over personal logins.
-                    </p>
-                    <div class="scenario-footer">
-                        <span style="color: var(--brand-emerald); font-weight: 600;">✓ Instant Mobile QR</span>
-                        <span>10-minute expiry</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
-
-<!-- Sharing Protocol Workflow -->
-<section class="section section-subtle" id="how-it-works">
-    <div class="container">
-        <div class="section-header">
-            <h2 class="section-title">How Controlled Sharing Operates</h2>
-            <p class="section-subtitle">A straightforward three-stage architecture keeping you in complete ownership.</p>
-        </div>
-
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); gap: 1.5rem;">
-            <!-- Step 1 -->
-            <div class="feature-tile" style="border-top: 3px solid var(--brand-navy);">
-                <div style="font-family: var(--font-mono); font-size: 0.8rem; font-weight: 700; color: var(--brand-navy); margin-bottom: 0.5rem;">STEP 01</div>
-                <h3 style="font-size: 1.05rem; font-weight: 700; color: var(--brand-navy); margin-bottom: 0.4rem;">Select & Generate</h3>
-                <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.55;">
-                    Choose the specific files you want to present from your vault, set expiration (10m - 24h), and generate a Share Pass with a QR code and random Share Key.
-                </p>
-            </div>
-
-            <!-- Step 2 -->
-            <div class="feature-tile" style="border-top: 3px solid var(--brand-emerald);">
-                <div style="font-family: var(--font-mono); font-size: 0.8rem; font-weight: 700; color: var(--brand-emerald); margin-bottom: 0.5rem;">STEP 02</div>
-                <h3 style="font-size: 1.05rem; font-weight: 700; color: var(--brand-navy); margin-bottom: 0.4rem;">Recipient Scans & Authenticates</h3>
-                <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.55;">
-                    The recipient scans the QR code to open the isolated access portal, then supplies the 8-character key. The server verifies the cryptographic hash before releasing files.
-                </p>
-            </div>
-
-            <!-- Step 3 -->
-            <div class="feature-tile" style="border-top: 3px solid var(--brand-blue);">
-                <div style="font-family: var(--font-mono); font-size: 0.8rem; font-weight: 700; color: var(--brand-blue); margin-bottom: 0.5rem;">STEP 03</div>
-                <h3 style="font-size: 1.05rem; font-weight: 700; color: var(--brand-navy); margin-bottom: 0.4rem;">Automatic Shredding</h3>
-                <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.55;">
-                    The recipient views or downloads only authorized files. As soon as the pass expires or is revoked, access is immediately blocked on the server.
-                </p>
-            </div>
-        </div>
-    </div>
-</section>
-
-<!-- Defensive Capabilities Grid -->
-<section class="section" id="features">
-    <div class="container">
-        <div style="max-width: 600px; margin-bottom: 2.5rem;">
-            <h2 class="section-title" data-testid="features-title">Engineered for absolute document sovereignty</h2>
-            <p class="section-subtitle">Traditional file shares give away account access and permanent links. Passli enforces localized zero-trust boundaries.</p>
-        </div>
-
-        <div class="feature-cards-grid">
-            <div class="feature-tile" data-testid="feature-card-vault">
-                <div class="feature-tile-icon">
-                    <span class="material-symbols-outlined" style="font-size: 20px;">shield_lock</span>
-                </div>
-                <h3 style="font-size: 1.05rem; font-weight: 700; margin-bottom: 0.4rem;">Encrypted Vault</h3>
-                <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.55;">
-                    Server-side authenticated encryption ensures your documents are protected at rest.
-                </p>
-                <div style="margin-top: 1rem; padding-top: 0.75rem; border-top: 1px solid var(--border-light); font-size: 0.7rem; color: var(--text-dim);" class="font-mono-data">
-                    AES-256-GCM
-                </div>
-            </div>
-
-            <div class="feature-tile" data-testid="feature-card-dual-auth">
-                <div class="feature-tile-icon">
-                    <span class="material-symbols-outlined" style="font-size: 20px;">fingerprint</span>
-                </div>
-                <h3 style="font-size: 1.05rem; font-weight: 700; margin-bottom: 0.4rem;">Two-Factor Share Access</h3>
-                <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.55;">
-                    Require separate Share Key entry before the recipient browser is authorized to decrypt the ephemeral bundle.
-                </p>
-                <div style="margin-top: 1rem; padding-top: 0.75rem; border-top: 1px solid var(--border-light); font-size: 0.7rem; color: var(--text-dim);" class="font-mono-data">
-                    Dual-Layer Endpoint Auth
-                </div>
-            </div>
-
-            <div class="feature-tile" data-testid="feature-card-expiration">
-                <div class="feature-tile-icon">
-                    <span class="material-symbols-outlined" style="font-size: 20px;">auto_delete</span>
-                </div>
-                <h3 style="font-size: 1.05rem; font-weight: 700; margin-bottom: 0.4rem;">Enforced Expiration</h3>
-                <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.55;">
-                    Cryptographic shredding where access keys are permanently erased once the timer lapses or pass is revoked.
-                </p>
-                <div style="margin-top: 1rem; padding-top: 0.75rem; border-top: 1px solid var(--border-light); font-size: 0.7rem; color: var(--text-dim);" class="font-mono-data">
-                    Server-side key sanitization
-                </div>
-            </div>
-
-            <div class="feature-tile" data-testid="feature-card-audit">
-                <div class="feature-tile-icon">
-                    <span class="material-symbols-outlined" style="font-size: 20px;">receipt_long</span>
-                </div>
-                <h3 style="font-size: 1.05rem; font-weight: 700; margin-bottom: 0.4rem;">Detailed Access Audit</h3>
-                <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.55;">
-                    Immutable server logs pinpointing exact view timestamps, IP geolocation, recipient actions, and validation status.
-                </p>
-                <div style="margin-top: 1rem; padding-top: 0.75rem; border-top: 1px solid var(--border-light); font-size: 0.7rem; color: var(--text-dim);" class="font-mono-data">
-                    Verifiable Audit Trail
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
-
-<!-- Institutional Security Comparison Table -->
-<section class="section section-subtle" id="security">
-    <div class="container">
-        <div class="section-header">
-            <h2 class="section-title">Institutional Security Comparison</h2>
-            <p class="section-subtitle">See how Passli’s cryptographic pass structure compares to legacy cloud links and unencrypted email attachments.</p>
-        </div>
-
-        <div class="table-card" style="overflow-x: auto; -webkit-overflow-scrolling: touch;">
-            <table class="comp-table" style="min-width: 600px;">
-                <thead>
-                    <tr>
-                        <th style="width: 25%;">Specification</th>
-                        <th style="width: 35%;" class="highlight-col">
-                            <div style="display: flex; align-items: center; gap: 0.4rem;">
-                                <span class="material-symbols-outlined" style="font-size: 16px;">verified</span> Passli Secure Pass
-                            </div>
-                        </th>
-                        <th style="width: 20%;">Cloud Storage Folders</th>
-                        <th style="width: 20%;">Email Attachments</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td style="font-weight: 600; color: var(--text-primary);">Account Credential Exposure</td>
-                        <td class="highlight-col">Zero exposure (Ephemeral recipient token)</td>
-                        <td>Shared access exposes account / folders</td>
-                        <td style="color: #e11d48;">Replicated permanently on recipient host</td>
-                    </tr>
-                    <tr>
-                        <td style="font-weight: 600; color: var(--text-primary);">Granular Sub-File Permissions</td>
-                        <td class="highlight-col">Itemized bundle isolation</td>
-                        <td>All-or-nothing folder permission cascades</td>
-                        <td style="color: var(--text-dim);">None (Static detached files)</td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-    </div>
-</section>
-
-<!-- Bottom CTA -->
-<section style="padding: 4.5rem 0; background-color: var(--bg-surface); text-align: center; border-top: 1px solid var(--border-light);">
-    <div class="container">
-        <h2 class="section-title">Ready to secure your personal records perimeter?</h2>
-        <p class="section-subtitle" style="max-width: 550px; margin: 0.5rem auto 1.5rem;">Launch your vault immediately. Share sensitive files with complete confidence and total control.</p>
-        <div style="display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap;">
-            <a href="{% url 'register' %}" class="btn btn-primary btn-lg">
-                <span class="material-symbols-outlined">lock</span> Launch Personal Vault
-            </a>
-            <a href="{% url 'login' %}" class="btn btn-secondary btn-lg">
-                Sign In
-            </a>
-        </div>
-    </div>
-</section>
+{% block extra_js %}
+<script src="{% static 'js/landing-interactive.js' %}" defer></script>
 {% endblock %}
